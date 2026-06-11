@@ -1,19 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pzrkrlgtdufxwccwwigm.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_-8EZPybHOv_VFd6v33IFIA_E4SQ4YLS'
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
-const missingSupabaseConfig = () => {
-  throw new Error('Missing Supabase environment variables. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your deployment settings.')
-}
-
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : new Proxy(
-      {},
-      {
-        get: missingSupabaseConfig,
-      }
-    )
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
