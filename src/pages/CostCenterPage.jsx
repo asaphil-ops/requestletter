@@ -6,7 +6,7 @@ import { useAttachFileCostCenter, useCostCenter, useCreateCostCenter, useDeleteC
 import { useInitiativeMappings } from '../hooks/useInitiativeMappings'
 import { useEmployeeList } from '../hooks/useEmployeeList'
 import { uploadToDrive } from '../lib/gas'
-import { fmtCurrency, fmtDate, ROWS_PER_PAGE } from '../lib/utils'
+import { fmtCurrency, fmtDate, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import Pagination from '../components/shared/Pagination'
 import { EmptyRow, TableLoader } from '../components/shared/Loader'
 import StatusBadge from '../components/shared/StatusBadge'
@@ -162,7 +162,7 @@ export default function CostCenterPage({ type }) {
     if (statusFilter) {
       result = result.filter(row => (row.status || 'Pending') === statusFilter)
     }
-    return result
+    return sortByLatest(result)
   }, [config.columns, data, search, dateFrom, dateTo, statusFilter])
 
   const paged = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE)

@@ -159,12 +159,25 @@ export default function CFOOBudget() {
             <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
               {headers.map((h) => (
                 <React.Fragment key={h}>
-                  <div className="font-medium text-gray-300">{h}</div>
-                  <div className="text-gray-100 break-words">{selected[h]}</div>
+                  <div className="font-medium text-gray-300">{h.replace(/_/g, ' ')}</div>
+                  <div className="text-gray-100 break-words">
+                    {h.toLowerCase() === 'notes' && !selected[h] ? 'Note: FOR VP/SVP APPROVAL' : selected[h]}
+                  </div>
                 </React.Fragment>
               ))}
+              <div className="font-medium text-gray-300">Approval Status</div>
+              <div className="text-emerald-400 font-semibold italic">Note: FOR VP/SVP APPROVAL</div>
             </div>
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-end space-x-3">
+              <button 
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center transition-colors"
+                onClick={() => {
+                  const body = `Note: FOR VP/SVP APPROVAL\n\nRecord Details:\n${headers.map(h => `${h.replace(/_/g, ' ')}: ${selected[h] || ''}`).join('\n')}`;
+                  window.location.href = `mailto:?subject=Budget Approval Request&body=${encodeURIComponent(body)}`;
+                }}
+              >
+                <i className="fas fa-paper-plane mr-2" /> Send Email
+              </button>
               <button className="px-4 py-2 bg-[#254662] hover:bg-[#2e5a80] text-white rounded" onClick={() => setSelected(null)}>
                 Close
               </button>

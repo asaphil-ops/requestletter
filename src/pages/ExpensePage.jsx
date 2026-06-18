@@ -16,7 +16,7 @@ const OPERATION_EMAIL_MAP = {
 };
 import { uploadToDrive } from '../lib/gas'
 import { supabase } from '../lib/supabase'
-import { fmtCurrency, getUploadedAt, IT_BUDGETS, AT_BUDGETS, ROWS_PER_PAGE } from '../lib/utils'
+import { fmtCurrency, getUploadedAt, IT_BUDGETS, AT_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import StatusBadge from '../components/shared/StatusBadge'
 import { OpsModal } from '../components/shared/ProcessModal'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
@@ -220,6 +220,7 @@ export default function ExpensePage({ type }) {
         return true
       })
     }
+    if (sortKey === 'created_at' && sortDir === 'desc') return sortByLatest(arr)
     arr.sort((a, b) => {
       const av = a[sortKey] ?? ''; const bv = b[sortKey] ?? ''
       const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv))

@@ -47,7 +47,7 @@ function fileToBase64(file) {
 export function buildEmailHTML({ subject, senderName, senderEmail, note, messageBody, attachments = [], today }) {
   const dateStr = today || new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
   const safeSubject = escapeHtml(subject)
-  const safeNote = escapeHtml(note || 'FOR VP/SVP APPROVAL')
+  const safeNote = escapeHtml(note || 'NOTE: FOR VP/SVP APPROVAL')
   const safeSenderName = escapeHtml(senderName || '')
   const safeSenderEmail = escapeHtml(senderEmail || '')
   const bodyHTML = escapeHtml(messageBody || "Good day, Ma'am/Sir,\n\nKindly see the attached File/s")
@@ -75,8 +75,7 @@ export function buildEmailHTML({ subject, senderName, senderEmail, note, message
             ${attachListHTML}
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
               <tr><td style="background:#f1f5f9;border-left:4px solid #1e3a5f;padding:12px 20px;">
-                <span style="font-size:11px;font-weight:700;color:#1e3a5f;">Note:&nbsp;</span>
-                <span style="font-size:14px;color:#1e293b;font-weight:500;">${safeNote}</span>
+                <span style="font-size:14px;color:#1e293b;font-weight:700;">${safeNote}</span>
               </td></tr>
             </table>
             <p style="margin:0 0 20px;color:#1e293b;font-size:14px;">Thank you,<br><br>Regards,</p>

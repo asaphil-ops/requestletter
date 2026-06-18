@@ -32,6 +32,24 @@ export const getUploadedAt = (record = {}) => {
   return Number.isNaN(created.getTime()) ? null : created
 }
 
+const latestTimestamp = (record = {}) => {
+  const uploadedAt = getUploadedAt(record)
+  if (uploadedAt) return uploadedAt.getTime()
+
+  const dateFields = ['created_at', 'updated_at', 'date_req', 'date']
+  for (const field of dateFields) {
+    if (!record[field]) continue
+    const date = new Date(record[field])
+    if (!Number.isNaN(date.getTime())) return date.getTime()
+  }
+
+  const numericId = Number(record.req_id || record.uniq_id || record.id || 0)
+  return Number.isFinite(numericId) ? numericId : 0
+}
+
+export const sortByLatest = (records = []) =>
+  [...records].sort((a, b) => latestTimestamp(b) - latestTimestamp(a))
+
 export const formatBytes = (bytes) => {
   if (!bytes) return '0B'
   const k = 1024

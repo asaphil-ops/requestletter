@@ -4,8 +4,10 @@ import { useAuthStore } from '../store/authStore'
 import { sendEmail, buildEmailHTML, getFileUrl } from '../lib/gas'
 import { supabase } from '../lib/supabase'
 import { SUGGESTED_EMAILS, AUTO_CC_RULES, formatBytes, getFileIcon } from '../lib/utils'
-import { useBranchEmailMap, useBranchOptions } from '../hooks/useBranches'
+import { useBranchEmailMap } from '../hooks/useBranches'
 import Swal from 'sweetalert2'
+
+const DEFAULT_NOTE = 'NOTE: FOR VP/SVP APPROVAL'
 
 const TagInput = forwardRef(({ tags, input, setInput, field, placeholder, removeTag, handleKeyDown, onFocus, addTag }, ref) => (
   <div
@@ -39,7 +41,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const { user } = useAuthStore()
   const location = useLocation()
   const branchEmailMap = useBranchEmailMap()
-  const branchOptions = useBranchOptions()
   const initDraft = draft ?? location.state?.draft ?? {}
   const defaultMessageBody = "Good day, Ma'am/Sir,\n\nKindly see the attached File/s"
   const [toTags, setToTags] = useState([])
@@ -48,21 +49,14 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const [ccInput, setCcInput] = useState('')
   const [subject, setSubject] = useState('')
   const [messageBody, setMessageBody] = useState(defaultMessageBody)
-  const [note, setNote] = useState('FOR VP/SVP APPROVAL')
-  const [selectedBranch, setSelectedBranch] = useState(null)
-  const [branchQuery, setBranchQuery] = useState('')
-  const [showBranchSugg, setShowBranchSugg] = useState(false)
+  const [note, setNote] = useState(DEFAULT_NOTE)
   const [attachments, setAttachments] = useState([])
   const [driveAttachment, setDriveAttachment] = useState(null)
   const [showSugg, setShowSugg] = useState(null) // 'to' | 'cc' | null
   const [suggQuery, setSuggQuery] = useState('')
   const [sending, setSending] = useState(false)
-  const toRef = useRef(); const ccRef = useRef(); const suggRef = useRef(); const branchRef = useRef(); const branchSuggRef = useRef()
+  const toRef = useRef(); const ccRef = useRef(); const suggRef = useRef()
   const fileInputRef = useRef()
-
-  const filteredBranches = branchOptions.filter(b =>
-    b.label.toLowerCase().includes(branchQuery.toLowerCase())
-  ).slice(0, 10)
 
   // All suggestion emails
   const allEmails = [...new Set([...SUGGESTED_EMAILS, ...Object.values(branchEmailMap).filter(Boolean)])]
@@ -79,10 +73,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
           ccRef.current && !ccRef.current.contains(e.target)) {
         setShowSugg(null)
       }
-      if (branchSuggRef.current && !branchSuggRef.current.contains(e.target) &&
-          branchRef.current && !branchRef.current.contains(e.target)) {
-        setShowBranchSugg(false)
-      }
     }
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
@@ -98,16 +88,8 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setCcInput('')
     setSubject(d.subject || '')
     setMessageBody(d.messageBody || defaultMessageBody)
-    setNote(d.note || 'FOR VP/SVP APPROVAL')
+    setNote(d.note || DEFAULT_NOTE)
     setDriveAttachment(null)
-    setBranchQuery('')
-    setShowBranchSugg(false)
-
-    // Load branch if provided in draft
-    if (d.branch_code) {
-      const matchedBranch = branchOptions.find(b => b.code === d.branch_code)
-      if (matchedBranch) setSelectedBranch(matchedBranch)
-    }
 
     if (d.fileId) {
       getFileUrl(d.fileId)
@@ -126,7 +108,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
           })
         })
     }
-  }, [draft, branchOptions])
+  }, [draft])
 
   const addTag = (email, field) => {
     const clean = email.replace(/,/g, '').trim()
@@ -223,7 +205,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       await supabase.from('email_logs').insert({ sent_by: user?.full_name, to_addresses: to, cc_addresses: cc, subject })
 
       Swal.fire('Sent!', 'Email sent successfully.', 'success')
-      setToTags([]); setCcTags([]); setSubject(''); setMessageBody(defaultMessageBody); setNote('FOR VP/SVP APPROVAL'); setAttachments([]); setDriveAttachment(null); setSelectedBranch(null)
+      setToTags([]); setCcTags([]); setSubject(''); setMessageBody(defaultMessageBody); setNote(DEFAULT_NOTE); setAttachments([]); setDriveAttachment(null)
     } catch (err) {
       Swal.fire('Error', err.message || 'Failed to send', 'error')
     } finally { setSending(false) }
@@ -236,12 +218,9 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setCcInput('')
     setSubject('')
     setMessageBody(defaultMessageBody)
-    setNote('FOR VP/SVP APPROVAL')
+    setNote(DEFAULT_NOTE)
     setAttachments([])
     setDriveAttachment(null)
-    setSelectedBranch(null)
-    setBranchQuery('')
-    setShowBranchSugg(false)
   }
 
   const TagInput = ({ tags, input, setInput, field, placeholder, ref: inputRef }) => (
@@ -381,71 +360,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               <div>
                 <label className="label mb-1">Note</label>
                 <textarea className="input resize-none" rows={2} value={note} onChange={e => setNote(e.target.value)} />
-              </div>
-
-              {/* Branch Selection */}
-              <div className="relative">
-                <label className="label mb-1"><i className="fas fa-code mr-1" />Branch Code</label>
-                <div
-                  ref={branchRef}
-                  className="flex items-center gap-2 p-2 border border-gray-200 dark:border-gray-700 rounded-lg min-h-[42px] cursor-pointer bg-white dark:bg-gray-900"
-                  onClick={() => { setBranchQuery(''); setShowBranchSugg(!showBranchSugg) }}
-                >
-                  {selectedBranch ? (
-                    <>
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {selectedBranch.code.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-sm text-gray-800 dark:text-gray-200">{selectedBranch.code}</div>
-                        <div className="text-xs text-gray-400 truncate">{selectedBranch.name}</div>
-                      </div>
-                      <button
-                        onClick={e => { e.stopPropagation(); setSelectedBranch(null); setBranchQuery('') }}
-                        className="w-6 h-6 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 flex items-center justify-center transition-colors flex-shrink-0"
-                      >
-                        <i className="fas fa-times text-xs" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-search text-gray-400 ml-2" />
-                      <input
-                        type="text"
-                        placeholder="Search branch code (B0001, B1860...)..."
-                        className="flex-1 min-w-[150px] outline-none text-sm bg-transparent text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                        value={branchQuery}
-                        onChange={e => { setBranchQuery(e.target.value); setShowBranchSugg(true) }}
-                        onFocus={() => { setShowBranchSugg(true); setBranchQuery('') }}
-                        onClick={e => e.stopPropagation()}
-                      />
-                    </>
-                  )}
-                </div>
-
-                {/* Branch Suggestions */}
-                {showBranchSugg && filteredBranches.length > 0 && (
-                  <div ref={branchSuggRef} className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden max-h-64 overflow-y-auto">
-                    <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 sticky top-0">
-                      <i className="fas fa-code mr-1 text-blue-500" />Available Branches
-                    </div>
-                    {filteredBranches.map(branch => (
-                      <div
-                        key={branch.code}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                        onClick={() => { setSelectedBranch(branch); setShowBranchSugg(false); setBranchQuery('') }}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                          {branch.code.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm text-gray-800 dark:text-gray-200">{branch.code}</div>
-                          <div className="text-xs text-gray-400 truncate">{branch.name}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <hr className="border-gray-100 dark:border-gray-800" />

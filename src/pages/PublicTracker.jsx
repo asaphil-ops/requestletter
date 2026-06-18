@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
 import { fetchAllBranches } from '../hooks/useBranches'
+import { sortByLatest } from '../lib/utils'
 
 const TRACKER_ROWS_PER_PAGE = 100
 const TRACKER_ENCODER_NAME = 'Mary Jane Cared Lapitan'
@@ -387,7 +388,7 @@ export default function PublicTracker() {
     const from = filters.dateFrom ? new Date(filters.dateFrom) : null
     const to = filters.dateTo ? new Date(filters.dateTo) : null
     if (to) to.setHours(23, 59, 59, 999)
-    return records.filter((record) => {
+    const matches = records.filter((record) => {
       const haystack = `${record.id} ${record.module} ${record.type} ${record.party} ${record.title} ${record.description} ${record.uploader}`.toLowerCase()
       const date = record.date ? new Date(record.date) : null
 
@@ -402,6 +403,7 @@ export default function PublicTracker() {
       if (to && (!date || date > to)) return false
       return true
     })
+    return sortByLatest(matches)
   }, [records, filters])
 
   useEffect(() => {
