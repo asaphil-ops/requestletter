@@ -86,7 +86,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setCcTags(Array.isArray(d.cc) ? d.cc.filter(Boolean) : [])
     setToInput('')
     setCcInput('')
-    setSubject(d.fileName || d.subject || '')
+    setSubject(d.subject || d.fileName || '')
     setMessageBody(d.messageBody || defaultMessageBody)
     setNote(d.note || DEFAULT_NOTE)
     setDriveAttachment(null)
