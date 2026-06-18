@@ -59,12 +59,12 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const fileInputRef = useRef()
 
   // All suggestion emails
-  const allEmails = [...new Set([...SUGGESTED_EMAILS, ...Object.values(branchEmailMap).filter(Boolean)])]
+  const allEmails = useMemo(() => [...new Set([...SUGGESTED_EMAILS, ...Object.values(branchEmailMap).filter(Boolean)])], [branchEmailMap])
 
-  const filteredSugg = allEmails.filter(e =>
+  const filteredSugg = useMemo(() => allEmails.filter(e =>
     e.toLowerCase().includes(suggQuery.toLowerCase()) &&
     !toTags.includes(e) && !ccTags.includes(e)
-  ).slice(0, 8)
+  ).slice(0, 8), [allEmails, suggQuery, toTags, ccTags])
 
   useEffect(() => {
     const fn = (e) => {
