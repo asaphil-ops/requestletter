@@ -106,7 +106,6 @@ export default function ExpensePage({ type }) {
       draft: {
         to: operationEmail ? [operationEmail] : [],
         subject: `${rec.item_name || refType} - ${rec.branch_code} - ${rec.branch_name || rec.uniq_id} (Checked)`,
-        note: `Expense for ${rec.branch_code} - ${rec.branch_name || rec.uniq_id} has been checked. Amount: ${fmtCurrency(rec.amount)}.`,
         refId: rec.uniq_id,
         refType: refType,
         fileId: rec.file_id || '',
@@ -135,7 +134,6 @@ export default function ExpensePage({ type }) {
         draft: {
           to: [...new Set(emails)], // Use Set to get unique emails
           subject: `${refType} Batch (Checked - ${eligible.length} items)`,
-          note: `Attached are the ${refType} records that have been checked. Total Amount: ${fmtCurrency(eligible.reduce((s, r) => s + Number(r.amount || 0), 0))}.`,
           refId: eligible.map(r => r.uniq_id).join(','),
           refType: `${refType} Batch`,
         },

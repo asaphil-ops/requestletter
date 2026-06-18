@@ -295,7 +295,6 @@ export default function CostCenterPage({ type }) {
         draft: {
           to: [...new Set(emails)],
           subject: `${config.title} - Batch Release`,
-          note: `Checked ${config.title} for multiple staff members. Total: ${fmtCurrency(eligible.reduce((s, r) => s + Number(r.amount || 0), 0))}`,
           refId: [...selectedIds].join(','),
           refType: config.title,
         },
@@ -313,7 +312,6 @@ export default function CostCenterPage({ type }) {
         draft: {
           to: recipientEmail ? [recipientEmail] : [],
           subject,
-          note: `Checked ${config.title} for ${record.staff_name || record.cost_center}. Amount: ${fmtCurrency(record.amount)}.`,
           refId: record.uniq_id,
           refType: config.title,
           fileId: record.file_id || '',

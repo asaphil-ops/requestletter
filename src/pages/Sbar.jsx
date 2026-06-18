@@ -69,11 +69,10 @@ export default function Sbar() {
     navigate('/send-email', {
       state: {
         draft: {
-          to: emails,
+          to: receiverEmail ? [receiverEmail] : [],
           subject: `${rec.type || 'SBAR'} - ${rec.giver} to ${rec.receiver}`,
-          note: `Approved ${rec.type || 'SBAR'} from ${rec.giver} to ${rec.receiver}. Amount: ${fmtCurrency(rec.amount)}.`,
           refId: rec.uniq_id,
-          refType: rec.type || 'SBAR',
+          refType: 'SBAR',
           fileId: rec.file_id || '',
         },
       },
@@ -94,11 +93,10 @@ export default function Sbar() {
     navigate('/send-email', {
       state: {
         draft: {
-          to: [...new Set(emails)], // Use Set to get unique emails
+          to: [...new Set(emails)],
           subject: `Approved SBAR / Budget Transfer Batch (${eligible.length} items)`,
-          note: `Attached are the approved SBAR / Budget Transfer records. Total Amount: ${fmtCurrency(eligible.reduce((s, r) => s + Number(r.amount || 0), 0))}.`,
           refId: eligible.map(r => r.uniq_id).join(','),
-          refType: 'SBAR / Budget Transfer Batch',
+          refType: 'SBAR Batch',
         },
       },
     })

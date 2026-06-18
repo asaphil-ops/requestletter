@@ -266,8 +266,7 @@ export default function Requests() {
       state: {
         draft: {
           to: receiverEmail ? [receiverEmail] : [],
-          subject: `${rec.title || 'Request Letter'} - ${rec.beneficiary || rec.req_id} (Checked)`,
-          note: `Request letter for ${rec.beneficiary || rec.req_id} has been checked. Amount: ${fmtCurrency(rec.amount)}.`,
+          subject: `${rec.type || 'Request Letter'} - ${rec.beneficiary || rec.req_id} (Checked)`,
           refId: rec.req_id,
           refType: 'Request Letter',
           fileId: rec.file_id || '',
@@ -287,7 +286,6 @@ export default function Requests() {
         draft: {
           to: [...new Set(emails)],
           subject: `Checked Request Letters Batch (${eligible.length} items)`,
-          note: `Attached are the checked request letters. Total Amount: ${fmtCurrency(eligible.reduce((s, r) => s + Number(r.amount || 0), 0))}.`,
           refId: eligible.map(r => r.req_id).join(','),
           refType: 'Request Letter Batch',
         },
