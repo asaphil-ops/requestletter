@@ -86,7 +86,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setCcTags(Array.isArray(d.cc) ? d.cc.filter(Boolean) : [])
     setToInput('')
     setCcInput('')
-    setSubject(d.subject || d.fileName || '')
+    setSubject(d.subject || (d.fileName ? `Request Letter - ${d.fileName}` : ''))
     setMessageBody(d.messageBody || defaultMessageBody)
     setNote(d.note || DEFAULT_NOTE)
     setDriveAttachment(null)
@@ -100,7 +100,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
             name: fileName,
             fileName,
           })
-          setSubject(fileName)
+          setSubject(`Request Letter - ${fileName}`)
         })
         .catch(() => {
           const fileName = d.fileName || 'Request Letter Attachment'
@@ -109,7 +109,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
             name: fileName,
             fileName,
           })
-          setSubject(fileName)
+          setSubject(`Request Letter - ${fileName}`)
         })
     }
   }, [draft])
