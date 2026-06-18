@@ -6,3 +6,6 @@ dist
 # IDE and cache files
 .antigravity-ide/
 .cache/
+
+.vercel
+.env*
