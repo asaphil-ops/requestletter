@@ -86,7 +86,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setCcTags(Array.isArray(d.cc) ? d.cc.filter(Boolean) : [])
     setToInput('')
     setCcInput('')
-    setSubject(d.subject || '')
+    setSubject(d.fileName || d.subject || '')
     setMessageBody(d.messageBody || defaultMessageBody)
     setNote(d.note || DEFAULT_NOTE)
     setDriveAttachment(null)
@@ -94,18 +94,22 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     if (d.fileId) {
       getFileUrl(d.fileId)
         .then(file => {
+          const fileName = file?.name || d.fileName || 'Request Letter Attachment'
           setDriveAttachment({
             fileId: d.fileId,
-            name: file?.name || d.fileName || 'Request Letter Attachment',
-            fileName: file?.name || d.fileName || 'Request Letter Attachment',
+            name: fileName,
+            fileName,
           })
+          setSubject(fileName)
         })
         .catch(() => {
+          const fileName = d.fileName || 'Request Letter Attachment'
           setDriveAttachment({
             fileId: d.fileId,
-            name: d.fileName || 'Request Letter Attachment',
-            fileName: d.fileName || 'Request Letter Attachment',
+            name: fileName,
+            fileName,
           })
+          setSubject(fileName)
         })
     }
   }, [draft])

@@ -50,7 +50,9 @@ export function buildEmailHTML({ subject, senderName, senderEmail, note, message
   const safeNote = escapeHtml(note || 'NOTE: FOR VP/SVP APPROVAL')
   const safeSenderName = escapeHtml(senderName || '')
   const safeSenderEmail = escapeHtml(senderEmail || '')
-  const bodyHTML = escapeHtml(messageBody || "Good day, Ma'am/Sir,\n\nKindly see the attached File/s")
+  const baseBody = messageBody || "Good day, Ma'am/Sir,\n\nKindly see the attached File/s"
+  const bodyWithHeader = `Request Letter\n${dateStr}\n\n${baseBody}`
+  const bodyHTML = escapeHtml(bodyWithHeader)
     .split('\n')
     .map(line => line.trim() ? line : '&nbsp;')
     .join('<br>')
@@ -67,7 +69,7 @@ export function buildEmailHTML({ subject, senderName, senderEmail, note, message
       <tr><td align="center">
         <table width="620" cellpadding="0" cellspacing="0" style="border-radius:12px;overflow:hidden;">
           <tr><td style="background:#1e3a5f;padding:24px 32px;">
-            <div style="color:#fff;font-size:22px;font-weight:600;">${safeSubject}</div>
+            <div style="color:#fff;font-size:22px;font-weight:600;">Request Letter</div>
             <div style="color:rgba(255,255,255,0.7);font-size:12px;">${dateStr}</div>
           </td></tr>
           <tr><td style="background:#fff;padding:32px;">
