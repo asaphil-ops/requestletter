@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { toTitleCase } from '../lib/utils'
+import { escapePostgrestSearch } from '../lib/security'
 import { useMemo } from 'react'
 
 export function useStaff(filters = {}) {
@@ -14,7 +15,8 @@ export function useStaff(filters = {}) {
       if (filters.area)      q = q.eq('area',      filters.area)
       if (filters.branchCode) q = q.eq('branch_code', filters.branchCode)
       if (filters.search) {
-        q = q.or(`last_name.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,id.ilike.%${filters.search}%`)
+        const search = escapePostgrestSearch(filters.search)
+        if (search) q = q.or(`last_name.ilike.%${search}%,first_name.ilike.%${search}%,id.ilike.%${search}%`)
       }
       const { data, error } = await q
       if (error) throw error

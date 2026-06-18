@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { getTime } from '../lib/utils'
+import { buildWorkflowInfoHtml } from '../lib/security'
+import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
 
 const TABLE_MAP = {
@@ -34,7 +36,7 @@ export function useCreateCostCenter(type) {
         ...payload,
         status: 'Pending',
         uploader: user?.full_name,
-        uploader_info: `<b>${user?.full_name}</b><br><span style="font-size:10px;color:#64748b">${getTime()}</span>`,
+        uploader_info: buildWorkflowInfoHtml(user?.full_name, getTime()),
       })
       if (error) throw error
     },
@@ -64,8 +66,10 @@ export function useDeleteCostCenter(type) {
 
   return useMutation({
     mutationFn: async (uniqId) => {
+      const { data: before } = await supabase.from(table).select('*').eq('uniq_id', uniqId).maybeSingle()
       const { error } = await supabase.from(table).delete().eq('uniq_id', uniqId)
       if (error) throw error
+      await logAudit({ user: useAuthStore.getState().user, action: `DELETE_${type.toUpperCase()}_COST_CENTER`, module: table, recordId: uniqId, before })
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
   })
@@ -92,8 +96,9 @@ export function useProcessCostCenter(type) {
 
   return useMutation({
     mutationFn: async ({ uniqId, action, payload = {} }) => {
-      const info = `<b>${user?.full_name}</b><br><span style="font-size:10px;color:#64748b">${getTime()}</span>`
+      const info = buildWorkflowInfoHtml(user?.full_name, getTime())
       let updates = { updated_at: new Date().toISOString() }
+      const { data: before } = await supabase.from(table).select('uniq_id,status,amount,remarks,file_id').eq('uniq_id', uniqId).maybeSingle()
 
       if (action === 'OPS_CHECK') {
         updates.status = 'Checked'
@@ -109,7 +114,7 @@ export function useProcessCostCenter(type) {
 
       const { error } = await supabase.from(table).update(updates).eq('uniq_id', uniqId)
       if (error) throw error
-      await supabase.from('audit_logs').insert({ user_name: user?.full_name, action: `${action}_${type.toUpperCase()}_COST_CENTER`, details: uniqId })
+      await logAudit({ user, action: `${action}_${type.toUpperCase()}_COST_CENTER`, module: table, recordId: uniqId, before, after: updates })
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
   })

@@ -51,8 +51,7 @@ export function buildEmailHTML({ subject, senderName, senderEmail, note, message
   const safeSenderName = escapeHtml(senderName || '')
   const safeSenderEmail = escapeHtml(senderEmail || '')
   const baseBody = messageBody || "Good day, Ma'am/Sir,\n\nKindly see the attached File/s"
-  const bodyWithHeader = `Request Letter\n${dateStr}\n\n${baseBody}`
-  const bodyHTML = escapeHtml(bodyWithHeader)
+  const bodyHTML = escapeHtml(baseBody)
     .split('\n')
     .map(line => line.trim() ? line : '&nbsp;')
     .join('<br>')

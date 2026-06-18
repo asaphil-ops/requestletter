@@ -7,7 +7,7 @@ export function useDashboard() {
     queryFn: async () => {
       const [staff, requests, sbar, it, at, comms, emailLogs] = await Promise.all([
         supabase.from('staff').select('id', { count: 'exact', head: true }),
-        supabase.from('requests').select('id,status,amount,title,date_req,created_at,uploader'),
+        supabase.from('requests').select('id,status,amount,title,date_req,created_at,uploader,beneficiary'),
         supabase.from('sbar').select('id,status,amount,date,created_at,giver,receiver'),
         supabase.from('it_expenses').select('id,status,amount,category,date,branch_code,created_at'),
         supabase.from('at_expenses').select('id,status,amount,category,date,branch_code,created_at'),

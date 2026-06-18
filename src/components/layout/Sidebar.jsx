@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useUIStore } from '../../store/uiStore'
+import { permissionsForRole } from '../../lib/permissions'
 import Swal from 'sweetalert2'
 
 const NAV = [
@@ -27,6 +28,7 @@ const NAV = [
   { label: 'Lantaw', icon: 'fa-chart-pie', to: '/lantaw' },
   { label: 'Cash Flow', icon: 'fa-money-bill-wave', to: '/cashflow' },
   { label: 'Budget Monitoring', icon: 'fa-chart-line', to: '/budget' },
+  { label: 'Reports', icon: 'fa-file-pdf', to: '/reports', permission: 'canViewReports' },
   { section: 'Admin' },
   { label: 'Directory', icon: 'fa-users', to: '/directory' },
   { label: 'Bulk Upload', icon: 'fa-file-csv', to: '/bulk-upload', adminOnly: true },
@@ -36,7 +38,9 @@ const NAV = [
 ]
 
 export default function Sidebar() {
-  const { user, isAdmin, logout } = useAuthStore()
+  const auth = useAuthStore()
+  const { user, isAdmin, logout } = auth
+  const rolePermissions = permissionsForRole(user?.role)
   const { sidebarOpen, darkMode, toggleDarkMode } = useUIStore()
   const navigate = useNavigate()
 
@@ -78,6 +82,7 @@ export default function Sidebar() {
               </div>
             )
             if (item.adminOnly && !isAdmin) return null
+            if (item.permission && !(auth[item.permission] || rolePermissions[item.permission])) return null
             if (item.external) return (
               <a key={i} href={item.external} target="_blank" rel="noreferrer"
                 className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/50 hover:text-white hover:bg-white/8 transition-all text-sm font-medium">

@@ -16,6 +16,8 @@ const OPERATION_EMAIL_MAP = {
 import { uploadToDrive } from '../lib/gas'
 import { supabase } from '../lib/supabase'
 import { fmtNum, fmtCurrency, fmtDate, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { sanitizeInfoHtml } from '../lib/security'
+import { validateAmount, validateDate, validateRequired } from '../lib/validation'
 import StatusBadge from '../components/shared/StatusBadge'
 import { OpsModal } from '../components/shared/ProcessModal'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
@@ -69,7 +71,7 @@ export default function Sbar() {
     navigate('/send-email', {
       state: {
         draft: {
-          to: receiverEmail ? [receiverEmail] : [],
+          to: emails,
           subject: `${rec.type || 'SBAR'} - ${rec.giver} to ${rec.receiver}`,
           refId: rec.uniq_id,
           refType: 'SBAR',
@@ -210,8 +212,16 @@ export default function Sbar() {
   }
 
   const handleSave = async () => {
-    if (!form.date || !form.giverCode || !form.receiverCode || !form.amount || !form.giverTitle || !form.receiverTitle)
-      return Swal.fire('Error', 'Missing required fields', 'error')
+    const requiredError = validateRequired(form, [
+      { key: 'date', label: 'Date' },
+      { key: 'giverCode', label: 'Giver branch' },
+      { key: 'receiverCode', label: 'Receiver branch' },
+      { key: 'giverTitle', label: 'Giver title' },
+      { key: 'receiverTitle', label: 'Receiver title' },
+      { key: 'amount', label: 'Amount' },
+    ])
+    const errorMessage = requiredError || validateDate(form.date, 'Date') || validateAmount(form.amount)
+    if (errorMessage) return Swal.fire('Error', errorMessage, 'error')
     try {
       const payload = {
         type: form.type, date: form.date,
@@ -423,9 +433,9 @@ export default function Sbar() {
                     </td>
                     <td className="table-td text-xs text-gray-500 truncate" title={r.description || ''}>{r.description||'-'}</td>
                     <td className="table-td font-semibold whitespace-nowrap">{fmtCurrency(r.amount)}</td>
-                    <td className="table-td whitespace-nowrap"><StatusBadge status={r.status} remarks={r.remarks} /></td>
-                    <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: r.uploader_info||r.uploader||'—' }} />
-                    <td className="table-td text-xs hidden md:table-cell" dangerouslySetInnerHTML={{ __html: r.ops_info||'—' }} />
+                    <td className="table-td whitespace-nowrap"><StatusBadge status={r.status} remarks={r.remarks} emailSent={r.email_sent} emailSentAt={r.email_sent_at} /></td>
+                    <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.uploader_info||r.uploader||'—') }} />
+                    <td className="table-td text-xs hidden md:table-cell" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.ops_info||'—') }} />
 
                     <td className="table-td">
                       <div className="table-actions">

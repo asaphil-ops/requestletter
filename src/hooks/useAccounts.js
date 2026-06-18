@@ -1,13 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import bcrypt from 'bcryptjs'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { hashPassword, isBcryptHash, verifyPassword } from '../lib/security'
 
 async function withHashedPassword(payload) {
   if (!payload?.password) return payload
-  if (typeof payload.password === 'string' && payload.password.startsWith('$2')) return payload
   return {
     ...payload,
-    password: await bcrypt.hash(payload.password.trim(), 10),
+    password: await hashPassword(payload.password),
   }
 }
 
@@ -50,11 +49,16 @@ export function useLogin() {
       if (!data) throw new Error('Invalid credentials')
       const storedPw = data.password;
       let isValid = false;
-      if (typeof storedPw === 'string' && storedPw.startsWith('$2')) {
-        isValid = await bcrypt.compare(password.trim(), storedPw);
+      if (isBcryptHash(storedPw)) {
+        isValid = await verifyPassword(password, storedPw);
       } else {
-        // Allows existing plain-text accounts to keep working until their passwords are reset.
         isValid = storedPw === password.trim();
+        if (isValid) {
+          await supabase
+            .from('accounts')
+            .update({ password: await hashPassword(password) })
+            .eq('id', data.id)
+        }
       }
       if (!isValid) throw new Error('Invalid credentials');
       // Remove password field before returning user data

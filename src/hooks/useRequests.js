@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { normalizeID, getTime } from '../lib/utils'
+import { buildWorkflowInfoHtml, escapePostgrestSearch } from '../lib/security'
+import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
 
 export function useRequests(filters = {}) {
@@ -11,7 +13,10 @@ export function useRequests(filters = {}) {
       if (filters.status && filters.status !== 'All') q = q.eq('status', filters.status)
       if (filters.dateStart) q = q.gte('date_req', filters.dateStart)
       if (filters.dateEnd)   q = q.lte('date_req', filters.dateEnd)
-      if (filters.search)    q = q.or(`title.ilike.%${filters.search}%,beneficiary.ilike.%${filters.search}%`)
+      if (filters.search) {
+        const search = escapePostgrestSearch(filters.search)
+        if (search) q = q.or(`title.ilike.%${search}%,beneficiary.ilike.%${search}%`)
+      }
       const { data, error } = await q
       if (error) throw error
       return data || []
@@ -36,7 +41,7 @@ export function useCreateRequest() {
         amount: payload.amount || 0,
         status: 'Pending',
         uploader: user?.full_name,
-        uploader_info: `<b>${user?.full_name}</b><br><span style="font-size:10px;color:#64748b">${getTime()}</span>`,
+        uploader_info: buildWorkflowInfoHtml(user?.full_name, getTime()),
       })
       if (error) throw error
     },
@@ -59,8 +64,10 @@ export function useDeleteRequest() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (reqId) => {
+      const { data: before } = await supabase.from('requests').select('*').eq('req_id', reqId).maybeSingle()
       const { error } = await supabase.from('requests').delete().eq('req_id', reqId)
       if (error) throw error
+      await logAudit({ user: useAuthStore.getState().user, action: 'DELETE_REQUEST', module: 'Request Letter', recordId: reqId, before })
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['requests'] }),
   })
@@ -71,8 +78,9 @@ export function useProcessRequest() {
   const user = useAuthStore((s) => s.user)
   return useMutation({
     mutationFn: async ({ reqId, action, payload = {} }) => {
-      const info = `<b>${user?.full_name}</b><br><span style="font-size:10px;color:#64748b">${getTime()}</span>`
+      const info = buildWorkflowInfoHtml(user?.full_name, getTime())
       let updates = { updated_at: new Date().toISOString() }
+      const { data: before } = await supabase.from('requests').select('req_id,status,amount,remarks,file_id').eq('req_id', reqId).maybeSingle()
 
       if (action === 'OPS_CHECK') {
         updates.status = 'Checked'
@@ -89,8 +97,7 @@ export function useProcessRequest() {
       const { error } = await supabase.from('requests').update(updates).eq('req_id', reqId)
       if (error) throw error
 
-      // Log
-      await supabase.from('audit_logs').insert({ user_name: user?.full_name, action, details: reqId })
+      await logAudit({ user, action, module: 'Request Letter', recordId: reqId, before, after: updates })
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['requests'] })

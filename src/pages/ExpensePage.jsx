@@ -17,6 +17,8 @@ const OPERATION_EMAIL_MAP = {
 import { uploadToDrive } from '../lib/gas'
 import { supabase } from '../lib/supabase'
 import { fmtCurrency, getUploadedAt, IT_BUDGETS, AT_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { sanitizeInfoHtml } from '../lib/security'
+import { validateAmount, validateDate, validateRequired } from '../lib/validation'
 import StatusBadge from '../components/shared/StatusBadge'
 import { OpsModal } from '../components/shared/ProcessModal'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
@@ -255,8 +257,15 @@ export default function ExpensePage({ type }) {
   }, [branchOptions, form.branchCode])
 
   const handleSave = async () => {
-    if (!form.date || !form.branchCode || !form.accountTitle || !form.itemName || !form.amount)
-      return Swal.fire('Error', 'Missing required fields', 'error')
+    const requiredError = validateRequired(form, [
+      { key: 'date', label: 'Date' },
+      { key: 'branchCode', label: 'Branch code' },
+      { key: 'accountTitle', label: 'Account title' },
+      { key: 'itemName', label: 'Item name' },
+      { key: 'amount', label: 'Amount' },
+    ])
+    const errorMessage = requiredError || validateDate(form.date, 'Date') || validateAmount(form.amount)
+    if (errorMessage) return Swal.fire('Error', errorMessage, 'error')
     try {
       if (editing) {
         await updateExp.mutateAsync({ uniqId: editing.uniq_id, updates: { category: form.category, date: form.date, branch_code: form.branchCode, branch_name: form.branchName, account_title: form.accountTitle, item_name: form.itemName, description: form.description, amount: form.amount } })
@@ -482,9 +491,9 @@ export default function ExpensePage({ type }) {
                       })()}
                     </td>
                     <td className="table-td font-semibold whitespace-nowrap">{fmtCurrency(r.amount)}</td>
-                    <td className="table-td whitespace-nowrap"><StatusBadge status={r.status} remarks={r.remarks} /></td>
-                    <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: r.uploader_info || r.uploader || '—' }} />
-                    <td className="table-td text-xs hidden md:table-cell" dangerouslySetInnerHTML={{ __html: r.ops_info || '—' }} />
+                    <td className="table-td whitespace-nowrap"><StatusBadge status={r.status} remarks={r.remarks} emailSent={r.email_sent} emailSentAt={r.email_sent_at} /></td>
+                    <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.uploader_info || r.uploader || '—') }} />
+                    <td className="table-td text-xs hidden md:table-cell" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.ops_info || '—') }} />
 
                     <td className="table-td">
                       <div className="table-actions">

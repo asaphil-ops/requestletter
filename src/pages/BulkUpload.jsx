@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useStaffFilters } from '../hooks/useStaff'
 import { fetchAllBranches } from '../hooks/useBranches'
+import { buildWorkflowInfoHtml, hashPassword } from '../lib/security'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import Swal from 'sweetalert2'
 import Papa from 'papaparse'
@@ -41,7 +42,7 @@ const formatWorkflowTime = (date) =>
   })
 
 const workflowInfo = (name, date) =>
-  `<b>${name}</b><br><span style="font-size:10px;color:#64748b">${formatWorkflowTime(date)}</span>`
+  buildWorkflowInfoHtml(name, formatWorkflowTime(date))
 
 const IMPORT_TYPES = {
   branches: {
@@ -380,7 +381,7 @@ export default function BulkUpload() {
     };
 
   // Helper to remap CSV column names to DB column names
-  const mapToDbColumns = (row) => {
+  const mapToDbColumns = async (row) => {
     const mapped = {}
     config.columns.forEach(col => {
       if (row[col] !== undefined && row[col] !== '') {
@@ -409,6 +410,10 @@ export default function BulkUpload() {
 
       // Remove fin_info as 'Approved' status is no longer part of the workflow
       delete mapped.fin_info
+    }
+
+    if (type === 'accounts' && mapped.password) {
+      mapped.password = await hashPassword(mapped.password)
     }
 
     return mapped
@@ -451,7 +456,7 @@ export default function BulkUpload() {
       const chunkSize = 500
       for (let i = 0; i < uniqueRows.length; i += chunkSize) {
         const chunk = uniqueRows.slice(i, i + chunkSize)
-        const mappedChunk = chunk.map(mapToDbColumns)
+        const mappedChunk = await Promise.all(chunk.map(mapToDbColumns))
         const { error } = await supabase
           .from(config.table)
           .upsert(mappedChunk, { onConflict: config.db_conflict })

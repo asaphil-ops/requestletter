@@ -9,6 +9,38 @@ import Swal from 'sweetalert2'
 
 const DEFAULT_NOTE = 'NOTE: FOR VP/SVP APPROVAL'
 
+const EMAIL_REF_TABLES = [
+  { match: /^Request Letter/i, table: 'requests', key: 'req_id' },
+  { match: /^SBAR/i, table: 'sbar', key: 'uniq_id' },
+  { match: /^IT Expense/i, table: 'it_expenses', key: 'uniq_id' },
+  { match: /^Aircon\/Toilet/i, table: 'at_expenses', key: 'uniq_id' },
+  { match: /^Comms Expense/i, table: 'comms_expenses', key: 'uniq_id' },
+  { match: /^Initiatives Monthly Expenses/i, table: 'cost_center_initiatives', key: 'uniq_id' },
+  { match: /^CFOO Per Staff Monthly Expense/i, table: 'cost_center_cfoo', key: 'uniq_id' },
+  { match: /^Other Cost Center Monthly Expenses/i, table: 'cost_center_other', key: 'uniq_id' },
+]
+
+async function markEmailSent({ refType, refId, subject, sentBy }) {
+  const ref = EMAIL_REF_TABLES.find(item => item.match.test(String(refType || '')))
+  if (!ref || !refId) return
+
+  const ids = String(refId).split(',').map(item => item.trim()).filter(Boolean)
+  if (!ids.length) return
+
+  const { error } = await supabase
+    .from(ref.table)
+    .update({
+      email_sent: true,
+      email_sent_at: new Date().toISOString(),
+      email_sent_by: sentBy || '',
+      email_subject: subject || '',
+      updated_at: new Date().toISOString(),
+    })
+    .in(ref.key, ids)
+
+  if (error) console.warn('Email sent tracking skipped:', error.message)
+}
+
 const TagInput = forwardRef(({ tags, input, setInput, field, placeholder, removeTag, handleKeyDown, onFocus, addTag }, ref) => (
   <div
     ref={ref}
@@ -207,7 +239,20 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       })
 
       // Log email
-      await supabase.from('email_logs').insert({ sent_by: user?.full_name, to_addresses: to, cc_addresses: cc, subject })
+      await supabase.from('email_logs').insert({
+        sent_by: user?.full_name,
+        to_addresses: to,
+        cc_addresses: cc,
+        subject,
+        ref_type: initDraft.refType || '',
+        ref_id: initDraft.refId || '',
+      })
+      await markEmailSent({
+        refType: initDraft.refType,
+        refId: initDraft.refId,
+        subject,
+        sentBy: user?.full_name,
+      })
 
       Swal.fire('Sent!', 'Email sent successfully.', 'success')
       setToTags([]); setCcTags([]); setSubject(''); setMessageBody(defaultMessageBody); setNote(DEFAULT_NOTE); setAttachments([]); setDriveAttachment(null)
@@ -261,16 +306,33 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   return (
     <div className={embedded ? 'bg-white p-5 text-gray-900' : ''}>
       {!embedded && (
-      <div className="flex items-end justify-between mb-5 flex-wrap gap-2">
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Compose</p>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Send to Email</h1>
-          <p className="text-sm font-semibold text-gray-500">Compose and send emails with multiple attachments</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[11px] font-bold uppercase tracking-wider mb-2">
+              <i className="fas fa-paper-plane" />
+              Compose
+            </div>
+            <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Send to Email</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Send approved requests and attachments</p>
+          </div>
+          <button 
+            onClick={handleSend} 
+            disabled={sending} 
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-500 active:scale-95 text-white shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+          >
+            {sending ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-paper-plane text-xs" />
+                Send Email
+              </>
+            )}
+          </button>
         </div>
-        <button onClick={handleSend} disabled={sending} className="btn-primary flex items-center gap-2 px-5 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed">
-          {sending ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending...</> : <><i className="fas fa-paper-plane" /> Send Email</>}
-        </button>
-      </div>
       )}
 
       <div className="grid grid-cols-1 gap-5">
@@ -278,28 +340,47 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         <div>
           <div className="card overflow-hidden">
             {/* Compose header */}
-            <div className="bg-gradient-to-r from-[#1e3a5f] to-blue-600 px-6 py-5 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest bg-white/10 px-2 py-1 rounded mb-2 inline-block"><i className="fas fa-envelope mr-1" />New Message</span>
-                <div className="text-white font-semibold text-lg">Compose Email</div>
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 px-6 py-5">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.15),_transparent_50%)]" />
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 text-white/80 text-[11px] font-semibold uppercase tracking-wider mb-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    New Message
+                  </div>
+                  <div className="text-white font-bold text-lg tracking-tight">Compose Email</div>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 text-white/40 text-xs">
+                  <i className="fas fa-shield-alt" />
+                  <span className="font-medium">Secure Send</span>
+                </div>
               </div>
-              <div className="text-white/50 text-xs flex items-center gap-1.5"><i className="fas fa-lock" /> Secure</div>
             </div>
 
             {/* Sender row */}
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">{initial}</div>
-              <div>
-                <div className="font-semibold text-sm text-gray-800 dark:text-gray-200">{user?.full_name}</div>
-                <div className="text-xs text-gray-400">{user?.email}</div>
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50">
+              <div className="relative">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/30 flex-shrink-0">
+                  {initial}
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900" />
               </div>
-              <span className="ml-auto badge badge-approved text-xs">Sender</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm text-gray-900 dark:text-white truncate">{user?.full_name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</div>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[11px] font-bold uppercase tracking-wider border border-blue-100 dark:border-blue-700/50">
+                Sender
+              </span>
             </div>
 
             <div className="p-5 space-y-4">
               {/* Relative wrapper for suggestion dropdown */}
-              <div className="relative">
-                <label className="label mb-1">To <span className="text-red-500">*</span></label>
+              <div className="relative group">
+                <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-gray-200 dark:border-gray-700">
+                  <i className="fas fa-user text-[9px] text-gray-400" />
+                  To <span className="text-red-500">*</span>
+                </label>
                 <TagInput tags={toTags} input={toInput} setInput={setToInput} field="to" placeholder="recipient@asaphil.org" ref={toRef} />
                 {showSugg === 'to' && filteredSugg.length > 0 && (
                   <div ref={suggRef} className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
@@ -331,7 +412,10 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               </div>
 
               <div className="relative">
-                <label className="label mb-1">CC</label>
+                <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-gray-200 dark:border-gray-700">
+                  <i className="fas fa-copy text-[9px] text-gray-400" />
+                  CC
+                </label>
                 <TagInput tags={ccTags} input={ccInput} setInput={setCcInput} field="cc" placeholder="cc@asaphil.org (optional)" ref={ccRef} />
                 {showSugg === 'cc' && filteredSugg.length > 0 && (
                   <div ref={suggRef} className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
@@ -348,14 +432,25 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               </div>
 
               <div>
-                <label className="label mb-1">Subject</label>
-                <input className="input" placeholder="Email subject..." value={subject} onChange={e => setSubject(e.target.value)} />
+                <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-gray-200 dark:border-gray-700">
+                  <i className="fas fa-heading text-[9px] text-gray-400" />
+                  Subject
+                </label>
+                <input 
+                  className="input bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20 transition-colors" 
+                  placeholder="Email subject..." 
+                  value={subject} 
+                  onChange={e => setSubject(e.target.value)} 
+                />
               </div>
 
               <div>
-                <label className="label mb-1">Message Body</label>
+                <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-gray-200 dark:border-gray-700">
+                  <i className="fas fa-align-left text-[9px] text-gray-400" />
+                  Message Body
+                </label>
                 <textarea
-                  className="input min-h-[130px] resize-y leading-relaxed"
+                  className="input min-h-[140px] resize-y leading-relaxed bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20 transition-colors"
                   placeholder="Type the body of your email..."
                   value={messageBody}
                   onChange={e => setMessageBody(e.target.value)}
@@ -363,8 +458,16 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               </div>
 
               <div>
-                <label className="label mb-1">Note</label>
-                <textarea className="input resize-none" rows={2} value={note} onChange={e => setNote(e.target.value)} />
+                <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-amber-200 dark:border-amber-700/50">
+                  <i className="fas fa-sticky-note text-[9px]" />
+                  Note
+                </label>
+                <textarea 
+                  className="input resize-none bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-700/50 focus:border-amber-500 focus:ring-amber-500/20 transition-colors" 
+                  rows={2} 
+                  value={note} 
+                  onChange={e => setNote(e.target.value)} 
+                />
               </div>
 
               <hr className="border-gray-100 dark:border-gray-800" />

@@ -1,0 +1,37 @@
+-- RLS hardening plan.
+--
+-- Current app authentication is custom and runs through the public Supabase anon client.
+-- Because the database does not receive a trusted user role/JWT claim, true per-user
+-- RLS cannot safely distinguish Staff/Ops Finance/Finance/Admin at the SQL layer yet.
+--
+-- Recommended production path:
+-- 1. Migrate login to Supabase Auth or issue trusted JWTs with a role claim.
+-- 2. Store app role in auth.users app_metadata, for example:
+--    { "role": "Ops Finance" }
+-- 3. Replace existing allow_all_* policies with policies that check:
+--    auth.jwt() -> 'app_metadata' ->> 'role'
+-- 4. Example pattern after Auth migration:
+--
+-- create policy "requests_read_authenticated"
+-- on requests for select
+-- to authenticated
+-- using (true);
+--
+-- create policy "requests_insert_uploaders"
+-- on requests for insert
+-- to authenticated
+-- with check ((auth.jwt() -> 'app_metadata' ->> 'role') in ('Planning','Governance','Admin','Super Admin'));
+--
+-- create policy "requests_update_ops_or_admin"
+-- on requests for update
+-- to authenticated
+-- using ((auth.jwt() -> 'app_metadata' ->> 'role') in ('Ops Finance','Admin','Super Admin'))
+-- with check ((auth.jwt() -> 'app_metadata' ->> 'role') in ('Ops Finance','Admin','Super Admin'));
+--
+-- create policy "requests_delete_admin"
+-- on requests for delete
+-- to authenticated
+-- using ((auth.jwt() -> 'app_metadata' ->> 'role') in ('Admin','Super Admin'));
+--
+-- Do not apply these sample policies until the app no longer depends on anon custom auth,
+-- otherwise normal users may lose access or roles may not be enforceable.

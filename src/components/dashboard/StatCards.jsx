@@ -9,13 +9,15 @@ const CARDS = [
   { key: 'totalReqs',   label: 'Total Requests',   icon: 'fa-exchange-alt', gradient: 'from-cyan-600 to-cyan-700' },
 ]
 
-export default function StatCards({ data = {} }) {
+export default function StatCards({ data = {}, onCardClick }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
       {CARDS.map((c) => (
         <div
           key={c.key}
-          className={`bg-gradient-to-br ${c.gradient} rounded-xl p-4 text-white flex items-center gap-3 shadow-sm hover:-translate-y-0.5 transition-transform cursor-default`}
+          onClick={() => onCardClick?.(c.key)}
+          className={`bg-gradient-to-br ${c.gradient} rounded-xl p-4 text-white flex items-center gap-3 shadow-sm hover:-translate-y-0.5 transition-transform ${onCardClick ? 'cursor-pointer' : 'cursor-default'}`}
+          title={onCardClick ? `Open ${c.label} report` : undefined}
         >
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
             <i className={`fas ${c.icon} text-lg`} />

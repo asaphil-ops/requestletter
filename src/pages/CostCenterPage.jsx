@@ -7,6 +7,8 @@ import { useInitiativeMappings } from '../hooks/useInitiativeMappings'
 import { useEmployeeList } from '../hooks/useEmployeeList'
 import { uploadToDrive } from '../lib/gas'
 import { fmtCurrency, fmtDate, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { sanitizeInfoHtml } from '../lib/security'
+import { validateAmount, validateDate } from '../lib/validation'
 import Pagination from '../components/shared/Pagination'
 import { EmptyRow, TableLoader } from '../components/shared/Loader'
 import StatusBadge from '../components/shared/StatusBadge'
@@ -187,6 +189,9 @@ export default function CostCenterPage({ type }) {
   const handleSave = async () => {
     const missing = config.fields.find(field => field.required && !String(form[field.key] || '').trim())
     if (missing) return Swal.fire('Missing field', `${missing.label} is required`, 'warning')
+    const dateError = form.date ? validateDate(form.date, 'Date') : ''
+    const amountError = form.amount ? validateAmount(form.amount) : ''
+    if (dateError || amountError) return Swal.fire('Error', dateError || amountError, 'error')
 
     const payload = { ...form, amount: form.amount || 0 }
     try {
@@ -682,9 +687,9 @@ export default function CostCenterPage({ type }) {
                     </td>
                     <td className="table-td text-xs text-gray-400">{(page - 1) * ROWS_PER_PAGE + index + 1}</td>
                     {config.columns.map(([key]) => <td key={key} className="table-td min-w-0">{renderCell(row, key)}</td>)}
-                    <td className="table-td whitespace-nowrap"><StatusBadge status={row.status || 'Pending'} remarks={row.remarks} /></td>
-                    <td className="table-td text-xs truncate" dangerouslySetInnerHTML={{ __html: row.uploader_info || row.uploader || '-' }} />
-                    <td className="table-td text-xs hidden md:table-cell truncate" dangerouslySetInnerHTML={{ __html: row.ops_info || '-' }} />
+                    <td className="table-td whitespace-nowrap"><StatusBadge status={row.status || 'Pending'} remarks={row.remarks} emailSent={row.email_sent} emailSentAt={row.email_sent_at} /></td>
+                    <td className="table-td text-xs truncate" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(row.uploader_info || row.uploader || '-') }} />
+                    <td className="table-td text-xs hidden md:table-cell truncate" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(row.ops_info || '-') }} />
 
                     <td className="table-td">
                       <div className="table-actions">

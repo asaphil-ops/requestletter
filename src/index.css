@@ -308,3 +308,24 @@ body {
   border-radius: 0.5rem !important;
   font-weight: 600 !important;
 }
+
+@media (max-width: 640px) {
+  .table-th,
+  .table-td {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.78rem;
+  }
+
+  .btn-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .card {
+    border-radius: 0.625rem;
+  }
+
+  .badge {
+    white-space: nowrap;
+  }
+}

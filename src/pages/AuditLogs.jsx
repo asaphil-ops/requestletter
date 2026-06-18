@@ -33,6 +33,19 @@ export default function AuditLogs() {
     return 'bg-gray-50 text-gray-500'
   }
 
+  const describeDetails = (details) => {
+    if (!details) return '—'
+    try {
+      const parsed = JSON.parse(details)
+      const movement = parsed.before?.status && parsed.after?.status
+        ? ` | ${parsed.before.status} -> ${parsed.after.status}`
+        : ''
+      return `${parsed.module || 'Module'} | ${parsed.recordId || '-'}${movement}`
+    } catch {
+      return details
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -71,7 +84,7 @@ export default function AuditLogs() {
                     <td className="table-td">
                       <span className={`badge text-xs ${actionColor(l.action)}`}>{l.action}</span>
                     </td>
-                    <td className="table-td text-sm text-gray-500 max-w-xs truncate">{l.details || '—'}</td>
+                    <td className="table-td text-sm text-gray-500 max-w-md truncate" title={l.details || ''}>{describeDetails(l.details)}</td>
                   </tr>
                 ))
               }

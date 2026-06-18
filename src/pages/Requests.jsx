@@ -23,6 +23,8 @@ import { useStaff } from '../hooks/useStaff'
 import { useEmployeeList } from '../hooks/useEmployeeList'
 import { uploadToDrive } from '../lib/gas'
 import { fmtCurrency, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { sanitizeInfoHtml } from '../lib/security'
+import { validateAmount, validateDate, validateRequired } from '../lib/validation'
 import StatusBadge from '../components/shared/StatusBadge'
 import { OpsModal } from '../components/shared/ProcessModal'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
@@ -181,7 +183,15 @@ export default function Requests() {
   }
 
   const handleSave = async () => {
-    if (!form.date_req || !form.beneficiary || !form.title) return Swal.fire('Error', 'Missing required fields', 'error')
+    const requiredError = validateRequired(form, [
+      { key: 'date_req', label: 'Date' },
+      { key: 'beneficiary', label: 'Beneficiary' },
+      { key: 'title', label: 'Title' },
+    ])
+    const dateError = validateDate(form.date_req, 'Date')
+    const amountError = form.amount ? validateAmount(form.amount) : ''
+    const errorMessage = requiredError || dateError || amountError
+    if (errorMessage) return Swal.fire('Error', errorMessage, 'error')
     try {
       if (editing) {
         await updateReq.mutateAsync({ reqId: editing.req_id, updates: { type: form.type, beneficiary: form.beneficiary, date_req: form.date_req, title: form.title, description: form.description, amount: form.amount } })
@@ -531,8 +541,8 @@ export default function Requests() {
                     <td className="table-td min-w-0"><div className="font-semibold text-sm truncate" title={r.title}>{r.title}</div><div className="text-xs text-gray-400 truncate" title={r.beneficiary}>{r.beneficiary}</div></td>
                     <td className="table-td"><div className="text-xs text-gray-500 max-w-[120px] truncate">{r.description || '-'}</div></td>
                     <td className="table-td font-semibold whitespace-nowrap">{fmtCurrency(r.amount)}</td>
-                    <td className="table-td whitespace-nowrap"><StatusBadge status={displayStatus} remarks={r.remarks} /></td>
-                    <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: r.uploader_info || r.uploader || '-' }} />
+                    <td className="table-td whitespace-nowrap"><StatusBadge status={displayStatus} remarks={r.remarks} emailSent={r.email_sent} emailSentAt={r.email_sent_at} /></td>
+                    <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.uploader_info || r.uploader || '-') }} />
 
                     <td className="table-td">
                       <div className="table-actions">

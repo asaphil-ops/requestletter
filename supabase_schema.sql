@@ -74,6 +74,10 @@ create table if not exists requests (
   uploader_info text,
   ops_info text,
   fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
   remarks text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -103,6 +107,10 @@ create table if not exists sbar (
   uploader_info text,
   ops_info text,
   fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
   remarks text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -131,6 +139,10 @@ create table if not exists it_expenses (
   uploader_info text,
   ops_info text,
   fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
   remarks text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -160,6 +172,10 @@ create table if not exists at_expenses (
   uploader_info text,
   ops_info text,
   fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
   remarks text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -188,6 +204,10 @@ create table if not exists comms_expenses (
   uploader_info text,
   ops_info text,
   fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
   remarks text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -219,6 +239,10 @@ create table if not exists cost_center_initiatives (
   uploader_info text,
   ops_info text,
   fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -284,6 +308,10 @@ create table if not exists cost_center_cfoo (
   uploader_info text,
   ops_info text,
   fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -310,6 +338,10 @@ create table if not exists cost_center_other (
   uploader_info text,
   ops_info text,
   fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -434,8 +466,8 @@ create policy "allow_all_email_logs" on email_logs for all using (true) with che
 
 -- ============================================================
 -- SEED DEFAULT ADMIN ACCOUNT
--- password: admin123 (change after first login)
+-- password: admin123 (bcrypt hash; change after first login)
 -- ============================================================
 insert into accounts (username, password, role, full_name, email)
-values ('admin', 'admin123', 'Super Admin', 'System Admin', 'admin@asaphil.org')
+values ('admin', '$2a$12$tgkVjDtZPPqakdtKMGjJju1hjcqYf063Kp6deFR6Q/1wJ441SDGSO', 'Super Admin', 'System Admin', 'admin@asaphil.org')
 on conflict (username) do nothing;

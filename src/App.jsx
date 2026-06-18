@@ -20,10 +20,12 @@ import Users from './pages/Users'
 import AuditLogs from './pages/AuditLogs'
 import Settings from './pages/Settings'
 import BulkUpload from './pages/BulkUpload'
+import Reports from './pages/Reports'
 import EmbeddedPage from './pages/EmbeddedPage'
 import CFOOBudget from './pages/CFOOBudget'
 import BudgetPage from './pages/BudgetPage'
 import PublicTracker from './pages/PublicTracker'
+import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, isAdmin } = useAuthStore()
@@ -33,7 +35,8 @@ function ProtectedRoute({ children, adminOnly = false }) {
 }
 
 function AppRoutes() {
-  const { user } = useAuthStore()
+  const { user, canViewReports } = useAuthStore()
+  const canOpenReports = canViewReports || permissionsForRole(user?.role).canViewReports
   useRealtime()
 
   return (
@@ -55,6 +58,7 @@ function AppRoutes() {
         <Route path="data-management" element={<DataManagement />} />
         <Route path="employee-list" element={<EmployeeList />} />
         <Route path="send-email" element={<SendEmailModal />} />
+        <Route path="reports" element={canOpenReports ? <Reports /> : <Navigate to="/" replace />} />
 
         <Route path="directory" element={<Directory />} />
         <Route path="bulk-upload" element={<ProtectedRoute adminOnly><BulkUpload /></ProtectedRoute>} />

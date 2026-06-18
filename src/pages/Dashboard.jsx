@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useDashboard } from '../hooks/useDashboard'
-import { useStaff, useStaffFilters } from '../hooks/useStaff'
-import { useBranchOptions } from '../hooks/useBranches'
+import { useStaff } from '../hooks/useStaff'
+import { useBranchMap, useBranchOptions, useBranches } from '../hooks/useBranches'
 import StatCards from '../components/dashboard/StatCards'
 import { TrendChart, CategoryChart, StackedWeekChart } from '../components/dashboard/Charts'
 import Insights from '../components/dashboard/Insights'
@@ -13,10 +14,12 @@ const EMPTY_FILTERS = { operation: '', division: '', region: '', area: '', branc
 
 export default function Dashboard() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const { data: dash, isLoading } = useDashboard()
   const { data: staff = [] } = useStaff()
-  const staffFilters = useStaffFilters()
+  const { data: branches = [] } = useBranches()
   const branchOptions = useBranchOptions()
+  const branchMap = useBranchMap()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
 
   const set = (key, val) => {
@@ -30,19 +33,73 @@ export default function Dashboard() {
     })
   }
 
-  // Cascading filter options
-  const filteredStaff = useMemo(() => staff.filter(s =>
-    (!filters.operation || s.operation === filters.operation) &&
-    (!filters.division  || s.division  === filters.division)  &&
-    (!filters.region    || s.region    === filters.region)     &&
-    (!filters.area      || s.area      === filters.area)
-  ), [staff, filters])
+  const branchMatchesFilters = (branch = {}, { ignoreKey = '', includeBranchCode = false } = {}) => (
+    (ignoreKey === 'operation' || !filters.operation || branch.operation === filters.operation) &&
+    (ignoreKey === 'division' || !filters.division || branch.division === filters.division) &&
+    (ignoreKey === 'region' || !filters.region || branch.region === filters.region) &&
+    (ignoreKey === 'area' || !filters.area || branch.area === filters.area) &&
+    (!includeBranchCode || !filters.branchCode || branch.code === filters.branchCode)
+  )
 
-  const unique = (key) => [...new Set(filteredStaff.map(s => s[key]).filter(Boolean))].sort()
-  const branchCodes = new Set(filteredStaff.map(s => s.branch_code).filter(Boolean))
-  const filteredBranches = filters.operation
-    ? branchOptions.filter(b => branchCodes.has(b.value))
-    : branchOptions
+  // Cascading filter options from branch master data.
+  const geoOptions = useMemo(() => {
+    const optionsFor = (key) => [...new Set(
+      branches
+        .filter(branch => branchMatchesFilters(branch, { ignoreKey: key }))
+        .map(branch => branch[key])
+        .filter(Boolean)
+    )].sort()
+
+    const filteredBranches = branchOptions.filter(branch =>
+      branchMatchesFilters(branch, { ignoreKey: 'branchCode' })
+    )
+
+    return {
+      operations: optionsFor('operation'),
+      divisions: optionsFor('division'),
+      regions: optionsFor('region'),
+      areas: optionsFor('area'),
+      branches: filteredBranches,
+    }
+  }, [branches, branchOptions, filters.operation, filters.division, filters.region, filters.area, filters.branchCode])
+
+  const staffBranchMap = useMemo(() => {
+    const map = {}
+    staff.forEach((row) => {
+      const code = String(row.branch_code || '').trim().toUpperCase()
+      if (!code) return
+      const names = [
+        row.name,
+        row.full_name,
+        `${row.first_name || ''} ${row.last_name || ''}`.trim(),
+        `${row.last_name || ''}, ${row.first_name || ''}`.trim(),
+      ].filter(Boolean)
+      names.forEach(name => { map[String(name).toLowerCase()] = code })
+    })
+    return map
+  }, [staff])
+
+  const getRecordBranchCode = (record = {}) => {
+    if (['it','at','comms'].includes(record._type)) return String(record.branch_code || '').trim().toUpperCase()
+    if (record._type === 'req') {
+      const beneficiary = String(record.beneficiary || '').trim()
+      const branchCode = beneficiary.match(/^([A-Z0-9]+)\s*-/i)?.[1]
+      return String(branchCode || staffBranchMap[beneficiary.toLowerCase()] || '').trim().toUpperCase()
+    }
+    if (record._type === 'sbar') {
+      return String(record.giver || '').trim().match(/^([A-Z0-9]+)\s*-/i)?.[1]?.toUpperCase() || ''
+    }
+    return ''
+  }
+
+  const recordMatchesGeo = (record = {}) => {
+    if (!filters.branchCode && !filters.operation && !filters.division && !filters.region && !filters.area) return true
+    const code = getRecordBranchCode(record)
+    if (filters.branchCode && code !== filters.branchCode) return false
+    const branch = branchMap[code]
+    if (!branch) return false
+    return branchMatchesFilters(branch, { includeBranchCode: true })
+  }
 
   // Filter combined data
   const combined = useMemo(() => {
@@ -57,23 +114,23 @@ export default function Dashboard() {
           if (d < s || d > e) return false
         } catch {}
       }
-      if (filters.branchCode || filters.operation || filters.division || filters.region || filters.area) {
-        // For expenses: filter by bCode; for req/sbar: skip (no bCode)
-        if (['it','at','comms'].includes(r._type)) {
-          const code = (r.branch_code || '').trim().toUpperCase()
-          if (filters.branchCode && code !== filters.branchCode) return false
-        }
-      }
+      if (!recordMatchesGeo(r)) return false
       return true
     })
-  }, [dash, filters])
+  }, [dash, filters, branchMap, staffBranchMap])
 
   const filteredStaffCount = useMemo(() => {
     if (!filters.operation && !filters.division && !filters.region && !filters.area && !filters.branchCode) {
       return dash?.totalStaff || 0
     }
-    return filteredStaff.filter(s => !filters.branchCode || s.branch_code === filters.branchCode).length
-  }, [filteredStaff, filters, dash])
+    return staff.filter((row) => {
+      const code = String(row.branch_code || '').trim().toUpperCase()
+      if (filters.branchCode && code !== filters.branchCode) return false
+      const branch = branchMap[code]
+      if (!branch) return false
+      return branchMatchesFilters(branch, { includeBranchCode: true })
+    }).length
+  }, [staff, branchMap, filters, dash])
 
   const statsData = useMemo(() => {
     if (!combined.length && !dash) return {}
@@ -90,6 +147,12 @@ export default function Dashboard() {
 
   const today = new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   const selectOptions = (items) => items.map(item => ({ value: item, label: item }))
+  const openDashboardReport = (key) => {
+    const statusMap = { pending: 'Pending', approved: 'Checked', rejected: 'Rejected' }
+    const params = new URLSearchParams()
+    if (statusMap[key]) params.set('status', statusMap[key])
+    navigate(`/reports${params.toString() ? `?${params.toString()}` : ''}`)
+  }
 
   if (isLoading) return <PageLoader />
 
@@ -143,11 +206,11 @@ export default function Dashboard() {
               <option value="comms">Comms</option>
             </select>
           </div>
-          <SegmentedSearchSelect label="Operation" value={filters.operation} options={selectOptions(staffFilters.operations)} onChange={value => set('operation', value)} />
-          <SegmentedSearchSelect label="Division" value={filters.division} options={selectOptions(unique('division'))} onChange={value => set('division', value)} />
-          <SegmentedSearchSelect label="Region" value={filters.region} options={selectOptions(unique('region'))} onChange={value => set('region', value)} />
-          <SegmentedSearchSelect label="Area" value={filters.area} options={selectOptions(unique('area'))} onChange={value => set('area', value)} />
-          <SegmentedSearchSelect label="Branch" value={filters.branchCode} options={filteredBranches} onChange={value => set('branchCode', value)} className="w-[260px]" />
+          <SegmentedSearchSelect label="Operation" value={filters.operation} options={selectOptions(geoOptions.operations)} onChange={value => set('operation', value)} />
+          <SegmentedSearchSelect label="Division" value={filters.division} options={selectOptions(geoOptions.divisions)} onChange={value => set('division', value)} />
+          <SegmentedSearchSelect label="Region" value={filters.region} options={selectOptions(geoOptions.regions)} onChange={value => set('region', value)} />
+          <SegmentedSearchSelect label="Area" value={filters.area} options={selectOptions(geoOptions.areas)} onChange={value => set('area', value)} />
+          <SegmentedSearchSelect label="Branch" value={filters.branchCode} options={geoOptions.branches} onChange={value => set('branchCode', value)} className="w-[260px]" />
           <div className="flex items-end">
             <button onClick={() => setFilters(EMPTY_FILTERS)} className="btn-secondary w-full py-1.5 text-sm">
               <i className="fas fa-sync-alt mr-1" /> Reset
@@ -157,7 +220,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat Cards */}
-      <StatCards data={statsData} />
+      <StatCards data={statsData} onCardClick={openDashboardReport} />
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
