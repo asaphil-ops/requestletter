@@ -41,6 +41,8 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const { user } = useAuthStore()
   const location = useLocation()
   const branchEmailMap = useBranchEmailMap()
+  const SENDER_EMAIL = 'operation.budgetmanagement@asaphil.org'
+  const SENDER_NAME = 'Operations Budget Management'
   const initDraft = draft ?? location.state?.draft ?? {}
   const defaultMessageBody = "Good day, Ma'am/Sir,\n\nKindly see the attached File/s"
   const [toTags, setToTags] = useState([])
@@ -190,7 +192,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       const to = toTags.join(', ')
       const cc = ccTags.join(', ')
       const emailAttachments = driveAttachment ? [driveAttachment, ...attachments] : attachments
-      const htmlBody = buildEmailHTML({ subject, senderName: user?.full_name, senderEmail: user?.email, note, messageBody, attachments: emailAttachments })
+      const htmlBody = buildEmailHTML({ subject, senderName: SENDER_NAME, senderEmail: SENDER_EMAIL, note, messageBody, attachments: emailAttachments })
       const attData = attachments.map(a => ({ base64: a.base64, mimeType: a.mimeType, fileName: a.name }))
 
       await sendEmail({
@@ -198,8 +200,8 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         cc,
         subject,
         htmlBody,
-        senderName: user?.full_name,
-        senderEmail: user?.email,
+        senderName: SENDER_NAME,
+        senderEmail: SENDER_EMAIL,
         attachments: attData,
         fileId: driveAttachment?.fileId,
         fileName: driveAttachment?.fileName,
