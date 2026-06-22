@@ -20,6 +20,40 @@ const EMAIL_REF_TABLES = [
   { match: /^Other Cost Center Monthly Expenses/i, table: 'cost_center_other', key: 'uniq_id' },
 ]
 
+const TagInput = React.memo(({ tags, input, setInput, setSuggQuery, setShowSugg, suggTimeoutRef, handleKeyDown, field, placeholder, onFocus, onBlur, onRemove, inputRef }) => (
+  <div
+    className="flex flex-wrap gap-1.5 p-2 border border-gray-200 dark:border-gray-700 rounded-lg min-h-[42px] cursor-text bg-white dark:bg-gray-900"
+    onClick={() => inputRef.current?.focus()}
+  >
+    {tags.map(email => (
+      <span key={email} className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 px-2 py-0.5 rounded-md text-xs font-medium">
+        {email}
+        <button onClick={(e) => { e.stopPropagation(); onRemove(email, field); }} className="hover:text-red-500 transition-colors" type="button">
+          <i className="fas fa-times text-[9px]" />
+        </button>
+      </span>
+    ))}
+    <input
+      ref={inputRef}
+      className="flex-1 min-w-[120px] outline-none text-sm bg-transparent text-gray-800 dark:text-gray-200"
+      placeholder={tags.length ? '' : placeholder}
+      value={input}
+      onChange={e => {
+        const val = e.target.value
+        setInput(val)
+        setSuggQuery(val)
+        if (suggTimeoutRef.current) clearTimeout(suggTimeoutRef.current)
+        suggTimeoutRef.current = setTimeout(() => {
+          setShowSugg(val ? field : null)
+        }, 80)
+      }}
+      onKeyDown={e => handleKeyDown(e, field)}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    />
+  </div>
+))
+
 async function markEmailSent({ refType, refId, subject, sentBy }) {
   const ref = EMAIL_REF_TABLES.find(item => item.match.test(String(refType || '')))
   if (!ref || !refId) return
@@ -67,6 +101,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const suggRef = useRef(null)
   const fileInputRef = useRef(null)
   const blurTimeoutRef = useRef(null)
+  const suggTimeoutRef = useRef(null)
   const toInputRef = useRef(null)
   const ccInputRef = useRef(null)
   const toContainerRef = useRef(null)
@@ -136,23 +171,13 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
 
   const handleToBlur = useCallback(() => {
     if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
-    blurTimeoutRef.current = setTimeout(() => {
-      setShowSugg(null)
-      if (toInput.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(toInput.trim())) {
-        addTag(toInput, 'to')
-      }
-    }, 120)
-  }, [toInput, addTag])
+    blurTimeoutRef.current = setTimeout(() => setShowSugg(null), 100)
+  }, [])
 
   const handleCcBlur = useCallback(() => {
     if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
-    blurTimeoutRef.current = setTimeout(() => {
-      setShowSugg(null)
-      if (ccInput.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ccInput.trim())) {
-        addTag(ccInput, 'cc')
-      }
-    }, 120)
-  }, [ccInput, addTag])
+    blurTimeoutRef.current = setTimeout(() => setShowSugg(null), 100)
+  }, [])
 
   const removeTag = useCallback((email, field) => {
     if (field === 'to') setToTags(prev => prev.filter(e => e !== email))
@@ -265,35 +290,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setDriveAttachment(null)
   }
 
-  const TagInput = ({ tags, input, setInput, field, placeholder, onFocus, onBlur, onRemove, inputRef }) => (
-    <div
-      className="flex flex-wrap gap-1.5 p-2 border border-gray-200 dark:border-gray-700 rounded-lg min-h-[42px] cursor-text bg-white dark:bg-gray-900"
-        onClick={() => inputRef.current?.focus()}
-    >
-      {tags.map(email => (
-        <span key={email} className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 px-2 py-0.5 rounded-md text-xs font-medium">
-          {email}
-          <button onClick={(e) => { e.stopPropagation(); onRemove(email, field); }} className="hover:text-red-500 transition-colors" type="button">
-            <i className="fas fa-times text-[9px]" />
-          </button>
-        </span>
-      ))}
-      <input
-        ref={inputRef}
-        className="flex-1 min-w-[120px] outline-none text-sm bg-transparent text-gray-800 dark:text-gray-200"
-        placeholder={tags.length ? '' : placeholder}
-        value={input}
-        onChange={e => {
-          setInput(e.target.value)
-          setSuggQuery(e.target.value)
-          setShowSugg(field)
-        }}
-        onKeyDown={e => handleKeyDown(e, field)}
-        onFocus={onFocus}
-        onBlur={onBlur}
-      />
-    </div>
-  )
 
   const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
   const initial = user?.full_name?.charAt(0).toUpperCase() || 'U'
@@ -376,6 +372,10 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   tags={toTags}
                   input={toInput}
                   setInput={setToInput}
+                  setSuggQuery={setSuggQuery}
+                  setShowSugg={setShowSugg}
+                  suggTimeoutRef={suggTimeoutRef}
+                  handleKeyDown={handleKeyDown}
                   field="to"
                   placeholder="recipient@asaphil.org"
                   onFocus={() => {
@@ -384,7 +384,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   }}
                   onBlur={handleToBlur}
                   onRemove={removeTag}
-                  ref={toInputRef}
+                  inputRef={toInputRef}
                 />
                 {showSugg === 'to' && filteredSugg.length > 0 && (
                   <div ref={suggRef} className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
@@ -422,6 +422,10 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   tags={ccTags}
                   input={ccInput}
                   setInput={setCcInput}
+                  setSuggQuery={setSuggQuery}
+                  setShowSugg={setShowSugg}
+                  suggTimeoutRef={suggTimeoutRef}
+                  handleKeyDown={handleKeyDown}
                   field="cc"
                   placeholder="cc@asaphil.org (optional)"
                   onFocus={() => {
@@ -430,7 +434,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   }}
                   onBlur={handleCcBlur}
                   onRemove={removeTag}
-                  ref={ccInputRef}
+                  inputRef={ccInputRef}
                 />
                 {showSugg === 'cc' && filteredSugg.length > 0 && (
                   <div ref={suggRef} className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
