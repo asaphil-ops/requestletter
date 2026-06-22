@@ -146,25 +146,13 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
 
   const handleToBlur = useCallback(() => {
     if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
-    blurTimeoutRef.current = setTimeout(() => {
-      setShowSugg(prev => {
-        if (prev === 'to') return null
-        if (toInput.trim()) addTag(toInput, 'to')
-        return null
-      })
-    }, 150)
-  }, [toInput, addTag])
+    blurTimeoutRef.current = setTimeout(() => setShowSugg(null), 100)
+  }, [])
 
   const handleCcBlur = useCallback(() => {
     if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
-    blurTimeoutRef.current = setTimeout(() => {
-      setShowSugg(prev => {
-        if (prev === 'cc') return null
-        if (ccInput.trim()) addTag(ccInput, 'cc')
-        return null
-      })
-    }, 150)
-  }, [ccInput, addTag])
+    blurTimeoutRef.current = setTimeout(() => setShowSugg(null), 100)
+  }, [])
 
   const removeTag = useCallback((email, field) => {
     if (field === 'to') setToTags(prev => prev.filter(e => e !== email))
