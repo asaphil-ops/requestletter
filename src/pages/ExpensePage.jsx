@@ -4,6 +4,7 @@ import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useP
 import { useAuthStore } from '../store/authStore'
 import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useBranchOptions, useBranchEmailMap } from '../hooks/useBranches'
 import { useSettings } from '../hooks/useAccounts'
+import { useUIStore } from '../store/uiStore'
 
 // Mapping of operations to recipient email addresses
 const OPERATION_EMAIL_MAP = {
@@ -97,29 +98,25 @@ export default function ExpensePage({ type }) {
   const titles = settings?.titles || []
 
   const handleSendEmail = (rec) => {
-  const branchCode = String(rec.branch_code || '').trim().toUpperCase()
-  const branch = branchMap[branchCode] || {}
-  
-  // Auto-detect based on Operation (Case-insensitive)
-  const opKey = String(branch.operation || '').toUpperCase()
-  const operationEmail = OPERATION_EMAIL_MAP[opKey] || branchEmailMap[branchCode]
-  
-  let refType = 'IT Expense'
-  if (type === 'at') refType = 'Aircon/Toilet Maintenance'
-  if (type === 'comms') refType = 'Comms Expense'
-  
-  navigate('/send-email', {
-    state: {
-      draft: {
-        to: operationEmail ? [operationEmail] : [],
-        subject: `${rec.item_name || refType} - ${rec.branch_code} - ${rec.branch_name || rec.uniq_id} (Checked)`,
-        refId: rec.uniq_id,
-        refType: refType,
-        fileId: rec.file_id || '',
-      },
-    },
-  })
-}
+    const branchCode = String(rec.branch_code || '').trim().toUpperCase()
+    const branch = branchMap[branchCode] || {}
+
+    // Auto-detect based on Operation (Case-insensitive)
+    const opKey = String(branch.operation || '').toUpperCase()
+    const operationEmail = OPERATION_EMAIL_MAP[opKey] || branchEmailMap[branchCode]
+
+    let refType = 'IT Expense'
+    if (type === 'at') refType = 'Aircon/Toilet Maintenance'
+    if (type === 'comms') refType = 'Comms Expense'
+
+    useUIStore.getState().openSendEmailModal({
+      to: operationEmail ? [operationEmail] : [],
+      subject: `${rec.item_name || refType} - ${rec.branch_code} - ${rec.branch_name || rec.uniq_id} (Checked)`,
+      refId: rec.uniq_id,
+      refType: refType,
+      fileId: rec.file_id || '',
+    })
+  }
 
   const handleBatchSendEmail = () => {
     const eligible = filtered.filter(r => selected.includes(r.uniq_id) && r.status === 'Checked')
@@ -136,15 +133,11 @@ export default function ExpensePage({ type }) {
     if (type === 'at') refType = 'Aircon/Toilet Maintenance'
     if (type === 'comms') refType = 'Comms Expense'
 
-    navigate('/send-email', {
-      state: {
-        draft: {
-          to: [...new Set(emails)], // Use Set to get unique emails
-          subject: `${refType} Batch (Checked - ${eligible.length} items)`,
-          refId: eligible.map(r => r.uniq_id).join(','),
-          refType: `${refType} Batch`,
-        },
-      },
+    useUIStore.getState().openSendEmailModal({
+      to: [...new Set(emails)],
+      subject: `${refType} Batch (Checked - ${eligible.length} items)`,
+      refId: eligible.map(r => r.uniq_id).join(','),
+      refType: `${refType} Batch`,
     })
   }
 

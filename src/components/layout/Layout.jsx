@@ -5,9 +5,10 @@ import TopBar from './TopBar'
 import Breadcrumbs from '../shared/Breadcrumbs'
 import { useUIStore } from '../../store/uiStore'
 import Toasts from '../shared/Toasts'
+import SendEmailModal from '../SendEmailModal'
 
 export default function Layout() {
-  const { sidebarOpen, initDarkMode } = useUIStore()
+  const { sidebarOpen, initDarkMode, sendEmailDraft, closeSendEmailModal } = useUIStore()
 
   useEffect(() => {
     initDarkMode()
@@ -27,6 +28,11 @@ export default function Layout() {
         </main>
         <Toasts />
       </div>
+
+      {/* Global Send Email Modal */}
+      {sendEmailDraft && (
+        <SendEmailModal draft={sendEmailDraft} onClose={closeSendEmailModal} />
+      )}
     </div>
   )
 }

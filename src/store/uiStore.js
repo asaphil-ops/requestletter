@@ -8,6 +8,11 @@ export const useUIStore = create(
       darkMode: false,
       notifications: [],
 
+      // Send Email Modal
+      sendEmailDraft: null,
+      openSendEmailModal: (draft) => set({ sendEmailDraft: draft }),
+      closeSendEmailModal: () => set({ sendEmailDraft: null }),
+
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setSidebar: (val) => set({ sidebarOpen: val }),
 
