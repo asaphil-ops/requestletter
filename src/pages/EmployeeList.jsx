@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
 import {
   useBulkUpsertEmployees,
   useCreateEmployee,
@@ -7,17 +7,23 @@ import {
   useUpdateEmployee,
 } from '../hooks/useEmployeeList'
 import { useAuthStore } from '../store/authStore'
+import { useBranches, useBranchMap, branchCodesMatch } from '../hooks/useBranches'
 import { parseCSV, normalizeCSVHeader } from '../lib/csv'
 import { EmptyRow, TableLoader } from '../components/shared/Loader'
 import Pagination from '../components/shared/Pagination'
 import { ROWS_PER_PAGE } from '../lib/utils'
+import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import Swal from 'sweetalert2'
+import { supabase } from '../lib/supabase'
 
 const EMPTY_FORM = { id_number: '', full_name: '', designation: '', contact_number: '', email_address: '' }
 
 export default function EmployeeList() {
   const { isAdmin, canUpload } = useAuthStore()
   const { data = [], isLoading } = useEmployeeList()
+  const { data: branches = [] } = useBranches()
+  const branchMap = useBranchMap()
+  const [staffBranchMap, setStaffBranchMap] = useState({})
   const createEmployee = useCreateEmployee()
   const bulkUpsertEmployees = useBulkUpsertEmployees()
   const updateEmployee = useUpdateEmployee()
@@ -25,19 +31,81 @@ export default function EmployeeList() {
   const fileInputRef = useRef(null)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [designationFilter, setDesignationFilter] = useState('')
+  const [geoFilter, setGeoFilter] = useState({ operation: '', division: '', region: '', area: '', branchCode: '' })
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
 
+  useEffect(() => {
+    let cancelled = false
+    supabase.from('staff').select('id, branch_code').then(({ data }) => {
+      if (cancelled || !data) return
+      const map = {}
+      data.forEach(s => { if (s.id && s.branch_code) map[s.id] = s.branch_code })
+      setStaffBranchMap(map)
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  const designationOptions = useMemo(() => [...new Set(data.map(r => r.designation).filter(Boolean))].sort(), [data])
+
+  const geoLists = useMemo(() => {
+    const operations = [...new Set(branches.map(b => b.operation).filter(Boolean))].sort()
+    let divBranches = branches
+    if (geoFilter.operation) divBranches = divBranches.filter(b => b.operation === geoFilter.operation)
+    const divisions = [...new Set(divBranches.map(b => b.division).filter(Boolean))].sort()
+    let regBranches = divBranches
+    if (geoFilter.division) regBranches = regBranches.filter(b => b.division === geoFilter.division)
+    const regions = [...new Set(regBranches.map(b => b.region).filter(Boolean))].sort()
+    let areaBranches = regBranches
+    if (geoFilter.region) areaBranches = areaBranches.filter(b => b.region === geoFilter.region)
+    const areas = [...new Set(areaBranches.map(b => b.area).filter(Boolean))].sort()
+    let branchList = areaBranches
+    if (geoFilter.area) branchList = branchList.filter(b => b.area === geoFilter.area)
+    const branchesOptions = branchList.filter(b => b.code && b.name).map(b => ({ value: b.code, label: `${b.code} - ${b.name}` })).sort((a, b) => a.label.localeCompare(b.label))
+    return { operations, divisions, regions, areas, branchesOptions }
+  }, [branches, geoFilter])
+
+  const setGeo = (key, val) => {
+    setGeoFilter(prev => {
+      let next = { ...prev, [key]: val }
+      if (key === 'operation') next = { ...next, division: '', region: '', area: '', branchCode: '' }
+      else if (key === 'division') next = { ...next, region: '', area: '', branchCode: '' }
+      else if (key === 'region') next = { ...next, area: '', branchCode: '' }
+      else if (key === 'area') next = { ...next, branchCode: '' }
+      return next
+    })
+    setPage(1)
+  }
+
   const filtered = useMemo(() => {
     const needle = search.toLowerCase()
-    if (!needle) return data
-    return data.filter(row =>
-      `${row.id_number} ${row.full_name} ${row.designation} ${row.contact_number} ${row.email_address}`
-        .toLowerCase()
-        .includes(needle)
-    )
-  }, [data, search])
+    let result = data
+    if (needle) {
+      result = result.filter(row =>
+        `${row.id_number ?? ''} ${row.full_name ?? ''} ${row.designation ?? ''} ${row.contact_number ?? ''} ${row.email_address ?? ''}`
+          .toLowerCase()
+          .includes(needle)
+      )
+    }
+    if (designationFilter) result = result.filter(row => (row.designation || '').toLowerCase() === designationFilter.toLowerCase())
+    if (geoFilter.operation || geoFilter.division || geoFilter.region || geoFilter.area || geoFilter.branchCode) {
+      result = result.filter(row => {
+        const empId = String(row.id_number || '').trim().toUpperCase()
+        const branchCode = staffBranchMap[empId]
+        const branch = branchCode ? branchMap[branchCode] || branchMap[empId] : null
+        if (!branch) return false
+        if (geoFilter.operation && branch.operation !== geoFilter.operation) return false
+        if (geoFilter.division && branch.division !== geoFilter.division) return false
+        if (geoFilter.region && branch.region !== geoFilter.region) return false
+        if (geoFilter.area && branch.area !== geoFilter.area) return false
+        if (geoFilter.branchCode && !branchCodesMatch(branch.code, geoFilter.branchCode)) return false
+        return true
+      })
+    }
+    return result
+  }, [data, search, designationFilter, geoFilter, branchMap, staffBranchMap])
 
   const padID = (val) => String(val || '').trim().padStart(5, '0')
 
@@ -188,9 +256,23 @@ export default function EmployeeList() {
       </div>
 
       <div className="card mb-4 p-4">
-        <div className="relative">
-          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-          <input className="input pl-9" placeholder="Search employee..." value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[180px]">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+            <input className="input pl-9" placeholder="Search employee..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+          </div>
+          <select className="input text-sm py-1.5 w-auto" value={designationFilter} onChange={e => { setDesignationFilter(e.target.value); setPage(1) }}>
+            <option value="">All Designations</option>
+            {designationOptions.map(d => <option key={d}>{d}</option>)}
+          </select>
+          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={geoLists.operations.map(o => ({ value: o, label: o }))} onChange={value => setGeo('operation', value)} />
+          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={geoLists.divisions.map(d => ({ value: d, label: d }))} onChange={value => setGeo('division', value)} />
+          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={geoLists.regions.map(r => ({ value: r, label: r }))} onChange={value => setGeo('region', value)} />
+          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={geoLists.areas.map(a => ({ value: a, label: a }))} onChange={value => setGeo('area', value)} />
+          <SegmentedSearchSelect label="Branch" value={geoFilter.branchCode} options={geoLists.branchesOptions} onChange={value => setGeo('branchCode', value)} className="w-[260px]" />
+          {(designationFilter || geoFilter.operation || geoFilter.division || geoFilter.region || geoFilter.area || geoFilter.branchCode) && (
+            <button onClick={() => { setDesignationFilter(''); setGeoFilter({ operation: '', division: '', region: '', area: '', branchCode: '' }); setPage(1) }} className="btn-secondary text-xs px-3 py-1.5"><i className="fas fa-times mr-1" />Clear</button>
+          )}
         </div>
       </div>
 

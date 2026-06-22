@@ -2,7 +2,9 @@ import { Outlet } from 'react-router-dom'
 import { useEffect } from 'react'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import Breadcrumbs from '../shared/Breadcrumbs'
 import { useUIStore } from '../../store/uiStore'
+import Toasts from '../shared/Toasts'
 
 export default function Layout() {
   const { sidebarOpen, initDarkMode } = useUIStore()
@@ -20,8 +22,10 @@ export default function Layout() {
       >
         <TopBar />
         <main className="flex-1 p-6">
+          <Breadcrumbs />
           <Outlet />
         </main>
+        <Toasts />
       </div>
     </div>
   )

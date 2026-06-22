@@ -5,6 +5,13 @@ import { buildWorkflowInfoHtml, escapePostgrestSearch } from '../lib/security'
 import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
 
+const invalidateWorkflowQueries = (qc) => {
+  qc.invalidateQueries({ queryKey: ['sbar'] })
+  qc.invalidateQueries({ queryKey: ['dashboard'] })
+  qc.invalidateQueries({ queryKey: ['pending-counts'] })
+  qc.invalidateQueries({ queryKey: ['action-center'] })
+}
+
 export function useSbar(filters = {}) {
   return useQuery({
     queryKey: ['sbar', filters],
@@ -48,7 +55,7 @@ export function useCreateSbar() {
       })
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sbar'] }),
+    onSuccess: () => invalidateWorkflowQueries(qc),
   })
 }
 
@@ -59,7 +66,7 @@ export function useUpdateSbar() {
       const { error } = await supabase.from('sbar').update({ ...updates, updated_at: new Date().toISOString() }).eq('uniq_id', uniqId)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sbar'] }),
+    onSuccess: () => invalidateWorkflowQueries(qc),
   })
 }
 
@@ -72,7 +79,7 @@ export function useDeleteSbar() {
       if (error) throw error
       await logAudit({ user: useAuthStore.getState().user, action: 'DELETE_SBAR', module: 'SBAR', recordId: uniqId, before })
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sbar'] }),
+    onSuccess: () => invalidateWorkflowQueries(qc),
   })
 }
 
@@ -102,8 +109,7 @@ export function useProcessSbar() {
       await logAudit({ user, action: 'SBAR_' + action, module: 'SBAR', recordId: uniqId, before, after: updates })
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sbar'] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      invalidateWorkflowQueries(qc)
     },
   })
 }

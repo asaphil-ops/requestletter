@@ -6,7 +6,7 @@ export default function FilePreviewModal({ fileId, onClose }) {
   const downloadUrl = getDriveDownloadUrl(fileId)
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-[#0f1923] border border-white/10 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-[#132230]">
           <h3 className="font-semibold text-sm text-slate-100 flex items-center gap-2">

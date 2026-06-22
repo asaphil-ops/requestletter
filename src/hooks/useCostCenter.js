@@ -11,6 +11,13 @@ const TABLE_MAP = {
   other: 'cost_center_other',
 }
 
+const invalidateWorkflowQueries = (qc, table) => {
+  qc.invalidateQueries({ queryKey: [table] })
+  qc.invalidateQueries({ queryKey: ['dashboard'] })
+  qc.invalidateQueries({ queryKey: ['pending-counts'] })
+  qc.invalidateQueries({ queryKey: ['action-center'] })
+}
+
 export function useCostCenter(type) {
   const table = TABLE_MAP[type]
   return useQuery({
@@ -40,7 +47,7 @@ export function useCreateCostCenter(type) {
       })
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
+    onSuccess: () => invalidateWorkflowQueries(qc, table),
   })
 }
 
@@ -56,7 +63,7 @@ export function useUpdateCostCenter(type) {
         .eq('uniq_id', uniqId)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
+    onSuccess: () => invalidateWorkflowQueries(qc, table),
   })
 }
 
@@ -71,7 +78,7 @@ export function useDeleteCostCenter(type) {
       if (error) throw error
       await logAudit({ user: useAuthStore.getState().user, action: `DELETE_${type.toUpperCase()}_COST_CENTER`, module: table, recordId: uniqId, before })
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
+    onSuccess: () => invalidateWorkflowQueries(qc, table),
   })
 }
 
@@ -85,7 +92,7 @@ export function useBatchDeleteCostCenter(type) {
       const { error } = await supabase.from(table).delete().in('uniq_id', uniqIds)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
+    onSuccess: () => invalidateWorkflowQueries(qc, table),
   })
 }
 
@@ -116,7 +123,7 @@ export function useProcessCostCenter(type) {
       if (error) throw error
       await logAudit({ user, action: `${action}_${type.toUpperCase()}_COST_CENTER`, module: table, recordId: uniqId, before, after: updates })
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
+    onSuccess: () => invalidateWorkflowQueries(qc, table),
   })
 }
 

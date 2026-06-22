@@ -157,6 +157,50 @@ const IMPORT_TYPES = {
     db_conflict: 'id_number,account_title,month',
     required: ['id_number', 'staff_name', 'budget', 'month'],
     columns: ['id_number', 'staff_name', 'initiative', 'account_title', 'operation', 'division', 'region', 'area', 'budget', 'transfer_to_field_ops', 'sbar', 'actual', 'remaining_budget', 'month'],
+    samples: [
+      ['EMP001', 'Dela Cruz, Juan', 'Q2 2026', 'Office Supplies', 'Operation 1', 'Division 1', 'Region 1', 'Area 1', '5000', '0', '0', '2000', '3000', '2026-06'],
+      ['EMP002', 'Santos, Maria', 'Q2 2026', 'Transportation', 'Operation 1', 'Division 1', 'Region 1', 'Area 2', '3000', '500', '0', '1500', '1000', '2026-06'],
+      ['EMP003', 'Reyes, Pedro', 'Q2 2026', 'Utilities', 'Operation 2', 'Division 2', 'Region 2', 'Area 3', '4000', '0', '1000', '2500', '500', '2026-06'],
+    ],
+  },
+  cost_center_initiatives: {
+    label: 'Initiatives Monthly Expenses',
+    table: 'cost_center_initiatives',
+    conflict: 'uniq_id',
+    db_conflict: 'uniq_id',
+    required: ['uniq_id', 'date', 'particular', 'account_title', 'amount'],
+    columns: ['uniq_id', 'date', 'particular', 'sub_account', 'account_title', 'amount', 'transaction_type', 'remarks', 'status', 'uploader', 'uploader_info', 'ops_info', 'fin_info'],
+    samples: [
+      ['CI-0001', '2026-06-01', 'Backend Development', 'Software', 'Server Hosting', '12000', 'Cash', 'Monthly hosting fee', 'Pending', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 9:00 AM</span>', '', ''],
+      ['CI-0002', '2026-06-01', 'Marketing Campaign', 'Advertising', 'Social Media Ads', '8500', 'Non-Cash', 'Q2 marketing', 'Checked', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 9:00 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 10:00 AM</span>', ''],
+      ['CI-0003', '2026-06-02', 'Training Program', 'HR', 'External Trainer', '15000', 'Cash', 'Staff training', 'Pending', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 2, 2026, 9:00 AM</span>', '', ''],
+    ],
+  },
+  cost_center_cfoo: {
+    label: 'CFOO Per Staff Monthly Expense',
+    table: 'cost_center_cfoo',
+    conflict: 'uniq_id',
+    db_conflict: 'uniq_id',
+    required: ['uniq_id', 'date', 'staff_name', 'id_number', 'account_title', 'amount'],
+    columns: ['uniq_id', 'date', 'id_number', 'staff_name', 'designation', 'sub_account', 'account_title', 'amount', 'transaction_type', 'remarks', 'status', 'uploader', 'uploader_info', 'ops_info', 'fin_info'],
+    samples: [
+      ['CC-0001', '2026-06-01', 'EMP001', 'Dela Cruz, Juan', 'Finance Manager', 'Office Supplies', 'Printer Ink', '2500', 'Cash', 'Monthly supplies', 'Pending', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 9:00 AM</span>', '', ''],
+      ['CC-0002', '2026-06-01', 'EMP002', 'Santos, Maria', 'Account Officer', 'Transportation', 'Fuel', '3000', 'Non-Cash', 'Client visit', 'Checked', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 9:00 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 10:00 AM</span>', ''],
+      ['CC-0003', '2026-06-02', 'EMP003', 'Reyes, Pedro', 'Area Manager', 'Utilities', 'Internet Bill', '4500', 'Cash', 'Branch internet', 'Pending', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 2, 2026, 9:00 AM</span>', '', ''],
+    ],
+  },
+  cost_center_other: {
+    label: 'Other Cost Center Monthly Expenses',
+    table: 'cost_center_other',
+    conflict: 'uniq_id',
+    db_conflict: 'uniq_id',
+    required: ['uniq_id', 'date', 'account_title', 'cost_center', 'amount'],
+    columns: ['uniq_id', 'date', 'account_title', 'cost_center', 'amount', 'remarks', 'status', 'uploader', 'uploader_info', 'ops_info', 'fin_info'],
+    samples: [
+      ['CO-0001', '2026-06-01', 'Repairs & Maintenance', 'Branch Operations', '6000', 'AC repair', 'Pending', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 9:00 AM</span>', '', ''],
+      ['CO-0002', '2026-06-02', 'Office Supplies', 'Admin', '2200', 'Stationery', 'Checked', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 2, 2026, 9:00 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">Jun 2, 2026, 10:00 AM</span>', ''],
+      ['CO-0003', '2026-06-03', 'Security Services', 'Branch Operations', '8000', 'Guard services', 'Pending', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 3, 2026, 9:00 AM</span>', '', ''],
+    ],
   },
 }
 

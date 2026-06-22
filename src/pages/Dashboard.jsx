@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useDashboard } from '../hooks/useDashboard'
 import { useStaff } from '../hooks/useStaff'
-import { useBranchMap, useBranchOptions, useBranches } from '../hooks/useBranches'
+import { branchCodesMatch, useBranchMap, useBranchOptions, useBranches } from '../hooks/useBranches'
 import StatCards from '../components/dashboard/StatCards'
 import { TrendChart, CategoryChart, StackedWeekChart } from '../components/dashboard/Charts'
 import Insights from '../components/dashboard/Insights'
+import ActivityFeed from '../components/dashboard/ActivityFeed'
 import { PageLoader } from '../components/shared/Loader'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 
@@ -38,7 +39,7 @@ export default function Dashboard() {
     (ignoreKey === 'division' || !filters.division || branch.division === filters.division) &&
     (ignoreKey === 'region' || !filters.region || branch.region === filters.region) &&
     (ignoreKey === 'area' || !filters.area || branch.area === filters.area) &&
-    (!includeBranchCode || !filters.branchCode || branch.code === filters.branchCode)
+    (!includeBranchCode || !filters.branchCode || branchCodesMatch(branch.code, filters.branchCode))
   )
 
   // Cascading filter options from branch master data.
@@ -95,16 +96,20 @@ export default function Dashboard() {
   const recordMatchesGeo = (record = {}) => {
     if (!filters.branchCode && !filters.operation && !filters.division && !filters.region && !filters.area) return true
     const code = getRecordBranchCode(record)
-    if (filters.branchCode && code !== filters.branchCode) return false
+    if (filters.branchCode && !branchCodesMatch(code, filters.branchCode)) return false
     const branch = branchMap[code]
     if (!branch) return false
     return branchMatchesFilters(branch, { includeBranchCode: true })
   }
 
-  // Filter combined data
+  // Normalize old 'Approved' status to 'Checked' throughout the app
   const combined = useMemo(() => {
     if (!dash?.combined) return []
-    return dash.combined.filter(r => {
+    const normalized = dash.combined.map(r => ({
+      ...r,
+      status: r.status === 'Approved' ? 'Checked' : r.status,
+    }))
+    return normalized.filter(r => {
       if (filters.category && r._type !== filters.category) return false
       if (filters.dateStart && filters.dateEnd) {
         try {
@@ -125,7 +130,7 @@ export default function Dashboard() {
     }
     return staff.filter((row) => {
       const code = String(row.branch_code || '').trim().toUpperCase()
-      if (filters.branchCode && code !== filters.branchCode) return false
+      if (filters.branchCode && !branchCodesMatch(code, filters.branchCode)) return false
       const branch = branchMap[code]
       if (!branch) return false
       return branchMatchesFilters(branch, { includeBranchCode: true })
@@ -138,7 +143,7 @@ export default function Dashboard() {
     return {
       totalStaff: filteredStaffCount,
       pending:    s('Pending'),
-      checked:    s('Checked') + s('Approved'), // Combine 'Checked' and old 'Approved'
+      checked:    s('Checked'),
       rejected:   s('Rejected'),
       emailsSent: dash?.emailsSent || 0,
       totalReqs:  combined.length,
@@ -148,6 +153,10 @@ export default function Dashboard() {
   const today = new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   const selectOptions = (items) => items.map(item => ({ value: item, label: item }))
   const openDashboardReport = (key) => {
+    if (key === 'pending') {
+      navigate('/action-center')
+      return
+    }
     const statusMap = { pending: 'Pending', approved: 'Checked', rejected: 'Rejected' }
     const params = new URLSearchParams()
     if (statusMap[key]) params.set('status', statusMap[key])
@@ -185,7 +194,7 @@ export default function Dashboard() {
       )}
 
       {/* Dashboard Filters */}
-      <div className="card p-4 mb-5">
+      <div className="card relative z-30 overflow-visible p-4 mb-5">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-9 gap-2 items-end">
           <div>
             <label className="label">Date Start</label>
@@ -222,13 +231,13 @@ export default function Dashboard() {
       {/* Stat Cards */}
       <StatCards data={statsData} onCardClick={openDashboardReport} />
 
-      {/* Charts Row 1 */}
+      {/* Charts Row 1 + Activity Feed */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
         <div className="xl:col-span-2">
           <TrendChart data={combined} />
         </div>
-        <div>
-          <CategoryChart data={combined} />
+        <div className="xl:row-span-2">
+          <ActivityFeed combined={combined} />
         </div>
       </div>
 

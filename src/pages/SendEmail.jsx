@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, forwardRef, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { sendEmail, buildEmailHTML, getFileUrl } from '../lib/gas'
@@ -41,41 +41,14 @@ async function markEmailSent({ refType, refId, subject, sentBy }) {
   if (error) console.warn('Email sent tracking skipped:', error.message)
 }
 
-const TagInput = forwardRef(({ tags, input, setInput, field, placeholder, removeTag, handleKeyDown, onFocus, addTag }, ref) => (
-  <div
-    ref={ref}
-    className="flex flex-wrap gap-1.5 p-2 border border-gray-200 dark:border-gray-700 rounded-lg min-h-[42px] cursor-text bg-white dark:bg-gray-900"
-    onClick={() => document.getElementById(`input-${field}`)?.focus()}
-  >
-    {tags.map(email => (
-      <span key={email} className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 px-2 py-0.5 rounded-md text-xs font-medium">
-        {email}
-        <button onClick={(e) => { e.stopPropagation(); removeTag(email, field); }} className="hover:text-red-500 transition-colors">
-          <i className="fas fa-times text-[9px]" />
-        </button>
-      </span>
-    ))}
-    <input
-      id={`input-${field}`}
-      className="flex-1 min-w-[120px] outline-none text-sm bg-transparent text-gray-800 dark:text-gray-200"
-      placeholder={tags.length ? '' : placeholder}
-      value={input}
-      onChange={e => setInput(e.target.value)}
-      onKeyDown={e => handleKeyDown(e, field)}
-      onFocus={onFocus}
-      onBlur={() => setTimeout(() => { if (input.trim()) addTag(input, field) }, 150)}
-    />
-  </div>
-))
-
 export default function SendEmail({ draft, onClose, embedded = false }) {
-
   const { user } = useAuthStore()
   const location = useLocation()
   const branchEmailMap = useBranchEmailMap()
   const SENDER_EMAIL = 'operation.budgetmanagement@asaphil.org'
   const initDraft = draft ?? location.state?.draft ?? {}
   const defaultMessageBody = "Good day, Ma'am/Sir,\n\nKindly see the attached File/s"
+
   const [toTags, setToTags] = useState([])
   const [ccTags, setCcTags] = useState([])
   const [toInput, setToInput] = useState('')
@@ -85,13 +58,20 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const [note, setNote] = useState(DEFAULT_NOTE)
   const [attachments, setAttachments] = useState([])
   const [driveAttachment, setDriveAttachment] = useState(null)
-  const [showSugg, setShowSugg] = useState(null) // 'to' | 'cc' | null
+  const [showSugg, setShowSugg] = useState(null)
   const [suggQuery, setSuggQuery] = useState('')
   const [sending, setSending] = useState(false)
-  const toRef = useRef(); const ccRef = useRef(); const suggRef = useRef()
-  const fileInputRef = useRef()
 
-  // All suggestion emails
+  const toRef = useRef(null)
+  const ccRef = useRef(null)
+  const suggRef = useRef(null)
+  const fileInputRef = useRef(null)
+  const blurTimeoutRef = useRef(null)
+  const toInputRef = useRef(null)
+  const ccInputRef = useRef(null)
+  const toContainerRef = useRef(null)
+  const ccContainerRef = useRef(null)
+
   const allEmails = useMemo(() => [...new Set([...SUGGESTED_EMAILS, ...Object.values(branchEmailMap).filter(Boolean)])], [branchEmailMap])
 
   const filteredSugg = useMemo(() => allEmails.filter(e =>
@@ -128,32 +108,23 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       getFileUrl(d.fileId)
         .then(file => {
           const fileName = file?.name || d.fileName || 'Request Letter Attachment'
-          setDriveAttachment({
-            fileId: d.fileId,
-            name: fileName,
-            fileName,
-          })
+          setDriveAttachment({ fileId: d.fileId, name: fileName, fileName })
           setSubject(`Request Letter - ${fileName}`)
         })
         .catch(() => {
           const fileName = d.fileName || 'Request Letter Attachment'
-          setDriveAttachment({
-            fileId: d.fileId,
-            name: fileName,
-            fileName,
-          })
+          setDriveAttachment({ fileId: d.fileId, name: fileName, fileName })
           setSubject(`Request Letter - ${fileName}`)
         })
     }
   }, [draft])
 
-  const addTag = (email, field) => {
+  const addTag = useCallback((email, field) => {
     const clean = email.replace(/,/g, '').trim()
     if (!clean) return
     if (field === 'to') {
       if (!toTags.includes(clean)) {
         setToTags(prev => [...prev, clean])
-        // Auto-CC rule
         const autoCC = AUTO_CC_RULES[clean.toLowerCase()]
         if (autoCC) {
           setCcTags(prev => {
@@ -171,28 +142,46 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       setCcInput('')
     }
     setShowSugg(null)
-  }
+  }, [toTags, ccTags])
 
-  const removeTag = (email, field) => {
+  const handleToBlur = useCallback(() => {
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
+    blurTimeoutRef.current = setTimeout(() => {
+      if (toInput.trim()) addTag(toInput, 'to')
+    }, 100)
+  }, [toInput, addTag])
+
+  const handleCcBlur = useCallback(() => {
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
+    blurTimeoutRef.current = setTimeout(() => {
+      if (ccInput.trim()) addTag(ccInput, 'cc')
+    }, 100)
+  }, [ccInput, addTag])
+
+  const removeTag = useCallback((email, field) => {
     if (field === 'to') setToTags(prev => prev.filter(e => e !== email))
     else setCcTags(prev => prev.filter(e => e !== email))
-  }
+  }, [])
 
-  const handleKeyDown = (e, field) => {
+  const handleKeyDown = useCallback((e, field) => {
     const val = field === 'to' ? toInput : ccInput
     if (['Enter', ',', ' '].includes(e.key) && val.trim()) {
-      e.preventDefault(); addTag(val, field)
+      e.preventDefault()
+      addTag(val, field)
     }
     if (e.key === 'Backspace' && !val) {
       if (field === 'to') setToTags(p => p.slice(0, -1))
       else setCcTags(p => p.slice(0, -1))
     }
     if (e.key === 'Escape') setShowSugg(null)
-  }
+  }, [toInput, ccInput, addTag])
 
   const handleFiles = (files) => {
     Array.from(files).forEach(file => {
-      if (file.size > 20 * 1024 * 1024) { Swal.fire('Too large', `${file.name} exceeds 20MB`, 'warning'); return }
+      if (file.size > 20 * 1024 * 1024) {
+        Swal.fire('Too large', `${file.name} exceeds 20MB`, 'warning')
+        return
+      }
       if (attachments.find(a => a.name === file.name)) return
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -204,12 +193,12 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   }
 
   const handleDrop = (e) => {
-    e.preventDefault(); e.currentTarget.classList.remove('border-blue-400')
+    e.preventDefault()
+    e.currentTarget.classList.remove('border-blue-400')
     handleFiles(e.dataTransfer.files)
   }
 
   const handleSend = async () => {
-    // Commit any un-entered tags
     if (toInput.trim()) addTag(toInput, 'to')
     if (ccInput.trim()) addTag(ccInput, 'cc')
     if (!toTags.length && !toInput.trim()) return Swal.fire('Error', 'Add at least one recipient', 'error')
@@ -238,7 +227,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         fileName: driveAttachment?.fileName,
       })
 
-      // Log email
       await supabase.from('email_logs').insert({
         sent_by: user?.full_name,
         to_addresses: to,
@@ -255,10 +243,18 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       })
 
       Swal.fire('Sent!', 'Email sent successfully.', 'success')
-      setToTags([]); setCcTags([]); setSubject(''); setMessageBody(defaultMessageBody); setNote(DEFAULT_NOTE); setAttachments([]); setDriveAttachment(null)
+      setToTags([])
+      setCcTags([])
+      setSubject('')
+      setMessageBody(defaultMessageBody)
+      setNote(DEFAULT_NOTE)
+      setAttachments([])
+      setDriveAttachment(null)
     } catch (err) {
       Swal.fire('Error', err.message || 'Failed to send', 'error')
-    } finally { setSending(false) }
+    } finally {
+      setSending(false)
+    }
   }
 
   const handleClear = () => {
@@ -273,29 +269,32 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setDriveAttachment(null)
   }
 
-  const TagInput = ({ tags, input, setInput, field, placeholder, ref: inputRef }) => (
+  const TagInput = ({ tags, input, setInput, field, placeholder, onFocus, onBlur, onRemove, inputRef }) => (
     <div
-      ref={inputRef}
       className="flex flex-wrap gap-1.5 p-2 border border-gray-200 dark:border-gray-700 rounded-lg min-h-[42px] cursor-text bg-white dark:bg-gray-900"
-      onClick={() => document.getElementById(`input-${field}`)?.focus()}
+        onClick={() => inputRef.current?.focus()}
     >
       {tags.map(email => (
         <span key={email} className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 px-2 py-0.5 rounded-md text-xs font-medium">
           {email}
-          <button onClick={() => removeTag(email, field)} className="hover:text-red-500 transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); onRemove(email, field); }} className="hover:text-red-500 transition-colors" type="button">
             <i className="fas fa-times text-[9px]" />
           </button>
         </span>
       ))}
       <input
-        id={`input-${field}`}
+        ref={inputRef}
         className="flex-1 min-w-[120px] outline-none text-sm bg-transparent text-gray-800 dark:text-gray-200"
         placeholder={tags.length ? '' : placeholder}
         value={input}
-        onChange={e => { setInput(e.target.value); setSuggQuery(e.target.value); setShowSugg(field) }}
+        onChange={e => {
+          setInput(e.target.value)
+          setSuggQuery(e.target.value)
+          setShowSugg(field)
+        }}
         onKeyDown={e => handleKeyDown(e, field)}
-        onFocus={() => { setSuggQuery(input); setShowSugg(field) }}
-        onBlur={() => setTimeout(() => { if (input.trim()) addTag(input, field) }, 150)}
+        onFocus={onFocus}
+        onBlur={onBlur}
       />
     </div>
   )
@@ -315,9 +314,9 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
             <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Send to Email</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Send approved requests and attachments</p>
           </div>
-          <button 
-            onClick={handleSend} 
-            disabled={sending} 
+          <button
+            onClick={handleSend}
+            disabled={sending}
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-500 active:scale-95 text-white shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             {sending ? (
@@ -336,10 +335,8 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       )}
 
       <div className="grid grid-cols-1 gap-5">
-        {/* LEFT: Compose */}
         <div>
           <div className="card overflow-hidden">
-            {/* Compose header */}
             <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 px-6 py-5">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.15),_transparent_50%)]" />
               <div className="relative flex items-center justify-between">
@@ -357,7 +354,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               </div>
             </div>
 
-            {/* Sender row */}
             <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50">
               <div className="relative">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/30 flex-shrink-0">
@@ -375,13 +371,25 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
             </div>
 
             <div className="p-5 space-y-4">
-              {/* Relative wrapper for suggestion dropdown */}
               <div className="relative group">
                 <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-gray-200 dark:border-gray-700">
                   <i className="fas fa-user text-[9px] text-gray-400" />
                   To <span className="text-red-500">*</span>
                 </label>
-                <TagInput tags={toTags} input={toInput} setInput={setToInput} field="to" placeholder="recipient@asaphil.org" ref={toRef} />
+                <TagInput
+                  tags={toTags}
+                  input={toInput}
+                  setInput={setToInput}
+                  field="to"
+                  placeholder="recipient@asaphil.org"
+                  onFocus={() => {
+                    setSuggQuery(toInput)
+                    setShowSugg('to')
+                  }}
+                  onBlur={handleToBlur}
+                  onRemove={removeTag}
+                  ref={toInputRef}
+                />
                 {showSugg === 'to' && filteredSugg.length > 0 && (
                   <div ref={suggRef} className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
                     <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
@@ -416,7 +424,20 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   <i className="fas fa-copy text-[9px] text-gray-400" />
                   CC
                 </label>
-                <TagInput tags={ccTags} input={ccInput} setInput={setCcInput} field="cc" placeholder="cc@asaphil.org (optional)" ref={ccRef} />
+                <TagInput
+                  tags={ccTags}
+                  input={ccInput}
+                  setInput={setCcInput}
+                  field="cc"
+                  placeholder="cc@asaphil.org (optional)"
+                  onFocus={() => {
+                    setSuggQuery(ccInput)
+                    setShowSugg('cc')
+                  }}
+                  onBlur={handleCcBlur}
+                  onRemove={removeTag}
+                  ref={ccInputRef}
+                />
                 {showSugg === 'cc' && filteredSugg.length > 0 && (
                   <div ref={suggRef} className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
                     <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
@@ -436,11 +457,11 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   <i className="fas fa-heading text-[9px] text-gray-400" />
                   Subject
                 </label>
-                <input 
-                  className="input bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20 transition-colors" 
-                  placeholder="Email subject..." 
-                  value={subject} 
-                  onChange={e => setSubject(e.target.value)} 
+                <input
+                  className="input bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20 transition-colors"
+                  placeholder="Email subject..."
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
                 />
               </div>
 
@@ -462,17 +483,16 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   <i className="fas fa-sticky-note text-[9px]" />
                   Note
                 </label>
-                <textarea 
-                  className="input resize-none bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-700/50 focus:border-amber-500 focus:ring-amber-500/20 transition-colors" 
-                  rows={2} 
-                  value={note} 
-                  onChange={e => setNote(e.target.value)} 
+                <textarea
+                  className="input resize-none bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-700/50 focus:border-amber-500 focus:ring-amber-500/20 transition-colors"
+                  rows={2}
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
                 />
               </div>
 
               <hr className="border-gray-100 dark:border-gray-800" />
 
-              {/* Attachments */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="label"><i className="fas fa-paperclip mr-1" />Attachments</label>
@@ -504,7 +524,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                           <div className="font-medium text-sm text-gray-700 dark:text-gray-300 truncate">{driveAttachment.name}</div>
                           <div className="text-xs text-gray-400">Auto-detected from approved request</div>
                         </div>
-                        <button onClick={() => setDriveAttachment(null)} className="w-7 h-7 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 flex items-center justify-center transition-colors">
+                        <button onClick={() => setDriveAttachment(null)} className="w-7 h-7 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 flex items-center justify-center transition-colors" type="button">
                           <i className="fas fa-times text-xs" />
                         </button>
                       </div>
@@ -520,7 +540,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                             <div className="font-medium text-sm text-gray-700 dark:text-gray-300 truncate">{a.name}</div>
                             <div className="text-xs text-gray-400">{formatBytes(a.size)}</div>
                           </div>
-                          <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="w-7 h-7 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 flex items-center justify-center transition-colors">
+                          <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="w-7 h-7 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 flex items-center justify-center transition-colors" type="button">
                             <i className="fas fa-times text-xs" />
                           </button>
                         </div>
@@ -531,10 +551,10 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <button onClick={handleClear} className="btn-secondary text-sm">
+                <button onClick={handleClear} className="btn-secondary text-sm" type="button">
                   <i className="fas fa-times mr-1" />Clear
                 </button>
-                <button onClick={handleSend} disabled={sending} className="btn-primary flex items-center gap-2 disabled:opacity-60">
+                <button onClick={handleSend} disabled={sending} className="btn-primary flex items-center gap-2 disabled:opacity-60" type="button">
                   {sending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <i className="fas fa-paper-plane" />}
                   Send Email
                 </button>
@@ -542,8 +562,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   )

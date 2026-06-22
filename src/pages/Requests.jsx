@@ -18,7 +18,7 @@ import {
 import { useRequests, useCreateRequest, useUpdateRequest, useDeleteRequest, useProcessRequest, useAttachFile } from '../hooks/useRequests'
 import { useSettings } from '../hooks/useAccounts'
 import { useAuthStore } from '../store/authStore'
-import { useBranches, useBranchMap, useBranchOptions, useBranchEmailMap } from '../hooks/useBranches'
+import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useBranchOptions, useBranchEmailMap } from '../hooks/useBranches'
 import { useStaff } from '../hooks/useStaff'
 import { useEmployeeList } from '../hooks/useEmployeeList'
 import { uploadToDrive } from '../lib/gas'
@@ -28,9 +28,11 @@ import { validateAmount, validateDate, validateRequired } from '../lib/validatio
 import StatusBadge from '../components/shared/StatusBadge'
 import { OpsModal } from '../components/shared/ProcessModal'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
+import TimelineModal from '../components/shared/TimelineModal'
 import Pagination from '../components/shared/Pagination'
 import { TableLoader, EmptyRow } from '../components/shared/Loader'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
+import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
 // Mapping of operations to recipient email addresses
@@ -44,13 +46,14 @@ const OPERATION_EMAIL_MAP = {
 };
 
 const normalizeRequestStatus = (value) => value === 'Approved' ? 'Checked' : value
+const initialStatus = () => new URLSearchParams(window.location.search).get('status') || 'All'
 
 export default function Requests() {
   const { canCheck, canUpload, isAdmin } = useAuthStore()
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('All')
+  const [status, setStatus] = useState(initialStatus)
   const [dateStart, setDateStart] = useState('')
   const [dateEnd, setDateEnd] = useState('')
   const [geoFilter, setGeoFilter] = useState({ operation: '', division: '', region: '', area: '', branchCode: '' })
@@ -59,6 +62,7 @@ export default function Requests() {
   const [editing, setEditing] = useState(null)
   const [opsTarget, setOpsTarget] = useState(null) // Keep opsTarget for 'Check' action
   const [previewFile, setPreviewFile] = useState(null) // Keep previewFile
+  const [timelineTarget, setTimelineTarget] = useState(null)
   const [sortKey, setSortKey] = useState('created_at')
   const [branchLookupOpen, setBranchLookupOpen] = useState(false)
   const [sortDir, setSortDir] = useState('desc')
@@ -156,7 +160,7 @@ export default function Requests() {
         if (geoFilter.division && bDet.division !== geoFilter.division) return false
         if (geoFilter.region && bDet.region !== geoFilter.region) return false
         if (geoFilter.area && bDet.area !== geoFilter.area) return false
-        if (geoFilter.branchCode && bCode !== geoFilter.branchCode) return false
+        if (geoFilter.branchCode && !branchCodesMatch(bCode, geoFilter.branchCode)) return false
         return true
       })
     }
@@ -370,11 +374,31 @@ export default function Requests() {
 
   const setGeo = (key, val) => {
     setGeoFilter(prev => {
-      const next = { ...prev, [key]: val }
-      if (key === 'operation') { next.division = ''; next.region = ''; next.area = ''; next.branchCode = '' }
-      if (key === 'division')  { next.region = ''; next.area = ''; next.branchCode = '' }
-      if (key === 'region')    { next.area = ''; next.branchCode = '' }
-      if (key === 'area')      { next.branchCode = '' }
+      let next = { ...prev, [key]: val }
+
+      if (key === 'operation') { next = { ...next, division: '', region: '', area: '', branchCode: '' } }
+      else if (key === 'division')  { next = { ...next, region: '', area: '', branchCode: '' } }
+      else if (key === 'region')    { next = { ...next, area: '', branchCode: '' } }
+      else if (key === 'area')      { next = { ...next, branchCode: '' } }
+
+      // Reverse cascading: selecting a branch auto-fills its geo fields
+      if (key === 'branchCode' && val) {
+        const codeAliases = getBranchCodeAliases(val)
+        const branch = branches.find(b => {
+          const bc = String(b.code || b.branch_code || b.branchCode || '').trim().toUpperCase()
+          return codeAliases.includes(bc)
+        })
+        if (branch) {
+          next = {
+            ...next,
+            operation: String(branch.operation || prev.operation || '').trim(),
+            division: String(branch.division || prev.division || '').trim(),
+            region: String(branch.region || prev.region || '').trim(),
+            area: String(branch.area || prev.area || '').trim(),
+          }
+        }
+      }
+
       return next
     })
     setPage(1)
@@ -442,7 +466,7 @@ export default function Requests() {
       </div>
 
       {/* Filters */}
-      <div className="card overflow-hidden">
+      <div className="card relative z-30 overflow-visible">
         <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
           <Filter size={16} className="text-sky-600 dark:text-sky-300" />
           <div className="text-sm font-bold text-gray-800 dark:text-gray-100">Filters</div>
@@ -485,7 +509,7 @@ export default function Requests() {
       </div>
 
       {/* Table */}
-      <div className="card overflow-hidden">
+      <div className="card relative z-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 dark:border-slate-800">
           <div>
             <div className="text-sm font-bold text-gray-900 dark:text-gray-100">Request Registry</div>
@@ -541,12 +565,14 @@ export default function Requests() {
                     <td className="table-td min-w-0"><div className="font-semibold text-sm truncate" title={r.title}>{r.title}</div><div className="text-xs text-gray-400 truncate" title={r.beneficiary}>{r.beneficiary}</div></td>
                     <td className="table-td"><div className="text-xs text-gray-500 max-w-[120px] truncate">{r.description || '-'}</div></td>
                     <td className="table-td font-semibold whitespace-nowrap">{fmtCurrency(r.amount)}</td>
-                    <td className="table-td whitespace-nowrap"><StatusBadge status={displayStatus} remarks={r.remarks} emailSent={r.email_sent} emailSentAt={r.email_sent_at} /></td>
+                    <td className="table-td whitespace-nowrap"><StatusBadge status={displayStatus} remarks={r.remarks} emailSent={r.email_sent} emailSentAt={r.email_sent_at} fileId={r.file_id} /></td>
                     <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.uploader_info || r.uploader || '-') }} />
 
                     <td className="table-td">
                       <div className="table-actions">
                         <button onClick={() => r.file_id && setPreviewFile(r.file_id)} className={`btn-icon ${r.file_id ? 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`} title={r.file_id ? 'Preview' : 'No attachment'}><i className="fas fa-eye" /></button>
+                        <button onClick={() => setTimelineTarget(r)} className="btn-icon bg-slate-50 text-slate-500 hover:bg-slate-100" title="Activity timeline"><i className="fas fa-clock-rotate-left" /></button>
+                        {canUpload && <button onClick={() => handleUpload(r)} className="btn-icon bg-emerald-50 text-emerald-600 hover:bg-emerald-100" title="Upload File"><i className="fas fa-cloud-upload-alt" /></button>}
                         {canUpload && <><button onClick={() => handleSendEmail(r)} className="btn-icon bg-amber-50 text-amber-500 hover:bg-amber-100" title="Send Email" disabled={displayStatus !== 'Checked'}><i className="fas fa-envelope" /></button><button onClick={() => openModal(r)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button></>}
                         {displayStatus === 'Pending' && canCheck && <button onClick={() => setOpsTarget(r)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Check"><i className="fas fa-check" /></button>}
 
@@ -681,6 +707,7 @@ export default function Requests() {
       )}
 
       {opsTarget && <OpsModal record={opsTarget} onConfirm={(action, payload) => handleProcess(action, payload, opsTarget)} onClose={() => setOpsTarget(null)} />}
+      {timelineTarget && <TimelineModal record={timelineTarget} module={WORKFLOW_MODULES.req} onClose={() => setTimelineTarget(null)} />}
       {previewFile && <FilePreviewModal fileId={previewFile} onClose={() => setPreviewFile(null)} />}
     </div>
   )

@@ -4,6 +4,32 @@ import { useMemo } from 'react'
 
 const BRANCH_PAGE_SIZE = 1000
 
+export function cleanGeoValue(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function getBranchCodeAliases(value) {
+  const code = String(value || '').trim().toUpperCase()
+  if (!code) return []
+
+  const aliases = new Set([code])
+  const withoutPrefix = code.replace(/^B/, '')
+  if (/^\d+$/.test(withoutPrefix)) {
+    aliases.add(withoutPrefix)
+    aliases.add(`B${withoutPrefix.padStart(4, '0')}`)
+  }
+
+  return [...aliases]
+}
+
+export function branchCodesMatch(left, right) {
+  if (!left || !right) return false
+  const rightAliases = new Set(getBranchCodeAliases(right))
+  return getBranchCodeAliases(left).some(alias => rightAliases.has(alias))
+}
+
 export async function fetchAllBranches() {
   const rows = []
 
@@ -55,6 +81,10 @@ export function normalizeBranch(branch) {
     name,
     branch_code: branch.branch_code || code,
     branch_name: branch.branch_name || name,
+    operation: cleanGeoValue(branch.operation),
+    division: cleanGeoValue(branch.division),
+    region: cleanGeoValue(branch.region),
+    area: cleanGeoValue(branch.area),
   }
 }
 
@@ -64,7 +94,9 @@ export function useBranchMap() {
     const map = {}
     branches.forEach((b) => {
       const branch = normalizeBranch(b)
-      if (branch.code) map[branch.code] = branch
+      getBranchCodeAliases(branch.code).forEach(alias => {
+        map[alias] = branch
+      })
     })
     return map
   }, [branches])
@@ -76,7 +108,11 @@ export function useBranchEmailMap() {
     const map = {}
     branches.forEach((b) => {
       const branch = normalizeBranch(b)
-      if (branch.code && branch.email) map[branch.code] = branch.email
+      if (branch.code && branch.email) {
+        getBranchCodeAliases(branch.code).forEach(alias => {
+          map[alias] = branch.email
+        })
+      }
     })
     return map
   }, [branches])

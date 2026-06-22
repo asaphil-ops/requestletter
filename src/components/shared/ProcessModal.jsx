@@ -1,141 +1,129 @@
-import { useState, useEffect } from 'react'
-import { useBranchOptions } from '../../hooks/useBranches'
+import { useState } from 'react'
 
 export function OpsModal({ record, onConfirm, onClose }) {
   const [note, setNote] = useState('')
   const [showReject, setShowReject] = useState(false)
-  const [branchLookupOpen, setBranchLookupOpen] = useState(false)
-  const [branchCode, setBranchCode] = useState('')
-  const branchOptions = useBranchOptions()
-
-  // Extract branch code from record beneficiary if it's a branch request format "CODE - NAME"
-  const getInitialBranchCode = () => {
-    if (!record) return ''
-    const beneficiary = record.beneficiary || ''
-    const parts = beneficiary.split(' - ')
-    if (parts.length >= 2) {
-      return parts[0].trim()
-    }
-    // If not in branch format, maybe it's a staff name; we could try to look up branch code from staff list, but for simplicity return empty.
-    return ''
-  }
-
-  const getBranchName = (code) => {
-    const opt = branchOptions.find(o => o.value === code)
-    if (!opt) return ''
-    return opt.label.split(' - ').slice(1).join(' - ')
-  }
-
-  const handleBranchSelect = (code) => {
-    setBranchCode(code)
-    setBranchLookupOpen(false)
-  }
-
-  // Initialize branchCode from record
-  useEffect(() => {
-    setBranchCode(getInitialBranchCode())
-  }, [record])
 
   if (!record) return null
 
+  const title =
+    record.title ||
+    record.item_name ||
+    record.particular ||
+    record.account_title ||
+    record.type ||
+    'Pending entry'
+  const reference = record.req_id || record.uniq_id || record.id || '-'
+  const owner =
+    record.beneficiary ||
+    record.branch_name ||
+    record.staff_name ||
+    record.giver ||
+    record.cost_center ||
+    ''
+
+  const handleCheck = () => {
+    onConfirm('OPS_CHECK', { note })
+  }
+
+  const handleReject = () => {
+    if (!note.trim()) return
+    onConfirm('OPS_REJECT', { note })
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-lg font-bold text-gray-900">Operations Processing</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-500"><i className="fas fa-times" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md overflow-hidden rounded-xl bg-white text-slate-900 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-blue-600">OPs Finance Review</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-950">Check pending entry</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            title="Close"
+          >
+            <i className="fas fa-times text-sm" />
+          </button>
         </div>
-        <div className="p-6">
-          {/* Branch Code Field */}
-          <div className="mb-4">
-            <label className="mb-2 block text-sm font-semibold text-gray-700">Branch Code</label>
-            <div className="relative">
-              <input
-                className="input text-sm font-semibold uppercase w-full"
-                placeholder="Code (e.g. B0001)"
-                value={branchCode}
-                onFocus={() => setBranchLookupOpen(true)}
-                onBlur={() => setTimeout(() => setBranchLookupOpen(false), 200)}
-                onChange={e => {
-                  const code = e.target.value.toUpperCase().replace(/O/g, '0')
-                  setBranchCode(code)
-                  setBranchLookupOpen(true)
-                }}
-              />
-              {branchLookupOpen && (
-                <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-72 overflow-y-auto rounded-xl border border-blue-500 bg-white shadow-xl">
-                  {(() => {
-                    const needle = String(branchCode).trim().toLowerCase()
-                    const matches = (needle
-                      ? branchOptions.filter(branch =>
-                          `${branch.value} ${branch.label}`.toLowerCase().includes(needle)
-                        )
-                      : branchOptions
-                    ).slice(0, 10)
-                    return matches.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-slate-500">No branch found</div>
-                    ) : matches.map(branch => (
-                      <button
-                        key={branch.value}
-                        type="button"
-                        className="grid w-full grid-cols-[72px_1fr] gap-2 border-b border-slate-100 px-4 py-2.5 text-left text-sm transition last:border-b-0 hover:bg-blue-50"
-                        onMouseDown={event => {
-                          event.preventDefault()
-                          handleBranchSelect(branch.value)
-                          setBranchLookupOpen(false)
-                        }}
-                      >
-                        <span className="font-bold text-blue-700">{branch.value}</span>
-                        <span className="text-slate-600 truncate">{branch.label.split(' - ').slice(1).join(' - ')}</span>
-                      </button>
-                    ))
-                  })()}
+
+        <div className="space-y-4 p-5">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-blue-600 text-white">
+                <i className="fas fa-file-circle-check text-sm" />
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-bold text-slate-900" title={String(title)}>
+                  {title}
                 </div>
-              )}
+                {owner && (
+                  <div className="mt-0.5 truncate text-xs font-medium text-slate-500" title={String(owner)}>
+                    {owner}
+                  </div>
+                )}
+                <div className="mt-2 inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
+                  Ref: {reference}
+                </div>
+              </div>
             </div>
-            <input className="mt-2 input text-sm text-rose-700 font-semibold" readOnly value={getBranchName(branchCode)} placeholder="Branch Name" />
           </div>
 
-          <div className="mb-4">
-            <label className="mb-2 block text-sm font-semibold text-gray-700">Add Note</label>
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">
+              Remarks {showReject && <span className="text-red-500">*</span>}
+            </label>
             <textarea
-              className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="min-h-[92px] w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               rows="3"
-              placeholder="Enter your remarks here..."
+              placeholder={showReject ? 'Required reason for rejection...' : 'Optional remarks before checking...'}
               value={note}
               onChange={e => setNote(e.target.value)}
             />
           </div>
-          <div className="flex justify-end gap-3">
-            <button onClick={() => setShowReject(true)} className="rounded-lg bg-red-50 px-4 py-2 font-semibold text-red-600 hover:bg-red-100">Reject</button>
-            <button onClick={() => {
-                // Determine action: if note filled -> reject, else approve/check
-                const action = note.trim() ? 'OPS_REJECT' : 'OPS_CHECK'
-                // Prepare updated record with potential beneficiary change
-                let updatedRecord = { ...record }
-                if (branchCode) {
-                  // If record is a branch request, update beneficiary with selected branch
-                  const beneficiary = record.beneficiary || ''
-                  const isBranchFormat = beneficiary.includes(' - ')
-                  if (isBranchFormat) {
-                    updatedRecord.beneficiary = `${branchCode} - ${getBranchName(branchCode)}`
-                  }
-                  // If not branch format (staff request), we might not want to change beneficiary; keep as is.
-                }
-                onConfirm(action, { note, record: updatedRecord })
-              }}>
-              {note.trim() ? 'Confirm Reject' : 'Confirm Check'}
-            </button>
-          </div>
+
           {showReject && (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
-              <p className="mb-3 text-sm font-medium text-red-800">Are you sure you want to reject this request?</p>
-              <div className="flex gap-2">
-                <button onClick={() => setShowReject(false)} className="rounded bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm border border-gray-300">Cancel</button>
-                <button onClick={() => onConfirm('Rejected', { note })} className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-red-700">Confirm Reject</button>
-              </div>
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              This will mark the entry as rejected. Add a reason above before confirming.
             </div>
           )}
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              onClick={() => {
+                setShowReject(true)
+                setNote('')
+              }}
+              className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50"
+            >
+              Reject
+            </button>
+            {showReject ? (
+              <button
+                onClick={handleReject}
+                disabled={!note.trim()}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Confirm Reject
+              </button>
+            ) : (
+              <button
+                onClick={handleCheck}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
+              >
+                Confirm Check
+              </button>
+            )}
+            {showReject && (
+              <button
+                onClick={() => setShowReject(false)}
+                className="rounded-lg px-4 py-2 text-sm font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -149,36 +137,77 @@ export function FinanceModal({ record, titles, onConfirm, onClose }) {
   if (!record) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-lg font-bold text-gray-900">Finance Processing</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-500"><i className="fas fa-times" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md overflow-hidden rounded-xl bg-white text-slate-900 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-600">Finance Review</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-950">Approve checked entry</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            title="Close"
+          >
+            <i className="fas fa-times text-sm" />
+          </button>
         </div>
-        <div className="p-6">
-          <div className="mb-4">
-            <label className="mb-2 block text-sm font-semibold text-gray-700">Add Note</label>
+
+        <div className="space-y-4 p-5">
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">
+              Remarks {showReject && <span className="text-red-500">*</span>}
+            </label>
             <textarea
-              className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="min-h-[92px] w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
               rows="3"
-              placeholder="Enter your remarks here..."
+              placeholder={showReject ? 'Required reason for rejection...' : 'Optional remarks before approval...'}
               value={note}
               onChange={e => setNote(e.target.value)}
             />
           </div>
-          <div className="flex justify-end gap-3">
-            <button onClick={() => setShowReject(true)} className="rounded-lg bg-red-50 px-4 py-2 font-semibold text-red-600 hover:bg-red-100">Reject</button>
-            <button onClick={() => onConfirm('Fin Approved', { note })} className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white shadow hover:bg-emerald-700">Approve</button>
-          </div>
+
           {showReject && (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
-              <p className="mb-3 text-sm font-medium text-red-800">Are you sure you want to reject this request?</p>
-              <div className="flex gap-2">
-                <button onClick={() => setShowReject(false)} className="rounded bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm border border-gray-300">Cancel</button>
-                <button onClick={() => onConfirm('Rejected', { note })} className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-red-700">Confirm Reject</button>
-              </div>
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              This will mark the entry as rejected. Add a reason above before confirming.
             </div>
           )}
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              onClick={() => {
+                setShowReject(true)
+                setNote('')
+              }}
+              className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50"
+            >
+              Reject
+            </button>
+            {showReject ? (
+              <button
+                onClick={() => note.trim() && onConfirm('FINANCE_REJECT', { note })}
+                disabled={!note.trim()}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Confirm Reject
+              </button>
+            ) : (
+              <button
+                onClick={() => onConfirm('FINANCE_APPROVE', { note })}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500"
+              >
+                Approve
+              </button>
+            )}
+            {showReject && (
+              <button
+                onClick={() => setShowReject(false)}
+                className="rounded-lg px-4 py-2 text-sm font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

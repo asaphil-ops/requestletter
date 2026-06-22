@@ -44,7 +44,7 @@ export default function SegmentedSearchSelect({
   const widthClass = className ? className : 'w-[220px]'
 
   return (
-    <div ref={wrapperRef} className={`relative inline-flex min-w-0 max-w-full ${widthClass}`}>
+    <div ref={wrapperRef} className={`relative z-[60] inline-flex min-w-0 max-w-full ${widthClass}`}>
       <div className="inline-flex w-full overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900">
         <span className="flex shrink-0 items-center border-r border-slate-300 bg-slate-50 px-2.5 text-xs font-semibold text-slate-900 sm:px-3 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
           {label}
@@ -83,7 +83,7 @@ export default function SegmentedSearchSelect({
       </div>
 
       {open && (
-        <div className="absolute left-0 top-full z-40 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+        <div className="absolute left-0 top-full z-[1000] mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
           <button
             type="button"
             className="block w-full px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-blue-50 sm:px-4 dark:text-slate-200 dark:hover:bg-sky-400/10"

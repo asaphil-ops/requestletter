@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { toTitleCase } from '../lib/utils'
 import { escapePostgrestSearch } from '../lib/security'
 import { useMemo } from 'react'
+import { cleanGeoValue } from './useBranches'
 
 export function useStaff(filters = {}) {
   return useQuery({
@@ -35,8 +36,13 @@ export function useStaff(filters = {}) {
           last_name: ln,
           first_name: fn,
           branch_name: bn,
+          operation: cleanGeoValue(s.operation),
+          division: cleanGeoValue(s.division),
+          region: cleanGeoValue(s.region),
+          area: cleanGeoValue(s.area),
+          branch_code: String(s.branch_code || '').trim().toUpperCase(),
           name: toTitleCase(`${ln}, ${fn}`),
-          branch: s.branch_code && bn ? `${s.branch_code} - ${bn}` : bn || s.branch_code || '',
+          branch: s.branch_code && bn ? `${String(s.branch_code).trim().toUpperCase()} - ${bn}` : bn || s.branch_code || '',
         }
       })
     },

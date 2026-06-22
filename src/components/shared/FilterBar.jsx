@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useStaff } from '../../hooks/useStaff'
-import { useBranchOptions } from '../../hooks/useBranches'
+import { branchCodesMatch, useBranchOptions } from '../../hooks/useBranches'
 import SegmentedSearchSelect from './SegmentedSearchSelect'
 
 export default function FilterBar({ value = {}, onChange }) {
@@ -35,7 +35,7 @@ export default function FilterBar({ value = {}, onChange }) {
         .map(s => s.branch_code)
         .filter(Boolean)
     )
-    return branchOptions.filter(b => codes.has(b.value))
+    return branchOptions.filter(b => [...codes].some(code => branchCodesMatch(code, b.value)))
   }, [staff, branchOptions, value])
 
   const set = (key, val) => {

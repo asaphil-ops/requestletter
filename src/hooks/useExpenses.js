@@ -7,6 +7,13 @@ import { useAuthStore } from '../store/authStore'
 
 const TABLE_MAP = { it: 'it_expenses', at: 'at_expenses', comms: 'comms_expenses' }
 
+const invalidateWorkflowQueries = (qc, table) => {
+  qc.invalidateQueries({ queryKey: [table] })
+  qc.invalidateQueries({ queryKey: ['dashboard'] })
+  qc.invalidateQueries({ queryKey: ['pending-counts'] })
+  qc.invalidateQueries({ queryKey: ['action-center'] })
+}
+
 export function useExpenses(type, filters = {}) {
   const table = TABLE_MAP[type]
   return useQuery({
@@ -55,8 +62,7 @@ export function useCreateExpense(type) {
       if (error) throw error
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [table] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      invalidateWorkflowQueries(qc, table)
     },
   })
 }
@@ -69,7 +75,7 @@ export function useUpdateExpense(type) {
       const { error } = await supabase.from(table).update({ ...updates, updated_at: new Date().toISOString() }).eq('uniq_id', uniqId)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
+    onSuccess: () => invalidateWorkflowQueries(qc, table),
   })
 }
 
@@ -83,7 +89,7 @@ export function useDeleteExpense(type) {
       if (error) throw error
       await logAudit({ user: useAuthStore.getState().user, action: `DELETE_${type.toUpperCase()}`, module: table, recordId: uniqId, before })
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [table] }),
+    onSuccess: () => invalidateWorkflowQueries(qc, table),
   })
 }
 
@@ -114,8 +120,7 @@ export function useProcessExpense(type) {
       await logAudit({ user, action: `${action}_${type.toUpperCase()}`, module: table, recordId: uniqId, before, after: updates })
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [table] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      invalidateWorkflowQueries(qc, table)
     },
   })
 }
@@ -153,8 +158,7 @@ export function useBatchProcessExpense(type) {
       await logAudit({ user, action: `BATCH_${action}_${type.toUpperCase()}`, module: table, recordId: ids.join(','), after: { status: newStatus, count: ids.length } })
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [table] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      invalidateWorkflowQueries(qc, table)
     },
   })
 }

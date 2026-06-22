@@ -38,6 +38,40 @@ body {
 /* Sidebar transition */
 .sidebar-open { margin-left: var(--sidebar-w); }
 
+/* Smooth theme transitions */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+* {
+  transition: border-color 0.3s ease, background-color 0.3s ease, color 0.15s ease;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.animate-shimmer {
+  animation: shimmer 1.8s infinite;
+}
+
+/* Custom selection */
+::selection {
+  @apply bg-blue-500/20 text-blue-900;
+}
+.dark ::selection {
+  @apply bg-sky-500/30 text-white;
+}
+
+/* Toast slide in */
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.toast-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
 @layer components {
   .btn-primary {
     @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all shadow-sm;

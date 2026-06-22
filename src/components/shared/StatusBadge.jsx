@@ -1,10 +1,16 @@
 import { STATUS_COLORS } from '../../lib/utils'
 
-export default function StatusBadge({ status, remarks, emailSent, emailSentAt }) {
+export default function StatusBadge({ status, remarks, emailSent, emailSentAt, fileId }) {
   const cls = STATUS_COLORS[status] || 'badge-pending'
   return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex flex-wrap items-center gap-1">
       <span className={`badge ${cls}`}>{status}</span>
+      <span
+        className={`badge border text-xs ${fileId ? 'bg-cyan-50 text-cyan-600 border-cyan-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}
+        title={fileId ? 'Attachment available' : 'No attachment uploaded'}
+      >
+        {fileId ? 'Attached' : 'No File'}
+      </span>
       {emailSent && (
         <span
           className="badge bg-purple-50 text-purple-600 border border-purple-100"

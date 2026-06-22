@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { TableLoader, EmptyRow } from './Loader'
 
 export default function DataTable({ columns, data, loading, keyField = 'id', onRowSelect, selectedIds = [], showCheckbox = false }) {
@@ -23,8 +23,37 @@ export default function DataTable({ columns, data, loading, keyField = 'id', onR
 
   const allSelected = sorted.length > 0 && sorted.every(r => selectedIds.includes(r[keyField]))
 
+  const handleExport = () => {
+    if (!sorted.length) return
+    const headers = columns.map(c => c.label).join(',')
+    const rows = sorted.map(row => columns.map(c => {
+      const val = row[c.key]
+      if (val === null || val === undefined) return ''
+      const str = String(val)
+      return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str
+    }).join(','))
+    const csv = [headers, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `export_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="overflow-x-auto">
+      <div className="flex items-center justify-end gap-2 mb-3">
+        <button
+          onClick={handleExport}
+          disabled={!sorted.length}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+        >
+          <i className="fas fa-download text-[10px]" />
+          Export CSV
+        </button>
+      </div>
       <table className="w-full min-w-[800px]">
         <thead>
           <tr>

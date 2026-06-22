@@ -20,6 +20,7 @@ const TABLES = [
 export default function useRealtime() {
   const qc = useQueryClient()
   const addNotification = useUIStore((s) => s.addNotification)
+  const removeEntryNotifications = useUIStore((s) => s.removeEntryNotifications)
   const user = useAuthStore((s) => s.user)
 
   useEffect(() => {
@@ -31,6 +32,8 @@ export default function useRealtime() {
         .on('postgres_changes', { event: '*', schema: 'public', table }, (payload) => {
           qc.invalidateQueries({ queryKey: [table] })
           qc.invalidateQueries({ queryKey: ['dashboard'] })
+          qc.invalidateQueries({ queryKey: ['pending-counts'] })
+          qc.invalidateQueries({ queryKey: ['action-center'] })
 
           if (payload.eventType === 'INSERT' && payload.new?.uploader !== user.full_name) {
             addNotification({
@@ -42,7 +45,10 @@ export default function useRealtime() {
           }
           if (payload.eventType === 'UPDATE') {
             const s = payload.new?.status
-            if (s && ['Approved', 'Rejected', 'Checked'].includes(s)) {
+            if (s && s !== 'Pending') {
+              removeEntryNotifications(table, payload.new)
+            }
+            if (s && ['Approved', 'Rejected'].includes(s)) {
               addNotification({
                 type: s.toLowerCase(),
                 table,

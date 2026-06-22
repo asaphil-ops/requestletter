@@ -2,17 +2,27 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 
 const TABLE = 'employee_list'
+const PAGE_SIZE = 1000
 
 export function useEmployeeList() {
   return useQuery({
     queryKey: [TABLE],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(TABLE)
-        .select('*')
-        .order('full_name', { ascending: true })
-      if (error) throw error
-      return data || []
+      const all = []
+      let from = 0
+      while (true) {
+        const { data, error } = await supabase
+          .from(TABLE)
+          .select('*')
+          .order('id_number', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1)
+        if (error) throw error
+        if (!data || data.length === 0) break
+        all.push(...data)
+        if (data.length < PAGE_SIZE) break
+        from += PAGE_SIZE
+      }
+      return all
     },
     staleTime: 30000,
   })

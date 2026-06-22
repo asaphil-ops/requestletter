@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useStaff, useAddStaff, useDeleteStaff, useStaffFilters } from '../hooks/useStaff'
-import { useBranchOptions } from '../hooks/useBranches'
+import { getBranchCodeAliases, useBranchOptions } from '../hooks/useBranches'
 import { useAuthStore } from '../store/authStore'
 import { fmtNum, ROWS_PER_PAGE, toTitleCase } from '../lib/utils'
 import Pagination from '../components/shared/Pagination'
@@ -27,10 +27,27 @@ export default function Directory() {
   const [form, setForm] = useState(EMPTY_FORM)
 
   const setGeo = (key, val) => setGeoFilter(p => {
-    const n = { ...p, [key]: val }
-    if (key === 'operation') { n.division = ''; n.region = ''; n.area = ''; n.branchCode = '' }
-    if (key === 'division')  { n.region = ''; n.area = ''; n.branchCode = '' }
-    if (key === 'region')    { n.area = ''; n.branchCode = '' }
+    let n = { ...p, [key]: val }
+
+    if (key === 'operation') { n = { ...n, division: '', region: '', area: '', branchCode: '' } }
+    else if (key === 'division')  { n = { ...n, region: '', area: '', branchCode: '' } }
+    else if (key === 'region')    { n = { ...n, area: '', branchCode: '' } }
+
+    // Reverse cascading: selecting a branch auto-fills its geo fields
+    if (key === 'branchCode' && val) {
+      const codeAliases = getBranchCodeAliases(val)
+      const branch = branchOptions.find(b => codeAliases.includes(b.value))
+      if (branch) {
+        n = {
+          ...n,
+          operation: String(branch.operation || p.operation || '').trim(),
+          division: String(branch.division || p.division || '').trim(),
+          region: String(branch.region || p.region || '').trim(),
+          area: String(branch.area || p.area || '').trim(),
+        }
+      }
+    }
+
     return n
   })
 

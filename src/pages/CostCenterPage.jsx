@@ -13,7 +13,9 @@ import Pagination from '../components/shared/Pagination'
 import { EmptyRow, TableLoader } from '../components/shared/Loader'
 import StatusBadge from '../components/shared/StatusBadge'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
+import TimelineModal from '../components/shared/TimelineModal'
 import { OpsModal } from '../components/shared/ProcessModal'
+import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
 // Operation email mapping for fallback
@@ -57,13 +59,12 @@ const CONFIG = {
     title: 'CFOO Per Staff Monthly Expense',
     subtitle: 'Cost center tracking per staff member',
     icon: 'fa-user-tie',
-    emptyForm: { date: '', id_number: '', staff_name: '', designation: '', sub_account: '', account_title: '', amount: '', transaction_type: '', remarks: '' },
+    emptyForm: { date: '', id_number: '', staff_name: '', designation: '', account_title: '', amount: '', transaction_type: '', remarks: '' },
     columns: [
       ['date', 'Date'],
       ['id_number', 'ID Number'],
       ['staff_name', 'Name of Staff'],
       ['designation', 'Designation'],
-      ['sub_account', 'Sub Account'],
       ['account_title', 'Account Title'],
       ['amount', 'Amount'],
       ['transaction_type', 'Type of Transactions'],
@@ -74,8 +75,7 @@ const CONFIG = {
       { key: 'staff_name', label: 'Name of Staff', type: 'employee-name', required: true },
       { key: 'id_number', label: 'ID Number', type: 'employee-id', required: true },
       { key: 'designation', label: 'Designation', type: 'employee-designation', required: true },
-      { key: 'sub_account', label: 'Sub Account', type: 'cfoo-sub-account' },
-      { key: 'account_title', label: 'Account Title', type: 'cfoo-account-title', required: true },
+      { key: 'account_title', label: 'Account Title', type: 'account', required: true },
       { key: 'amount', label: 'Amount', type: 'number', required: true },
       { key: 'transaction_type', label: 'Type of Transactions', type: 'select', options: TYPE_OPTIONS, required: true },
       { key: 'remarks', label: 'Remarks', type: 'textarea' },
@@ -103,6 +103,8 @@ const CONFIG = {
   },
 }
 
+const initialStatus = () => new URLSearchParams(window.location.search).get('status') || ''
+
 export default function CostCenterPage({ type }) {
   const config = CONFIG[type]
   const { canCheck, canUpload, isAdmin } = useAuthStore()
@@ -122,11 +124,12 @@ export default function CostCenterPage({ type }) {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(initialStatus)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [opsTarget, setOpsTarget] = useState(null)
   const [previewFile, setPreviewFile] = useState(null)
+  const [timelineTarget, setTimelineTarget] = useState(null)
   const [form, setForm] = useState(config.emptyForm)
   const titles = settings?.titles || []
   const initiativeParticulars = useMemo(
@@ -134,6 +137,10 @@ export default function CostCenterPage({ type }) {
     [initiativeMappings]
   )
   const cfooSubAccounts = useMemo(
+    () => [...new Set(initiativeMappings.map(row => row.sub_account).filter(Boolean))].sort(),
+    [initiativeMappings]
+  );
+  const initiativeSubAccounts = useMemo(
     () => [...new Set(initiativeMappings.map(row => row.sub_account).filter(Boolean))].sort(),
     [initiativeMappings]
   );
@@ -164,7 +171,12 @@ export default function CostCenterPage({ type }) {
     if (statusFilter) {
       result = result.filter(row => (row.status || 'Pending') === statusFilter)
     }
-    return sortByLatest(result)
+    return [...result].sort((a, b) => {
+      const da = a.date ? new Date(a.date).getTime() : 0
+      const db = b.date ? new Date(b.date).getTime() : 0
+      if (db !== da) return db - da
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    })
   }, [config.columns, data, search, dateFrom, dateTo, statusFilter])
 
   const paged = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE)
@@ -453,17 +465,8 @@ export default function CostCenterPage({ type }) {
         );
       }
 
-      // existing initiative account title rendering remains unchanged
       if (field.type === 'cfoo-account-title') {
-        return (
-          <input
-            className={`input ${value ? 'bg-green-100' : 'bg-red-100'}`}
-            value={value}
-            placeholder="Auto-filled account title"
-            readOnly
-            disabled
-          />
-        );
+        return <input className="input" value={value} placeholder="Select or encode account title..." onChange={e => onChange(e.target.value)} />
       }
 
     if (field.type === 'textarea') {
@@ -687,13 +690,14 @@ export default function CostCenterPage({ type }) {
                     </td>
                     <td className="table-td text-xs text-gray-400">{(page - 1) * ROWS_PER_PAGE + index + 1}</td>
                     {config.columns.map(([key]) => <td key={key} className="table-td min-w-0">{renderCell(row, key)}</td>)}
-                    <td className="table-td whitespace-nowrap"><StatusBadge status={row.status || 'Pending'} remarks={row.remarks} emailSent={row.email_sent} emailSentAt={row.email_sent_at} /></td>
+                    <td className="table-td whitespace-nowrap"><StatusBadge status={row.status || 'Pending'} remarks={row.remarks} emailSent={row.email_sent} emailSentAt={row.email_sent_at} fileId={row.file_id} /></td>
                     <td className="table-td text-xs truncate" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(row.uploader_info || row.uploader || '-') }} />
                     <td className="table-td text-xs hidden md:table-cell truncate" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(row.ops_info || '-') }} />
 
                     <td className="table-td">
                       <div className="table-actions">
                         <button onClick={() => row.file_id && setPreviewFile(row.file_id)} className={`btn-icon ${row.file_id ? 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`} title={row.file_id ? 'Preview' : 'No file'}><i className="fas fa-eye" /></button>
+                        <button onClick={() => setTimelineTarget(row)} className="btn-icon bg-slate-50 text-slate-500 hover:bg-slate-100" title="Activity timeline"><i className="fas fa-clock-rotate-left" /></button>
                         {canUpload && <button onClick={() => handleUpload(row)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Upload"><i className="fas fa-upload" /></button>}
                         {canUpload && <button onClick={() => openModal(row)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button>}
                         {(row.status || 'Pending') === 'Pending' && canCheck && <button onClick={() => setOpsTarget(row)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Check"><i className="fas fa-check" /></button>}
@@ -745,6 +749,7 @@ export default function CostCenterPage({ type }) {
       )}
 
       {opsTarget && <OpsModal record={opsTarget} onConfirm={(a, p) => handleProcess(a, p, opsTarget)} onClose={() => setOpsTarget(null)} />}
+      {timelineTarget && <TimelineModal record={timelineTarget} module={WORKFLOW_MODULES[type === 'other' ? 'otherCostCenter' : type]} onClose={() => setTimelineTarget(null)} />}
       {previewFile && <FilePreviewModal fileId={previewFile} onClose={() => setPreviewFile(null)} />}
     </div>
   )

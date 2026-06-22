@@ -5,6 +5,13 @@ import { buildWorkflowInfoHtml, escapePostgrestSearch } from '../lib/security'
 import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
 
+const invalidateWorkflowQueries = (qc) => {
+  qc.invalidateQueries({ queryKey: ['requests'] })
+  qc.invalidateQueries({ queryKey: ['dashboard'] })
+  qc.invalidateQueries({ queryKey: ['pending-counts'] })
+  qc.invalidateQueries({ queryKey: ['action-center'] })
+}
+
 export function useRequests(filters = {}) {
   return useQuery({
     queryKey: ['requests', filters],
@@ -45,7 +52,7 @@ export function useCreateRequest() {
       })
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['requests'] }),
+    onSuccess: () => invalidateWorkflowQueries(qc),
   })
 }
 
@@ -56,7 +63,7 @@ export function useUpdateRequest() {
       const { error } = await supabase.from('requests').update({ ...updates, updated_at: new Date().toISOString() }).eq('req_id', reqId)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['requests'] }),
+    onSuccess: () => invalidateWorkflowQueries(qc),
   })
 }
 
@@ -69,7 +76,7 @@ export function useDeleteRequest() {
       if (error) throw error
       await logAudit({ user: useAuthStore.getState().user, action: 'DELETE_REQUEST', module: 'Request Letter', recordId: reqId, before })
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['requests'] }),
+    onSuccess: () => invalidateWorkflowQueries(qc),
   })
 }
 
@@ -100,8 +107,7 @@ export function useProcessRequest() {
       await logAudit({ user, action, module: 'Request Letter', recordId: reqId, before, after: updates })
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['requests'] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      invalidateWorkflowQueries(qc)
     },
   })
 }
