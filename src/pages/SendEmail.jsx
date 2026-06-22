@@ -330,7 +330,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5">
+      <div className="grid grid-cols-1 gap-5 max-w-3xl mx-auto">
         <div>
           <div className="card overflow-hidden">
             <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 px-6 py-5">
