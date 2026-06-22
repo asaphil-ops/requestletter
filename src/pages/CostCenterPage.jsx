@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useUIStore } from '../store/uiStore'
 import { useSettings } from '../hooks/useAccounts'
 import { useAuthStore } from '../store/authStore'
 import { useAttachFileCostCenter, useCostCenter, useCreateCostCenter, useDeleteCostCenter, useProcessCostCenter, useUpdateCostCenter, useBatchDeleteCostCenter } from '../hooks/useCostCenter'
@@ -301,21 +302,17 @@ export default function CostCenterPage({ type }) {
   const handleBatchSendEmail = () => {
     const eligible = filtered.filter(r => selectedIds.has(r.uniq_id) && r.status === 'Checked')
     if (!eligible.length) return Swal.fire('Info', 'Select checked items first', 'info')
-    
+
     const emails = eligible.map(r => {
       const emp = employeeList.find(e => e.id_number === r.id_number || e.full_name === r.staff_name)
       return emp?.email_address
     }).filter(Boolean)
 
-    navigate('/send-email', {
-      state: {
-        draft: {
-          to: [...new Set(emails)],
-          subject: `${config.title} - Batch Release`,
-          refId: [...selectedIds].join(','),
-          refType: config.title,
-        },
-      },
+    useUIStore.getState().openSendEmailModal({
+      to: [...new Set(emails)],
+      subject: `${config.title} - Batch Release`,
+      refId: [...selectedIds].join(','),
+      refType: config.title,
     })
   }
 
@@ -324,16 +321,12 @@ export default function CostCenterPage({ type }) {
     const recipientEmail = emp?.email_address || ''
 
     const subject = `${config.title} - ${record.account_title || record.staff_name || record.cost_center || record.uniq_id}`
-    navigate('/send-email', {
-      state: {
-        draft: {
-          to: recipientEmail ? [recipientEmail] : [],
-          subject,
-          refId: record.uniq_id,
-          refType: config.title,
-          fileId: record.file_id || '',
-        },
-      },
+    useUIStore.getState().openSendEmailModal({
+      to: recipientEmail ? [recipientEmail] : [],
+      subject,
+      refId: record.uniq_id,
+      refType: config.title,
+      fileId: record.file_id || '',
     })
   }
 
