@@ -141,31 +141,6 @@ export default function Sidebar() {
             </NavLink>
           </div>
 
-          {/* Guidelines bottom item */}
-          <div className="mb-1">
-            <NavLink to="/send-email"
-              className={({ isActive }) =>
-                `group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium relative
-                ${isActive
-                  ? 'bg-white/10 text-white shadow-sm'
-                  : 'text-white/65 hover:text-white hover:bg-white/8'}`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-blue-400 rounded-r-full" />
-                  )}
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
-                    ${isActive ? 'text-white' : 'text-white/40'}`}>
-                    <i className="fas fa-envelope text-xs" />
-                  </div>
-                  <span className="truncate">Send to Email</span>
-                </>
-              )}
-            </NavLink>
-          </div>
-
           {/* Collapsible sections */}
           {SECTIONS.map((sec) => {
             if (sec.adminSection && !isAdmin) return null
