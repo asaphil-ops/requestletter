@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { sendEmail, buildEmailHTML, getFileUrl } from '../lib/gas'
 import { supabase } from '../lib/supabase'
-import { SUGGESTED_EMAILS, AUTO_CC_RULES, formatBytes, getFileIcon } from '../lib/utils'
+import { SUGGESTED_EMAILS, formatBytes, getFileIcon } from '../lib/utils'
 import { useBranchEmailMap } from '../hooks/useBranches'
 import Swal from 'sweetalert2'
 
@@ -125,16 +125,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     if (field === 'to') {
       if (!toTags.includes(clean)) {
         setToTags(prev => [...prev, clean])
-        const autoCC = AUTO_CC_RULES[clean.toLowerCase()]
-        if (autoCC) {
-          setCcTags(prev => {
-            const added = autoCC.filter(e => !prev.includes(e))
-            if (added.length) {
-              Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: `Auto CC: ${added.join(', ')}`, showConfirmButton: false, timer: 3000 })
-            }
-            return [...prev, ...added]
-          })
-        }
       }
       setToInput('')
     } else {
@@ -394,7 +384,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                     {filteredSugg.map(email => {
                       const name = email.split('@')[0].split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                       const isSugg = SUGGESTED_EMAILS.includes(email)
-                      const hasCC = !!AUTO_CC_RULES[email.toLowerCase()]
                       const colors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-red-500']
                       const bg = colors[email.charCodeAt(0) % colors.length]
                       return (
@@ -406,7 +395,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                           </div>
                           <div className="flex gap-1.5 flex-shrink-0">
                             {isSugg && <span className="text-[9px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">SUGGESTED</span>}
-                            {hasCC && <span className="text-[9px] font-bold bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded">AUTO CC</span>}
                           </div>
                         </div>
                       )
