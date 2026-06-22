@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useUIStore } from '../store/uiStore'
 import { useSbar, useCreateSbar, useUpdateSbar, useDeleteSbar, useProcessSbar } from '../hooks/useSbar'
 import { useSettings } from '../hooks/useAccounts'
 import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useBranchOptions, useBranchEmailMap } from '../hooks/useBranches'
@@ -66,24 +67,18 @@ export default function Sbar() {
   const handleSendEmail = (rec) => {
     const giverCode = (rec.giver || '').split(' - ')[0].trim().toUpperCase()
     const gDet = branchMap[giverCode] || {}
-    
+
     // Auto-detect based on Giver's Operation (Case-insensitive lookup)
     const opKey = String(gDet.operation || '').toUpperCase()
     const opEmail = OPERATION_EMAIL_MAP[opKey] || branchEmailMap[giverCode]
 
-    const emails = opEmail ? [opEmail] : []
-    
-    navigate('/send-email', {
-      state: {
-        draft: {
-          to: emails,
-          subject: `${rec.type || 'SBAR'} - ${rec.giver} to ${rec.receiver}`,
-          refId: rec.uniq_id,
-          refType: 'SBAR',
-          fileId: rec.file_id || '',
-        },
-      },
-    });
+    useUIStore.getState().openSendEmailModal({
+      to: opEmail ? [opEmail] : [],
+      subject: `${rec.type || 'SBAR'} - ${rec.giver} to ${rec.receiver}`,
+      refId: rec.uniq_id,
+      refType: 'SBAR',
+      fileId: rec.file_id || '',
+    })
   }
 
   const handleBatchSendEmail = () => {
@@ -97,15 +92,11 @@ export default function Sbar() {
       return OPERATION_EMAIL_MAP[opKey] || branchEmailMap[gCode]
     }).filter(Boolean)
 
-    navigate('/send-email', {
-      state: {
-        draft: {
-          to: [...new Set(emails)],
-          subject: `Approved SBAR / Budget Transfer Batch (${eligible.length} items)`,
-          refId: eligible.map(r => r.uniq_id).join(','),
-          refType: 'SBAR Batch',
-        },
-      },
+    useUIStore.getState().openSendEmailModal({
+      to: [...new Set(emails)],
+      subject: `Approved SBAR / Budget Transfer Batch (${eligible.length} items)`,
+      refId: eligible.map(r => r.uniq_id).join(','),
+      refType: 'SBAR Batch',
     })
   }
 
