@@ -723,12 +723,12 @@ export default function CostCenterPage({ type }) {
 
       {showModal && (
         <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="modal-panel max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="modal-panel max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title"><i className={`fas ${config.icon} text-sky-200`} />{editing ? 'Edit Entry' : 'New Entry'}</h3>
               <p className="modal-subtitle">{config.title}</p>
             </div>
-            <div className="modal-body">
+            <div className="modal-body flex-1 overflow-y-auto min-h-0">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {config.fields.map(field => (
                   <div key={field.key} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
@@ -737,12 +737,12 @@ export default function CostCenterPage({ type }) {
                   </div>
                 ))}
               </div>
-              <div className="mt-5 flex justify-end gap-2">
-                <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
-                <button onClick={handleSave} className="btn-primary" disabled={createRecord.isPending || updateRecord.isPending}>
-                  {editing ? 'Update' : 'Save Record'}
-                </button>
-              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-200 bg-white px-6 py-4 shrink-0">
+              <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={handleSave} className="btn-primary" disabled={createRecord.isPending || updateRecord.isPending}>
+                {editing ? 'Update' : 'Save Record'}
+              </button>
             </div>
           </div>
         </div>

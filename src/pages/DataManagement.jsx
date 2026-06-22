@@ -344,12 +344,12 @@ export default function DataManagement() {
 
       {showModal && (
         <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="modal-panel max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="modal-panel max-w-lg max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title"><i className="fas fa-database text-sky-200" />{editing ? 'Edit Mapping' : 'New Mapping'}</h3>
               <p className="modal-subtitle">Initiative account mapping</p>
             </div>
-            <div className="modal-body space-y-3">
+            <div className="modal-body space-y-3 flex-1 overflow-y-auto min-h-0">
               <div>
                 <label className="label">Particular</label>
                 <select className="input" value={form.particular} onChange={e => setForm(prev => ({ ...prev, particular: e.target.value }))}>
@@ -372,10 +372,10 @@ export default function DataManagement() {
                 <label className="label">Account Title</label>
                 <input className="input" value={form.account_title} onChange={e => setForm(prev => ({ ...prev, account_title: e.target.value }))} />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
-                <button onClick={handleSave} className="btn-primary" disabled={createMapping.isPending || updateMapping.isPending}>{editing ? 'Update' : 'Save Mapping'}</button>
-              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 bg-white px-6 py-4 shrink-0">
+              <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={handleSave} className="btn-primary" disabled={createMapping.isPending || updateMapping.isPending}>{editing ? 'Update' : 'Save Mapping'}</button>
             </div>
           </div>
         </div>

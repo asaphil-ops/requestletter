@@ -126,12 +126,12 @@ export default function Users() {
 
       {showModal && (
         <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="modal-panel max-w-sm" onClick={e => e.stopPropagation()}>
+          <div className="modal-panel max-w-sm max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title"><i className="fas fa-user-shield text-sky-200" />{editing ? 'Edit Account' : 'New Account'}</h3>
               <p className="modal-subtitle">Manage access and role assignment</p>
             </div>
-            <div className="modal-body space-y-3">
+            <div className="modal-body space-y-3 flex-1 overflow-y-auto min-h-0">
               <div><label className="label">Full Name *</label><input className="input" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -150,10 +150,10 @@ export default function Users() {
                 <label className="label">Password {editing && <span className="text-gray-400 font-normal normal-case">(leave blank to keep)</span>}</label>
                 <input type="password" className="input" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder={editing ? 'Leave blank to keep password' : 'New password'} />
               </div>
-              <div className="flex gap-2 mt-5 justify-end">
+            </div>
+            <div className="flex gap-2 mt-5 justify-end border-t border-slate-200 bg-white px-6 py-4 shrink-0">
               <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
               <button onClick={handleSave} disabled={createAccount.isPending || updateAccount.isPending} className="btn-primary">Save</button>
-              </div>
             </div>
           </div>
         </div>

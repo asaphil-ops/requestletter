@@ -553,7 +553,7 @@ export default function ExpensePage({ type }) {
       {/* Modal */}
       {showModal && (
         <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="modal-panel max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="modal-panel max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="modal-header flex items-start justify-between gap-4 shrink-0">
               <div>
                 <h3 className="modal-title"><i className={`fas ${config.icon} text-sky-200`} />{editing ? 'Edit Expense Entry' : 'New Expense Entry'}</h3>
@@ -564,7 +564,7 @@ export default function ExpensePage({ type }) {
               </button>
             </div>
 
-            <div className="modal-body space-y-5 bg-slate-50 flex-1">
+            <div className="modal-body space-y-5 bg-slate-50 flex-1 overflow-y-auto min-h-0">
               <section className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
@@ -674,12 +674,13 @@ export default function ExpensePage({ type }) {
                 </div>
               </section>
 
-              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-4">
-                <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
-                <button onClick={handleSave} disabled={createExp.isPending || updateExp.isPending} className="btn-primary">
-                  {editing ? 'Update Entry' : 'Save Record'}
-                </button>
-              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-6 py-4 shrink-0">
+              <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={handleSave} disabled={createExp.isPending || updateExp.isPending} className="btn-primary">
+                {editing ? 'Update Entry' : 'Save Record'}
+              </button>
             </div>
           </div>
         </div>

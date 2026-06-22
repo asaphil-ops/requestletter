@@ -317,12 +317,12 @@ export default function EmployeeList() {
 
       {showModal && (
         <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="modal-panel max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="modal-panel max-w-lg max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title"><i className="fas fa-id-card text-sky-200" />{editing ? 'Edit Employee' : 'New Employee'}</h3>
               <p className="modal-subtitle">Employee reference details</p>
             </div>
-            <div className="space-y-3 p-4">
+            <div className="space-y-3 p-4 flex-1 overflow-y-auto min-h-0">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div>
                   <label className="label text-[10px] font-semibold uppercase tracking-wider text-gray-500">ID Number <span className="text-red-500">*</span></label>
@@ -345,10 +345,10 @@ export default function EmployeeList() {
                   <input className="input py-1.5 text-sm" value={form.email_address} onChange={e => setForm(prev => ({ ...prev, email_address: e.target.value }))} placeholder="email@asaphil.org" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-1">
-                <button onClick={() => setShowModal(false)} className="btn-secondary text-xs px-3 py-1.5">Cancel</button>
-                <button onClick={handleSave} className="btn-primary text-xs px-3 py-1.5" disabled={createEmployee.isPending || updateEmployee.isPending}>{editing ? 'Update' : 'Save Employee'}</button>
-              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-1 border-t border-slate-200 bg-white px-6 py-4 shrink-0">
+              <button onClick={() => setShowModal(false)} className="btn-secondary text-xs px-3 py-1.5">Cancel</button>
+              <button onClick={handleSave} className="btn-primary text-xs px-3 py-1.5" disabled={createEmployee.isPending || updateEmployee.isPending}>{editing ? 'Update' : 'Save Employee'}</button>
             </div>
           </div>
         </div>

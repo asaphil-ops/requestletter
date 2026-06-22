@@ -201,13 +201,13 @@ export default function Directory() {
       {/* Add Staff Modal */}
       {showModal && (
         <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="modal-panel max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="modal-panel max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title"><i className="fas fa-user-plus text-sky-200" />New Staff Entry</h3>
               <p className="modal-subtitle">Create employee profile and branch assignment</p>
             </div>
 
-            <div className="modal-body">
+            <div className="modal-body flex-1 overflow-y-auto min-h-0">
             <div className="mb-4">
               <h4 className="text-xs font-bold text-blue-600 dark:text-sky-200 uppercase tracking-wide mb-3">Personal Information</h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -236,11 +236,11 @@ export default function Directory() {
                 <div><label className="label">Operation</label><input className="input" readOnly value={form.operation} /></div>
               </div>
             </div>
+            </div>
 
-            <div className="flex gap-2 mt-6 justify-end">
+            <div className="flex gap-2 mt-5 justify-end border-t border-slate-200 bg-white px-6 py-4 shrink-0">
               <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
               <button onClick={handleSave} disabled={addStaff.isPending} className="btn-primary">Save Record</button>
-            </div>
             </div>
           </div>
         </div>
