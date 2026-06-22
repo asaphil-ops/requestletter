@@ -9,14 +9,14 @@ export default function StatusBadge({ status, remarks, emailSent, emailSentAt, f
         className={`badge border text-xs ${fileId ? 'bg-cyan-50 text-cyan-600 border-cyan-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}
         title={fileId ? 'Attachment available' : 'No attachment uploaded'}
       >
-        {fileId ? 'Attached' : 'No File'}
+        {fileId ? <><i className="fas fa-paperclip mr-1" />Attached</> : 'No File'}
       </span>
       {emailSent && (
         <span
-          className="badge bg-purple-50 text-purple-600 border border-purple-100"
+          className="badge bg-emerald-50 text-emerald-600 border border-emerald-100"
           title={emailSentAt ? `Email sent: ${new Date(emailSentAt).toLocaleString('en-PH')}` : 'Email sent'}
         >
-          Sent
+          <i className="fas fa-check-circle mr-1" />Sent
         </span>
       )}
       {status === 'Rejected' && remarks && (

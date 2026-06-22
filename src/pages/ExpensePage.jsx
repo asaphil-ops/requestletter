@@ -526,10 +526,12 @@ export default function ExpensePage({ type }) {
                         {/* {r.status === 'Checked' && canApprove && <button onClick={() => setFinTarget(r)} className="btn-icon bg-emerald-50 text-emerald-600 hover:bg-emerald-100" title="Approve"><i className="fas fa-thumbs-up" /></button>} */}
                         <button 
                           onClick={() => handleSendEmail(r)} 
-                          className={`btn-icon ${r.status === 'Checked' ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`} 
-                          title={r.status === 'Checked' ? 'Send Email' : 'Available only for Checked status'}
+                          className={`btn-icon ${r.status === 'Checked' ? (r.email_sent ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-amber-50 text-amber-500 hover:bg-amber-100') : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`} 
+                          title={r.status === 'Checked' ? (r.email_sent ? 'Already sent - Click to resend' : 'Send Email') : 'Available only for Checked status'}
                           disabled={r.status !== 'Checked'}
-                        ><i className="fas fa-envelope" /></button>
+                        >
+                          <i className={`fas ${r.email_sent ? 'fa-redo' : 'fa-envelope'}`} />
+                        </button>
                         {isAdmin && <button onClick={() => handleDelete(r)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
                       </div>
                     </td>
