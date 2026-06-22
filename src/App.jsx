@@ -14,7 +14,7 @@ import CfooExpenses from './pages/CfooExpenses'
 import OtherCostCenterExpenses from './pages/OtherCostCenterExpenses'
 import DataManagement from './pages/DataManagement'
 import EmployeeList from './pages/EmployeeList'
-import SendEmailModal from './components/SendEmailModal'
+import SendEmail from './pages/SendEmail'
 
 import Directory from './pages/Directory'
 import Users from './pages/Users'
@@ -59,7 +59,7 @@ function AppRoutes() {
         <Route path="cost-center/other" element={<OtherCostCenterExpenses />} />
         <Route path="data-management" element={<DataManagement />} />
         <Route path="employee-list" element={<EmployeeList />} />
-        <Route path="send-email" element={<SendEmailModal />} />
+        <Route path="send-email" element={<SendEmail />} />
         <Route path="reports" element={canOpenReports ? <Reports /> : <Navigate to="/" replace />} />
 
         <Route path="directory" element={<Directory />} />
