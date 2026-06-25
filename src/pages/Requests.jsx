@@ -50,7 +50,7 @@ const normalizeRequestStatus = (value) => value === 'Approved' ? 'Checked' : val
 const initialStatus = () => new URLSearchParams(window.location.search).get('status') || 'All'
 
 export default function Requests() {
-  const { canCheck, canUpload, isAdmin, canForceDelete } = useAuthStore()
+  const { canCheck, canUpload, isAdmin, isSuperAdmin, canForceDelete } = useAuthStore()
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
