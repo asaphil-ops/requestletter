@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/layout/Layout'
 import Login from './pages/Login'
@@ -31,18 +31,20 @@ import useRealtime from './hooks/useRealtime'
 import Swal from 'sweetalert2'
 function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false }) {
   const { user, isAdmin, isSuperAdmin } = useAuthStore()
+  const navigate = useNavigate()
   if (!user) return <Navigate to="/login" replace />
   if (superAdminOnly && !isSuperAdmin) {
     Swal.fire({
       icon: 'error',
       title: 'Access Denied',
       text: 'This page is restricted to Super Admin only.',
-      timer: 3000,
-      showConfirmButton: false,
-      toast: true,
-      position: 'top-end'
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#2563eb',
+      position: 'center'
+    }).then(() => {
+      navigate('/')
     })
-    return <Navigate to="/" replace />
+    return null
   }
   if (adminOnly && !isAdmin) return <Navigate to="/" replace />
   return children
