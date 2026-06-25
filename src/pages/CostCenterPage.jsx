@@ -577,17 +577,19 @@ export default function CostCenterPage({ type }) {
           >
             <i className="fas fa-envelope" /> Email Selected
           </button>
-          <button
-            onClick={handleBatchDelete}
-            disabled={batchDelete.isPending}
-            className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
-          >
+          {isSuperAdmin && (
+            <button
+              onClick={handleBatchDelete}
+              disabled={batchDelete.isPending}
+              className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
             {batchDelete.isPending ? (
               <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Deleting...</>
             ) : (
               <><i className="fas fa-trash" /> Delete Selected</>
             )}
-          </button>
+            </button>
+          )}
         </div>
       )}
 
@@ -711,8 +713,8 @@ export default function CostCenterPage({ type }) {
                         >
                           <i className="fas fa-envelope" />
                         </button>
-                        {isAdmin && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
-                        {isAdmin && (row.status || 'Pending') === 'Checked' && canForceDelete && <button onClick={() => handleDelete(row)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
+                        {isAdmin && !isSuperAdmin && (row.status || 'Pending') !== 'Checked' && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
+                        {isSuperAdmin && canForceDelete && <button onClick={() => handleDelete(row)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
                       </div>
                     </td>
                   </tr>

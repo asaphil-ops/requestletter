@@ -568,8 +568,8 @@ export default function Requests() {
                         {canUpload && <><button onClick={() => handleSendEmail(r)} className="btn-icon bg-amber-50 text-amber-500 hover:bg-amber-100" title="Send Email" disabled={displayStatus !== 'Checked'}><i className="fas fa-envelope" /></button><button onClick={() => openModal(r)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button></>}
                         {displayStatus === 'Pending' && canCheck && <button onClick={() => setOpsTarget(r)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Check"><i className="fas fa-check" /></button>}
 
-                        {isAdmin && displayStatus !== 'Checked' && <button onClick={() => handleDelete(r)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
-                        {isAdmin && displayStatus === 'Checked' && canForceDelete && <button onClick={() => handleDelete(r)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
+                        {isAdmin && !isSuperAdmin && displayStatus !== 'Checked' && <button onClick={() => handleDelete(r)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
+                        {isSuperAdmin && canForceDelete && <button onClick={() => handleDelete(r)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
                       </div>
                     </td>
                   </tr>
