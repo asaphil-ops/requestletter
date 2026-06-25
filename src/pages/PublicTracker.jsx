@@ -151,29 +151,29 @@ function stageTone(status) {
 function TrackerRecordCard({ record, onPreview }) {
   return (
     <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{formatDate(record.date || record.created_at)}</p>
-          <h3 className="mt-1 line-clamp-2 text-sm font-bold text-slate-950">{record.title}</h3>
-          <p className="mt-1 truncate text-xs text-slate-500">{record.type}</p>
+          <p className="text-[11px] font-bold uppercase text-slate-400">{formatDate(record.date || record.created_at)}</p>
+          <h3 className="mt-1 line-clamp-2 text-base font-bold text-slate-950">{record.title}</h3>
+          <p className="mt-1 truncate text-xs font-semibold text-slate-500">{record.type}</p>
         </div>
-        <span className={`max-w-[9.5rem] shrink-0 rounded-full border px-2.5 py-1 text-center text-[11px] font-bold leading-tight ${stageTone(record.status)}`}>
+        <span className={`max-w-[10rem] shrink-0 rounded-md border px-2.5 py-1 text-center text-[11px] font-bold leading-tight ${stageTone(record.status)}`}>
           {stageLabel(record.status)}
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 text-sm">
+      <div className="mt-3 grid gap-3 text-sm">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Beneficiary / Branch</div>
+          <div className="text-[11px] font-bold uppercase text-slate-400">Beneficiary / Branch</div>
           <div className="mt-0.5 break-words font-medium text-slate-800">{record.party}</div>
         </div>
-        <div className="grid gap-3 rounded-lg bg-slate-50 p-3">
+        <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Amount</div>
+            <div className="text-[11px] font-bold uppercase text-slate-400">Amount</div>
             <div className="text-right font-bold text-slate-950">{formatCurrency(record.amount)}</div>
           </div>
           <div className="border-t border-slate-200 pt-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Encoded By</div>
+            <div className="text-[11px] font-bold uppercase text-slate-400">Encoded By</div>
             <div className="mt-0.5 break-words font-semibold leading-snug text-slate-800">{TRACKER_ENCODER_NAME}</div>
           </div>
         </div>
@@ -187,7 +187,7 @@ function TrackerRecordCard({ record, onPreview }) {
             <button
               type="button"
               onClick={() => onPreview(record.file_id)}
-              className="inline-flex h-9 items-center justify-center rounded-md bg-blue-600 px-3 text-xs font-bold text-white transition hover:bg-blue-500"
+              className="inline-flex h-9 items-center justify-center rounded-md bg-slate-900 px-3 text-xs font-bold text-white transition hover:bg-slate-700"
             >
               <i className="fas fa-eye mr-1" />
               Preview
@@ -446,150 +446,183 @@ export default function PublicTracker() {
   })
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-100 text-slate-900">
-      <header className="border-b border-slate-200 bg-slate-50">
-        <div className="mx-auto max-w-[1500px] px-3 py-3 sm:px-6 sm:py-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-              <div className="min-w-0">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm sm:h-11 sm:w-11">
-                    <i className="fas fa-route" />
-                  </div>
-                  <div className="min-w-0">
-                    <h1 className="mt-0.5 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">Request Letter Tracker</h1>
-                  </div>
+    <div className="min-h-screen overflow-x-hidden bg-[#f6f7f9] text-slate-900">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
+                  <i className="fas fa-route" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase text-emerald-700">Operations Finance</p>
+                  <h1 className="text-2xl font-bold text-slate-950 sm:text-3xl">Request Letter Tracker</h1>
                 </div>
               </div>
+            </div>
 
-              <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-5 xl:w-[900px]">
-                <Link
-                  to="/"
-                  className="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
-                >
-                  <i className="fas fa-home text-xs" />
-                  <span>Home</span>
-                </Link>
-                <div className="flex min-w-0 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-slate-600 ring-1 ring-slate-200">
-                    <i className="fas fa-list text-xs" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Records</div>
-                    <div className="truncate text-lg font-bold text-slate-950">{filtered.length}</div>
-                  </div>
-                </div>
-                <div className="flex min-w-0 items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-amber-600 ring-1 ring-amber-200">
-                    <i className="fas fa-clock text-xs" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Pending For Recommendation of OPs Fin</div>
-                    <div className="truncate text-lg font-bold text-amber-700">{totals.Pending}</div>
-                  </div>
-                </div>
-                <div className="flex min-w-0 items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-blue-600 ring-1 ring-blue-200">
-                    <i className="fas fa-check text-xs" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">Already sent to Group Head</div>
-                    <div className="truncate text-lg font-bold text-blue-700">{totals.Checked}</div>
-                  </div>
-                </div>
-                <div className="flex min-w-0 items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-emerald-600 ring-1 ring-emerald-200">
-                    <i className="fas fa-peso-sign text-xs" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Total</div>
-                    <div className="truncate text-base font-bold text-slate-950" title={formatCurrency(totals.amount)}>{formatCurrency(totals.amount)}</div>
-                  </div>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                <i className="fas fa-home text-xs" />
+                Home
+              </Link>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                onClick={resetFilters}
+              >
+                <i className="fas fa-rotate-left text-xs" />
+                Clear
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1500px] px-3 py-4 sm:px-6 sm:py-6">
-        <section className="mb-4 overflow-visible rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:mb-5 sm:p-4">
-          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0" />
-            <button className="btn-secondary w-full justify-center whitespace-nowrap sm:w-auto" onClick={resetFilters}>
-              <i className="fas fa-rotate-left mr-1" />
-              Clear
-            </button>
+      <main className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6">
+        <section className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold uppercase text-slate-500">Records</div>
+                <div className="mt-1 text-2xl font-bold text-slate-950">{filtered.length}</div>
+              </div>
+              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-100 text-slate-700">
+                <i className="fas fa-list" />
+              </span>
+            </div>
           </div>
-          <div className="grid min-w-0 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-[1.7fr_repeat(3,minmax(120px,1fr))]">
-            <input
-              className="input min-w-0 sm:col-span-2 xl:col-span-1"
-              placeholder="Search reference, branch, beneficiary, item, uploader..."
-              value={filters.search}
-              onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            />
-            <select className="input min-w-0" value={filters.module} onChange={e => setFilters(prev => ({ ...prev, module: e.target.value }))}>
-              {modules.map(module => <option key={module}>{module}</option>)}
-            </select>
-            <input type="date" className="input min-w-0" value={filters.dateFrom} onChange={e => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))} />
-            <input type="date" className="input min-w-0" value={filters.dateTo} onChange={e => setFilters(prev => ({ ...prev, dateTo: e.target.value }))} />
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold uppercase text-amber-700">Pending Ops Fin</div>
+                <div className="mt-1 text-2xl font-bold text-amber-800">{totals.Pending}</div>
+              </div>
+              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white text-amber-700">
+                <i className="fas fa-clock" />
+              </span>
+            </div>
           </div>
-          <div className="mt-2.5 grid min-w-0 gap-2.5 sm:mt-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-5">
-            <SegmentedSearchSelect
-              label="Operation"
-              value={filters.operation === 'All' ? '' : filters.operation}
-              options={selectOptions(geoOptions.operations)}
-              onChange={value => updateGeoFilter('operation', value)}
-              className="w-full min-w-0"
-            />
-            <SegmentedSearchSelect
-              label="Division"
-              value={filters.division === 'All' ? '' : filters.division}
-              options={selectOptions(geoOptions.divisions)}
-              onChange={value => updateGeoFilter('division', value)}
-              className="w-full min-w-0"
-            />
-            <SegmentedSearchSelect
-              label="Region"
-              value={filters.region === 'All' ? '' : filters.region}
-              options={selectOptions(geoOptions.regions)}
-              onChange={value => updateGeoFilter('region', value)}
-              className="w-full min-w-0"
-            />
-            <SegmentedSearchSelect
-              label="Area"
-              value={filters.area === 'All' ? '' : filters.area}
-              options={selectOptions(geoOptions.areas)}
-              onChange={value => updateGeoFilter('area', value)}
-              className="w-full min-w-0"
-            />
-            <SegmentedSearchSelect
-              label="Branch"
-              value={filters.branch === 'All' ? '' : filters.branch}
-              options={geoOptions.branchOptions}
-              onChange={value => updateGeoFilter('branch', value)}
-              className="w-full min-w-0 sm:col-span-2 lg:col-span-1"
-            />
+          <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold uppercase text-sky-700">Sent To Group Head</div>
+                <div className="mt-1 text-2xl font-bold text-sky-800">{totals.Checked}</div>
+              </div>
+              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white text-sky-700">
+                <i className="fas fa-paper-plane" />
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold uppercase text-red-700">Rejected</div>
+                <div className="mt-1 text-2xl font-bold text-red-800">{totals.Rejected}</div>
+              </div>
+              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white text-red-700">
+                <i className="fas fa-circle-xmark" />
+              </span>
+            </div>
+          </div>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 shadow-sm sm:col-span-2 xl:col-span-1">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs font-bold uppercase text-emerald-700">Total Amount</div>
+                <div className="mt-1 truncate text-xl font-bold text-slate-950" title={formatCurrency(totals.amount)}>{formatCurrency(totals.amount)}</div>
+              </div>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-emerald-700">
+                <i className="fas fa-peso-sign" />
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-5 overflow-visible rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <i className="fas fa-filter text-slate-500" />
+              <h2 className="text-sm font-bold text-slate-900">Filters</h2>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[1.7fr_repeat(3,minmax(120px,1fr))]">
+              <div className="relative min-w-0 sm:col-span-2 xl:col-span-1">
+                <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
+                <input
+                  className="input min-w-0 pl-9"
+                  placeholder="Search reference, branch, beneficiary, item, uploader..."
+                  value={filters.search}
+                  onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                />
+              </div>
+              <select className="input min-w-0" value={filters.module} onChange={e => setFilters(prev => ({ ...prev, module: e.target.value }))}>
+                {modules.map(module => <option key={module}>{module}</option>)}
+              </select>
+              <input type="date" className="input min-w-0" value={filters.dateFrom} onChange={e => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))} />
+              <input type="date" className="input min-w-0" value={filters.dateTo} onChange={e => setFilters(prev => ({ ...prev, dateTo: e.target.value }))} />
+            </div>
+            <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <SegmentedSearchSelect
+                label="Operation"
+                value={filters.operation === 'All' ? '' : filters.operation}
+                options={selectOptions(geoOptions.operations)}
+                onChange={value => updateGeoFilter('operation', value)}
+                className="w-full min-w-0"
+              />
+              <SegmentedSearchSelect
+                label="Division"
+                value={filters.division === 'All' ? '' : filters.division}
+                options={selectOptions(geoOptions.divisions)}
+                onChange={value => updateGeoFilter('division', value)}
+                className="w-full min-w-0"
+              />
+              <SegmentedSearchSelect
+                label="Region"
+                value={filters.region === 'All' ? '' : filters.region}
+                options={selectOptions(geoOptions.regions)}
+                onChange={value => updateGeoFilter('region', value)}
+                className="w-full min-w-0"
+              />
+              <SegmentedSearchSelect
+                label="Area"
+                value={filters.area === 'All' ? '' : filters.area}
+                options={selectOptions(geoOptions.areas)}
+                onChange={value => updateGeoFilter('area', value)}
+                className="w-full min-w-0"
+              />
+              <SegmentedSearchSelect
+                label="Branch"
+                value={filters.branch === 'All' ? '' : filters.branch}
+                options={geoOptions.branchOptions}
+                onChange={value => updateGeoFilter('branch', value)}
+                className="w-full min-w-0 sm:col-span-2 lg:col-span-1"
+              />
+            </div>
           </div>
         </section>
 
         <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <h2 className="font-bold text-slate-950">Requests</h2>
-              <p className="text-xs text-slate-500">
+              <h2 className="font-bold text-slate-950">Tracker Registry</h2>
+              <p className="text-xs font-semibold text-slate-500">
                 {filtered.length ? `Showing ${pageStart + 1}-${pageEnd} of ${filtered.length}` : '0 records shown'}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2 text-xs font-semibold">
-              <span className="rounded-md bg-red-50 px-2 py-1 text-red-600">Rejected: {totals.Rejected}</span>
-              <span className="rounded-md bg-slate-100 px-2 py-1 text-slate-600">Auto-refresh: 5 min</span>
+            <div className="flex flex-wrap gap-2 text-xs font-bold">
+              <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pending: {totals.Pending}</span>
+              <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Sent: {totals.Checked}</span>
+              <span className="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-red-700">Rejected: {totals.Rejected}</span>
             </div>
           </div>
 
           {error && <div className="m-4 border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
-          <div className="grid gap-3 bg-slate-50 p-3 md:hidden">
+          <div className="grid gap-3 bg-[#f6f7f9] p-3 md:hidden">
             {loading ? (
               <div className="rounded-lg border border-slate-200 bg-white p-5 text-center text-sm text-slate-400">Loading tracker...</div>
             ) : filtered.length === 0 ? (
@@ -605,7 +638,7 @@ export default function PublicTracker() {
 
           <div className="hidden max-h-[68vh] overflow-auto md:block">
             <table className="w-full min-w-[1180px] table-fixed">
-              <thead className="sticky top-0 z-10 bg-white">
+              <thead className="sticky top-0 z-10 bg-slate-50">
                 <tr>
                   <th className="table-th w-32">Date</th>
                   <th className="table-th w-56">Type / Title</th>
@@ -628,9 +661,9 @@ export default function PublicTracker() {
                 ) : paged.map((record, index) => (
                   <tr
                     key={`${record.module}-${record.id}`}
-                    className={`table-tr ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'} hover:bg-blue-50/70`}
+                    className={`table-tr ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-emerald-50/60`}
                   >
-                    <td className="table-td whitespace-nowrap">{formatDate(record.date || record.created_at)}</td>
+                    <td className="table-td whitespace-nowrap font-semibold text-slate-700">{formatDate(record.date || record.created_at)}</td>
                     <td className="table-td min-w-0">
                       <div className="font-semibold truncate" title={record.title}>{record.title}</div>
                       <div className="text-xs text-slate-400 truncate" title={record.type}>{record.type}</div>
@@ -648,7 +681,7 @@ export default function PublicTracker() {
                         <button
                           type="button"
                           onClick={() => setPreviewFile(record.file_id)}
-                          className="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-500"
+                          className="inline-flex items-center justify-center rounded-md bg-slate-900 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-slate-700"
                         >
                           <i className="fas fa-eye mr-1" />
                           Preview
@@ -662,7 +695,7 @@ export default function PublicTracker() {
               </tbody>
             </table>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3">
             <div className="text-xs font-semibold text-slate-500">
               Page {safePage} of {totalPages}
             </div>

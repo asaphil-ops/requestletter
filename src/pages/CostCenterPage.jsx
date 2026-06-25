@@ -106,6 +106,12 @@ const CONFIG = {
 
 const initialStatus = () => new URLSearchParams(window.location.search).get('status') || ''
 
+const getSortTimestamp = (value) => {
+  if (!value) return 0
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? 0 : time
+}
+
 export default function CostCenterPage({ type }) {
   const config = CONFIG[type]
   const { canCheck, canUpload, isAdmin } = useAuthStore()
@@ -173,10 +179,13 @@ export default function CostCenterPage({ type }) {
       result = result.filter(row => (row.status || 'Pending') === statusFilter)
     }
     return [...result].sort((a, b) => {
-      const da = a.date ? new Date(a.date).getTime() : 0
-      const db = b.date ? new Date(b.date).getTime() : 0
+      const da = getSortTimestamp(a.date)
+      const db = getSortTimestamp(b.date)
       if (db !== da) return db - da
-      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      const createdA = getSortTimestamp(a.created_at)
+      const createdB = getSortTimestamp(b.created_at)
+      if (createdB !== createdA) return createdB - createdA
+      return String(b.uniq_id || '').localeCompare(String(a.uniq_id || ''))
     })
   }, [config.columns, data, search, dateFrom, dateTo, statusFilter])
 
@@ -289,7 +298,7 @@ export default function CostCenterPage({ type }) {
       if (!file) return
       try {
         Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
-        const result = await uploadToDrive(file)
+        const result = await uploadToDrive(file, { convertToPdf: true })
         await attachFile.mutateAsync({ uniqId: record.uniq_id, fileId: result.fileId })
         Swal.fire('Uploaded!', '', 'success')
       } catch (err) {

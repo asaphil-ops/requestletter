@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useUIStore } from '../store/uiStore'
 import {
   Archive,
   CalendarDays,
@@ -239,7 +240,7 @@ export default function Requests() {
       const file = e.target.files[0]; if (!file) return
       try {
         Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
-        const result = await uploadToDrive(file)
+        const result = await uploadToDrive(file, { convertToPdf: true })
         await attachFile.mutateAsync({ reqId: rec.req_id, fileId: result.fileId })
         Swal.fire('Uploaded!', '', 'success')
       } catch (err) { Swal.fire('Error', err.message, 'error') }
@@ -275,35 +276,26 @@ export default function Requests() {
 
   const handleSendEmail = (rec) => {
     const receiverEmail = resolveRequestEmail(rec)
-
-    navigate('/send-email', {
-      state: {
-        draft: {
-          to: receiverEmail ? [receiverEmail] : [],
-          subject: `${rec.type || 'Request Letter'} - ${rec.beneficiary || rec.req_id} (Checked)`,
-          refId: rec.req_id,
-          refType: 'Request Letter',
-          fileId: rec.file_id || '',
-        },
-      },
+    useUIStore.getState().openSendEmailModal({
+      to: receiverEmail ? [receiverEmail] : [],
+      subject: `${rec.type || 'Request Letter'} - ${rec.beneficiary || rec.req_id} (Checked)`,
+      refId: rec.req_id,
+      refType: 'Request Letter',
+      fileId: rec.file_id || '',
     })
   }
 
   const handleBatchSendEmail = () => {
     const eligible = filtered.filter(r => selected.includes(r.req_id) && normalizeRequestStatus(r.status) === 'Checked');
     if (!eligible.length) return Swal.fire('Info', 'Select checked items first', 'info');
-    
+
     const emails = eligible.map(resolveRequestEmail).filter(Boolean)
 
-    navigate('/send-email', {
-      state: {
-        draft: {
-          to: [...new Set(emails)],
-          subject: `Checked Request Letters Batch (${eligible.length} items)`,
-          refId: eligible.map(r => r.req_id).join(','),
-          refType: 'Request Letter Batch',
-        },
-      },
+    useUIStore.getState().openSendEmailModal({
+      to: [...new Set(emails)],
+      subject: `Checked Request Letters Batch (${eligible.length} items)`,
+      refId: eligible.map(r => r.req_id).join(','),
+      refType: 'Request Letter Batch',
     })
   }
 

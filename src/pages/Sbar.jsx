@@ -301,7 +301,7 @@ export default function Sbar() {
       const file = e.target.files[0]; if (!file) return
       try {
         Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
-        const result = await uploadToDrive(file)
+        const result = await uploadToDrive(file, { convertToPdf: true })
         await supabase.from('sbar').update({ file_id: result.fileId }).eq('uniq_id', rec.uniq_id)
         Swal.fire('Uploaded!', '', 'success')
       } catch (err) { Swal.fire('Error', err.message, 'error') }

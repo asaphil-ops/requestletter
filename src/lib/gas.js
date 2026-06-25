@@ -22,9 +22,15 @@ export async function sendEmail({ to, cc, subject, htmlBody, senderName, senderE
   return callGAS({ action: 'SEND_EMAIL', to, cc, subject, htmlBody, senderName, senderEmail, attachments, fileId, fileName })
 }
 
-export async function uploadToDrive(file) {
+export async function uploadToDrive(file, options = {}) {
   const base64 = await fileToBase64(file)
-  return callGAS({ action: 'UPLOAD_DRIVE', base64, fileName: file.name, mimeType: file.type })
+  return callGAS({
+    action: 'UPLOAD_DRIVE',
+    base64,
+    fileName: file.name,
+    mimeType: file.type,
+    convertToPdf: Boolean(options.convertToPdf),
+  })
 }
 
 export async function deleteFromDrive(fileId) {
@@ -33,6 +39,10 @@ export async function deleteFromDrive(fileId) {
 
 export async function getFileUrl(fileId) {
   return callGAS({ action: 'GET_FILE_URL', fileId })
+}
+
+export async function getFileContent(fileId) {
+  return callGAS({ action: 'GET_FILE_CONTENT', fileId })
 }
 
 function fileToBase64(file) {

@@ -94,6 +94,12 @@ export const getDriveViewUrl = (fileId) =>
 export const getDriveDownloadUrl = (fileId) =>
   fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : null
 
+export const getDriveInlineUrl = (fileId) =>
+  fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : null
+
+export const getDriveThumbnailUrl = (fileId, size = 2200) =>
+  fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}` : null
+
 export const SUGGESTED_EMAILS = [
   'jinnette.anacio@asaphil.org',
   'cynthia.casido@asaphil.org',

@@ -19,7 +19,7 @@ export default function Layout() {
       <Sidebar />
       <div
         className="transition-all duration-300 flex flex-col min-h-screen"
-        style={{ marginLeft: sidebarOpen ? '264px' : '0' }}
+        style={{ marginLeft: sidebarOpen ? '276px' : '0' }}
       >
         <TopBar />
         <main className="flex-1 p-6">
