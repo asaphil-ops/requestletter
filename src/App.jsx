@@ -28,10 +28,22 @@ import BudgetPage from './pages/BudgetPage'
 import PublicTracker from './pages/PublicTracker'
 import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
+import Swal from 'sweetalert2'
 function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false }) {
   const { user, isAdmin, isSuperAdmin } = useAuthStore()
   if (!user) return <Navigate to="/login" replace />
-  if (superAdminOnly && !isSuperAdmin) return <Navigate to="/" replace />
+  if (superAdminOnly && !isSuperAdmin) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Access Denied',
+      text: 'This page is restricted to Super Admin only.',
+      timer: 3000,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end'
+    })
+    return <Navigate to="/" replace />
+  }
   if (adminOnly && !isAdmin) return <Navigate to="/" replace />
   return children
 }
