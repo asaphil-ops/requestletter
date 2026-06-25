@@ -533,6 +533,7 @@ export default function ExpensePage({ type }) {
                           <i className={`fas ${r.email_sent ? 'fa-redo' : 'fa-envelope'}`} />
                         </button>
                         {isAdmin && <button onClick={() => handleDelete(r)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
+                        {isAdmin && r.status === 'Checked' && canForceDelete && <button onClick={() => handleDelete(r)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
                       </div>
                     </td>
                   </tr>

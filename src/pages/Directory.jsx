@@ -9,7 +9,7 @@ import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import Swal from 'sweetalert2'
 
 export default function Directory() {
-  const { isAdmin } = useAuthStore()
+  const { isAdmin, isSuperAdmin } = useAuthStore()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [geoFilter, setGeoFilter] = useState({ operation: '', division: '', region: '', area: '', branchCode: '' })
@@ -186,6 +186,7 @@ export default function Directory() {
                           <button onClick={() => handleDelete(s)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete">
                             <i className="fas fa-trash text-xs" />
                           </button>
+                          {isSuperAdmin && <button onClick={() => handleDelete(s)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash text-xs" /></button>}
                         </div>
                       </td>
                     )}

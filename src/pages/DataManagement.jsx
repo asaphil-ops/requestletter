@@ -129,7 +129,7 @@ const SUB_ACCOUNT_OPTIONS = [
 const EMPTY_FORM = { particular: '', sub_account: '', account_title: '' }
 
 export default function DataManagement() {
-  const { isAdmin, canUpload } = useAuthStore()
+  const { isAdmin, isSuperAdmin, canUpload, canForceDelete } = useAuthStore()
   const { data = [], isLoading } = useInitiativeMappings()
   const createMapping = useCreateInitiativeMapping()
   const bulkUpsertMappings = useBulkUpsertInitiativeMappings()
@@ -332,6 +332,7 @@ export default function DataManagement() {
                       <div className="table-actions">
                         {canUpload && <button onClick={() => openModal(row)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button>}
                         {isAdmin && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
+                        {isSuperAdmin && canForceDelete && <button onClick={() => handleDelete(row)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
                       </div>
                     </td>
                   </tr>

@@ -114,6 +114,7 @@ export const AT_BUDGETS = { Aircon: 5000000, Toilet: 3000000 }
 
 export const ROLES = ['Staff', 'Governance', 'Ops Finance', 'Finance', 'Planning', 'Admin', 'Super Admin']
 export const ADMIN_ROLES = ['Admin', 'Super Admin']
+export const SUPER_ADMIN_ROLES = ['Super Admin']
 export const CAN_UPLOAD_ROLES = ['Planning', 'Governance', 'Admin', 'Super Admin']
 
 export const STATUS_COLORS = {

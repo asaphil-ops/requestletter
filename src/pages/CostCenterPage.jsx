@@ -712,6 +712,7 @@ export default function CostCenterPage({ type }) {
                           <i className="fas fa-envelope" />
                         </button>
                         {isAdmin && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
+                        {isAdmin && (row.status || 'Pending') === 'Checked' && canForceDelete && <button onClick={() => handleDelete(row)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
                       </div>
                     </td>
                   </tr>

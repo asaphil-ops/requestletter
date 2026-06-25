@@ -569,6 +569,7 @@ export default function Requests() {
                         {displayStatus === 'Pending' && canCheck && <button onClick={() => setOpsTarget(r)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Check"><i className="fas fa-check" /></button>}
 
                         {isAdmin && displayStatus !== 'Checked' && <button onClick={() => handleDelete(r)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
+                        {isAdmin && displayStatus === 'Checked' && canForceDelete && <button onClick={() => handleDelete(r)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
                       </div>
                     </td>
                   </tr>

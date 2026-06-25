@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useUIStore } from '../../store/uiStore'
 import { permissionsForRole } from '../../lib/permissions'
 import { usePendingCounts } from '../../hooks/useDashboard'
+import { ADMIN_ROLES, SUPER_ADMIN_ROLES } from '../../lib/utils'
 import Swal from 'sweetalert2'
 
 const SECTIONS = [
@@ -46,20 +47,30 @@ const SECTIONS = [
       { label: 'Reports', icon: 'fa-file-pdf', to: '/reports', permission: 'canViewReports' },
     ],
   },
-  {
-    key: 'admin',
-    label: 'Admin Settings',
-    icon: 'fa-shield-alt',
-    adminSection: true,
-    items: [
-      { label: 'Directory', icon: 'fa-address-book', to: '/directory' },
-      { label: 'Bulk Upload', icon: 'fa-file-upload', to: '/bulk-upload' },
-      { label: 'Accounts', icon: 'fa-user-cog', to: '/users' },
-      { label: 'Audit Logs', icon: 'fa-history', to: '/audit-logs' },
-      { label: 'Settings', icon: 'fa-sliders-h', to: '/settings' },
-    ],
-  },
-]
+    {
+      key: 'admin',
+      label: 'Admin Settings',
+      icon: 'fa-shield-alt',
+      adminSection: true,
+      items: [
+        { label: 'Directory', icon: 'fa-address-book', to: '/directory' },
+        { label: 'Bulk Upload', icon: 'fa-file-upload', to: '/bulk-upload' },
+        { label: 'Accounts', icon: 'fa-user-cog', to: '/users' },
+        { label: 'Audit Logs', icon: 'fa-history', to: '/audit-logs' },
+        { label: 'Settings', icon: 'fa-sliders-h', to: '/settings' },
+      ],
+    },
+    {
+      key: 'superadmin',
+      label: 'Super Admin',
+      icon: 'fa-user-secret',
+      superAdminSection: true,
+      items: [
+        { label: 'Employee List', icon: 'fa-id-badge', to: '/employee-list', permission: 'canManageEmployees' },
+        { label: 'Data Management', icon: 'fa-database', to: '/data-management', permission: 'canManageData' },
+      ],
+    },
+  ]
 
 function Badge({ value }) {
   if (!value) return null
@@ -98,7 +109,7 @@ function MainLink({ to, icon, label }) {
 
 export default function Sidebar() {
   const auth = useAuthStore()
-  const { user, isAdmin, logout } = auth
+  const { user, isAdmin, isSuperAdmin, logout } = auth
   const rolePermissions = permissionsForRole(user?.role)
   const { sidebarOpen } = useUIStore()
   const { data: pendingByBadge = {} } = usePendingCounts()
@@ -157,6 +168,7 @@ export default function Sidebar() {
           <div className="space-y-4">
             {SECTIONS.map(section => {
               if (section.adminSection && !isAdmin) return null
+              if (section.superAdminSection && !isSuperAdmin) return null
               const visibleItems = section.items.filter(item => {
                 if (item.permission && !(auth[item.permission] || rolePermissions[item.permission])) return false
                 return true

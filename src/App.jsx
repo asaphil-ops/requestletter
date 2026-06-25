@@ -28,9 +28,10 @@ import BudgetPage from './pages/BudgetPage'
 import PublicTracker from './pages/PublicTracker'
 import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
-function ProtectedRoute({ children, adminOnly = false }) {
-  const { user, isAdmin } = useAuthStore()
+function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false }) {
+  const { user, isAdmin, isSuperAdmin } = useAuthStore()
   if (!user) return <Navigate to="/login" replace />
+  if (superAdminOnly && !isSuperAdmin) return <Navigate to="/" replace />
   if (adminOnly && !isAdmin) return <Navigate to="/" replace />
   return children
 }
@@ -64,9 +65,9 @@ function AppRoutes() {
 
         <Route path="directory" element={<Directory />} />
         <Route path="bulk-upload" element={<ProtectedRoute adminOnly><BulkUpload /></ProtectedRoute>} />
-        <Route path="users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
-        <Route path="audit-logs" element={<ProtectedRoute adminOnly><AuditLogs /></ProtectedRoute>} />
-        <Route path="settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
+        <Route path="users" element={<ProtectedRoute superAdminOnly><Users /></ProtectedRoute>} />
+        <Route path="audit-logs" element={<ProtectedRoute superAdminOnly><AuditLogs /></ProtectedRoute>} />
+        <Route path="settings" element={<ProtectedRoute superAdminOnly><Settings /></ProtectedRoute>} />
         <Route path="circular" element={<EmbeddedPage type="circular" />} />
         <Route path="lantaw" element={<EmbeddedPage type="lantaw" />} />
         <Route path="cashflow" element={<EmbeddedPage type="cashflow" />} />

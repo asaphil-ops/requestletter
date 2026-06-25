@@ -19,7 +19,7 @@ import { supabase } from '../lib/supabase'
 const EMPTY_FORM = { id_number: '', full_name: '', designation: '', contact_number: '', email_address: '' }
 
 export default function EmployeeList() {
-  const { isAdmin, canUpload } = useAuthStore()
+  const { isAdmin, isSuperAdmin, canUpload, canForceDelete } = useAuthStore()
   const { data = [], isLoading } = useEmployeeList()
   const { data: branches = [] } = useBranches()
   const branchMap = useBranchMap()
@@ -304,6 +304,7 @@ export default function EmployeeList() {
                       <div className="table-actions">
                         {canUpload && <button onClick={() => openModal(row)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button>}
                         {isAdmin && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
+                        {isSuperAdmin && canForceDelete && <button onClick={() => handleDelete(row)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
                       </div>
                     </td>
                   </tr>
