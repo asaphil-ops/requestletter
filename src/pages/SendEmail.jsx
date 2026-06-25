@@ -5,6 +5,7 @@ import { sendEmail, buildEmailHTML, getFileUrl } from '../lib/gas'
 import { supabase } from '../lib/supabase'
 import { SUGGESTED_EMAILS, formatBytes, getFileIcon } from '../lib/utils'
 import { useBranchEmailMap } from '../hooks/useBranches'
+import { useEmployeeList } from '../hooks/useEmployeeList'
 import Swal from 'sweetalert2'
 
 const DEFAULT_NOTE = 'NOTE: FOR VP/SVP APPROVAL'
@@ -79,9 +80,21 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const { user } = useAuthStore()
   const location = useLocation()
   const branchEmailMap = useBranchEmailMap()
+  const { data: employeeList = [] } = useEmployeeList()
   const SENDER_EMAIL = 'operation.budgetmanagement@asaphil.org'
   const initDraft = draft ?? location.state?.draft ?? {}
   const defaultMessageBody = "Good day, Ma'am/Sir,\n\nKindly see the attached File/s"
+
+  // Build employee lookup: email -> employee name
+  const employeeNameMap = useMemo(() => {
+    const map = {}
+    employeeList.forEach(emp => {
+      const email = (emp.email_address || '').trim()
+      const name = (emp.full_name || '').trim()
+      if (email && name) map[email.toLowerCase()] = name
+    })
+    return map
+  }, [employeeList])
 
   const [toTags, setToTags] = useState([])
   const [ccTags, setCcTags] = useState([])
@@ -107,7 +120,14 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const toContainerRef = useRef(null)
   const ccContainerRef = useRef(null)
 
-  const allEmails = useMemo(() => [...new Set([...SUGGESTED_EMAILS, ...Object.values(branchEmailMap).filter(Boolean)])], [branchEmailMap])
+  const allEmails = useMemo(() => {
+    const emails = [
+      ...SUGGESTED_EMAILS,
+      ...employeeList.map(e => e.email_address).filter(Boolean),
+      ...Object.values(branchEmailMap).filter(Boolean),
+    ]
+    return [...new Set(emails)]
+  }, [branchEmailMap, employeeList])
 
   const filteredSugg = useMemo(() => allEmails.filter(e =>
     e.toLowerCase().includes(suggQuery.toLowerCase()) &&
@@ -392,7 +412,10 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                       <i className="fas fa-address-book mr-1 text-blue-500" />Suggested Recipients
                     </div>
                     {filteredSugg.map(email => {
-                      const name = email.split('@')[0].split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                      // Prefer exact name from employee list, then fallback to guessed name
+                      const mappedName = employeeNameMap[email.toLowerCase()]
+                      const guessedName = email.split('@')[0].split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                      const name = mappedName || guessedName
                       const isSugg = SUGGESTED_EMAILS.includes(email)
                       const colors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-red-500']
                       const bg = colors[email.charCodeAt(0) % colors.length]
