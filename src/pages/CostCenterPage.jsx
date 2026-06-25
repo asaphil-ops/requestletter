@@ -114,7 +114,7 @@ const getSortTimestamp = (value) => {
 
 export default function CostCenterPage({ type }) {
   const config = CONFIG[type]
-  const { canCheck, canUpload, isAdmin } = useAuthStore()
+  const { canCheck, canUpload, isAdmin, canForceDelete } = useAuthStore()
   const navigate = useNavigate()
   const { data = [], isLoading } = useCostCenter(type)
   const { data: initiativeMappings = [] } = useInitiativeMappings()

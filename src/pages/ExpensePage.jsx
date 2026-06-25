@@ -64,7 +64,7 @@ const initialStatus = () => new URLSearchParams(window.location.search).get('sta
 
 export default function ExpensePage({ type }) {
   const config = CONFIG[type]
-  const { canCheck, canUpload, isAdmin } = useAuthStore()
+  const { canCheck, canUpload, isAdmin, canForceDelete } = useAuthStore()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')

@@ -32,7 +32,7 @@ import Swal from 'sweetalert2'
 const initialStatus = () => new URLSearchParams(window.location.search).get('status') || 'All'
 
 export default function Sbar() {
-  const { canCheck, canUpload, isAdmin } = useAuthStore()
+  const { canCheck, canUpload, isAdmin, canForceDelete } = useAuthStore()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState(initialStatus)
