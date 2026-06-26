@@ -27,6 +27,7 @@ import CFOOBudget from './pages/CFOOBudget'
 import BudgetPage from './pages/BudgetPage'
 import PublicTracker from './pages/PublicTracker'
 import ComplianceCertificates from './pages/ComplianceCertificates'
+import OnlineStaffList from './pages/OnlineStaffList'
 import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
 import Swal from 'sweetalert2'
@@ -60,6 +61,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/tracker" element={<PublicTracker />} />
+      <Route path="/online-list" element={<OnlineStaffList />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="action-center" element={<ActionCenter />} />
