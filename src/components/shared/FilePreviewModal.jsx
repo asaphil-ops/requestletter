@@ -9,7 +9,7 @@ function base64ToBlob(base64, mimeType) {
   return new Blob([bytes], { type: mimeType || 'application/octet-stream' })
 }
 
-export default function FilePreviewModal({ fileId, onClose }) {
+export default function FilePreviewModal({ fileId, onClose, showOpenButton = true }) {
   const [file, setFile] = useState(null)
   const [blobUrl, setBlobUrl] = useState('')
   const [loading, setLoading] = useState(true)
@@ -82,9 +82,11 @@ export default function FilePreviewModal({ fileId, onClose }) {
             {file?.name && <p className="mt-0.5 max-w-[42rem] truncate text-xs text-slate-400">{file.name}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <a href={driveViewUrl} target="_blank" rel="noreferrer" className="btn-secondary px-3 py-1.5 text-xs">
-              <i className="fas fa-up-right-from-square mr-1" /> Open File
-            </a>
+            {showOpenButton && (
+              <a href={driveViewUrl} target="_blank" rel="noreferrer" className="btn-secondary px-3 py-1.5 text-xs">
+                <i className="fas fa-up-right-from-square mr-1" /> Open File
+              </a>
+            )}
             <a href={localDownloadUrl} download={downloadName} target="_blank" rel="noreferrer" className="btn-primary px-3 py-1.5 text-xs">
               <i className="fas fa-download mr-1" /> Download
             </a>
@@ -118,9 +120,11 @@ export default function FilePreviewModal({ fileId, onClose }) {
             <div className="mx-4 max-w-lg rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center">
               <div className="text-base font-bold text-red-100">Unable to load attachment</div>
               <p className="mt-2 text-sm text-red-200">{error}</p>
-              <a href={driveViewUrl} target="_blank" rel="noreferrer" className="btn-primary mt-4 inline-flex px-4 py-2 text-xs">
-                <i className="fas fa-up-right-from-square mr-1" /> Open File
-              </a>
+              {showOpenButton && (
+                <a href={driveViewUrl} target="_blank" rel="noreferrer" className="btn-primary mt-4 inline-flex px-4 py-2 text-xs">
+                  <i className="fas fa-up-right-from-square mr-1" /> Open File
+                </a>
+              )}
             </div>
           ) : canInlinePreview && file.mimeType === 'application/pdf' ? (
             <iframe src={blobUrl} className="h-full w-full border-0 bg-slate-950" title={file.name || 'File Preview'} />

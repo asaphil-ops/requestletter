@@ -19,6 +19,43 @@ function parseAudit(details) {
   }
 }
 
+const ACTION_LABELS = {
+  CREATE_COMPLIANCE_CERTIFICATE: 'Created compliance record',
+  UPDATE_COMPLIANCE_CERTIFICATE: 'Updated compliance record',
+  UPLOAD_COR_CERTIFICATE: 'Uploaded COR certificate',
+  UPLOAD_DOLE_CERTIFICATE: 'Uploaded DOLE certificate',
+  DELETE_COMPLIANCE_CERTIFICATE: 'Deleted compliance record',
+}
+
+const FIELD_LABELS = {
+  branch_code: 'Branch Code',
+  branch_name: 'Branch Name',
+  tin: 'TIN',
+  cor_address: 'COR Address',
+  cor_link: 'COR Link',
+  dole_link: 'DOLE Link',
+  dole_address: 'DOLE Address',
+  cams_address: 'CAMS Address',
+}
+
+function formatAuditDetail(action, parsed) {
+  if (!parsed) return ''
+  if (action === 'UPLOAD_COR_CERTIFICATE') return 'COR file/link was attached or replaced.'
+  if (action === 'UPLOAD_DOLE_CERTIFICATE') return 'DOLE file/link was attached or replaced.'
+  if (action === 'CREATE_COMPLIANCE_CERTIFICATE') return 'New branch compliance record was added.'
+  if (action === 'DELETE_COMPLIANCE_CERTIFICATE') return 'Branch compliance record was deleted.'
+
+  if (action === 'UPDATE_COMPLIANCE_CERTIFICATE' && parsed.before && parsed.after) {
+    const changes = Object.entries(FIELD_LABELS)
+      .filter(([key]) => String(parsed.before?.[key] ?? '') !== String(parsed.after?.[key] ?? ''))
+      .map(([, label]) => label)
+    return changes.length ? `Updated: ${changes.join(', ')}` : 'Record details were updated.'
+  }
+
+  if (parsed?.before?.status && parsed?.after?.status) return `${parsed.before.status} -> ${parsed.after.status}`
+  return parsed?.module || parsed?.details || ''
+}
+
 export default function TimelineModal({ record, module, onClose }) {
   const recordId = getWorkflowId(record, module)
 
@@ -26,10 +63,13 @@ export default function TimelineModal({ record, module, onClose }) {
     queryKey: ['timeline', module?.table, recordId],
     enabled: Boolean(recordId),
     queryFn: async () => {
+      const pattern = module?.key === 'compliance'
+        ? `%"recordId":"${recordId}"%`
+        : `%${recordId}%`
       const { data, error } = await supabase
         .from('audit_logs')
         .select('*')
-        .ilike('details', `%${recordId}%`)
+        .ilike('details', pattern)
         .order('created_at', { ascending: false })
         .limit(30)
 
@@ -94,14 +134,13 @@ export default function TimelineModal({ record, module, onClose }) {
 
     logs.forEach(log => {
       const parsed = parseAudit(log.details)
+      if (module?.key === 'compliance' && parsed?.recordId !== recordId) return
       list.push({
         key: `audit-${log.id}`,
-        label: log.action || 'Audit',
-        by: log.user_name || '-',
+        label: ACTION_LABELS[log.action] || log.action || 'Audit',
+        by: log.user_name ? `By ${log.user_name}` : 'By -',
         at: log.created_at ? new Date(log.created_at) : null,
-        detail: parsed?.before?.status && parsed?.after?.status
-          ? `${parsed.before.status} -> ${parsed.after.status}`
-          : parsed?.module || parsed?.details || '',
+        detail: formatAuditDetail(log.action, parsed),
         tone: 'bg-gray-100 text-gray-700',
       })
     })

@@ -5,6 +5,8 @@ import { buildWorkflowInfoHtml, escapePostgrestSearch } from '../lib/security'
 import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
 
+const REQUESTS_PAGE_SIZE = 1000
+
 const invalidateWorkflowQueries = (qc) => {
   qc.invalidateQueries({ queryKey: ['requests'] })
   qc.invalidateQueries({ queryKey: ['dashboard'] })
@@ -12,21 +14,31 @@ const invalidateWorkflowQueries = (qc) => {
   qc.invalidateQueries({ queryKey: ['action-center'] })
 }
 
+const buildRequestsQuery = (filters = {}) => {
+  let q = supabase.from('requests').select('*').order('created_at', { ascending: false })
+  if (filters.status && filters.status !== 'All') q = q.eq('status', filters.status)
+  if (filters.dateStart) q = q.gte('date_req', filters.dateStart)
+  if (filters.dateEnd) q = q.lte('date_req', filters.dateEnd)
+  if (filters.search) {
+    const search = escapePostgrestSearch(filters.search)
+    if (search) q = q.or(`title.ilike.%${search}%,beneficiary.ilike.%${search}%`)
+  }
+  return q
+}
+
 export function useRequests(filters = {}) {
   return useQuery({
     queryKey: ['requests', filters],
     queryFn: async () => {
-      let q = supabase.from('requests').select('*').order('created_at', { ascending: false })
-      if (filters.status && filters.status !== 'All') q = q.eq('status', filters.status)
-      if (filters.dateStart) q = q.gte('date_req', filters.dateStart)
-      if (filters.dateEnd)   q = q.lte('date_req', filters.dateEnd)
-      if (filters.search) {
-        const search = escapePostgrestSearch(filters.search)
-        if (search) q = q.or(`title.ilike.%${search}%,beneficiary.ilike.%${search}%`)
+      const rows = []
+      for (let from = 0; ; from += REQUESTS_PAGE_SIZE) {
+        const to = from + REQUESTS_PAGE_SIZE - 1
+        const { data, error } = await buildRequestsQuery(filters).range(from, to)
+        if (error) throw error
+        rows.push(...(data || []))
+        if (!data || data.length < REQUESTS_PAGE_SIZE) break
       }
-      const { data, error } = await q
-      if (error) throw error
-      return data || []
+      return rows
     },
     staleTime: 30000,
   })

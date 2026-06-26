@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount } from '../hooks/useAccounts'
-import { ROLES, ROWS_PER_PAGE } from '../lib/utils'
+import { getDriveThumbnailUrl, getImageDisplayUrl, ROLES, ROWS_PER_PAGE } from '../lib/utils'
+import { uploadToDrive } from '../lib/gas'
 import Pagination from '../components/shared/Pagination'
 import { TableLoader, EmptyRow } from '../components/shared/Loader'
 import Swal from 'sweetalert2'
@@ -16,8 +17,10 @@ export default function Users() {
   const updateAccount = useUpdateAccount()
   const deleteAccount = useDeleteAccount()
 
-  const EMPTY_FORM = { username: '', password: '', role: 'Staff', full_name: '', email: '' }
+  const EMPTY_FORM = { username: '', password: '', role: 'Staff', full_name: '', email: '', photo_url: '' }
   const [form, setForm] = useState(EMPTY_FORM)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const fileInputRef = useRef(null)
 
   const filtered = accounts.filter(a =>
     (a.full_name + a.username + a.email).toLowerCase().includes(search.toLowerCase())
@@ -26,8 +29,32 @@ export default function Users() {
 
   const openModal = (rec = null) => {
     setEditing(rec)
-    setForm(rec ? { username: rec.username, password: '', role: rec.role, full_name: rec.full_name, email: rec.email || '' } : EMPTY_FORM)
+    setForm(rec ? { 
+      username: rec.username, 
+      password: '', 
+      role: rec.role, 
+      full_name: rec.full_name, 
+      email: rec.email || '',
+      photo_url: rec.photo_url || ''
+    } : EMPTY_FORM)
     setShowModal(true)
+  }
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setUploadingAvatar(true)
+      Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
+      const result = await uploadToDrive(file)
+      const photoUrl = getDriveThumbnailUrl(result.fileId, 400) || result.viewUrl
+      setForm(prev => ({ ...prev, photo_url: photoUrl }))
+      Swal.fire('Success', 'Profile picture uploaded', 'success')
+    } catch (err) {
+      Swal.fire('Error', err.message, 'error')
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   const handleSave = async () => {
@@ -35,7 +62,7 @@ export default function Users() {
     if (!editing && !form.password) return Swal.fire('Error', 'Password is required for new accounts', 'error')
     try {
       if (editing) {
-        const updates = { role: form.role, full_name: form.full_name, email: form.email }
+        const updates = { role: form.role, full_name: form.full_name, email: form.email, photo_url: form.photo_url }
         if (form.password) updates.password = form.password
         await updateAccount.mutateAsync({ username: editing.username, updates })
         Swal.fire('Updated!', '', 'success')
@@ -43,7 +70,7 @@ export default function Users() {
         // Check if username exists
         const exists = accounts.find(a => a.username.toLowerCase() === form.username.toLowerCase())
         if (exists) return Swal.fire('Error', 'Username already taken', 'error')
-        await createAccount.mutateAsync({ username: form.username, password: form.password, role: form.role, full_name: form.full_name, email: form.email })
+        await createAccount.mutateAsync({ username: form.username, password: form.password, role: form.role, full_name: form.full_name, email: form.email, photo_url: form.photo_url })
         Swal.fire('Created!', 'Account added.', 'success')
       }
       setShowModal(false)
@@ -53,6 +80,13 @@ export default function Users() {
   const handleDelete = (a) => {
     Swal.fire({ title: `Delete ${a.full_name}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Yes' })
       .then(r => { if (r.isConfirmed) deleteAccount.mutateAsync(a.username).then(() => Swal.fire('Deleted!', '', 'success')).catch(e => Swal.fire('Error', e.message, 'error')) })
+  }
+
+  const AvatarCell = ({ url, name }) => {
+    if (!url) return <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">{name?.charAt(0) || '?'}</div>
+    return <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-200 dark:border-sky-300/30 bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center flex-shrink-0 relative">
+      <img src={getImageDisplayUrl(url)} alt={name} className="w-full h-full object-cover" />
+    </div>
   }
 
   const roleBadge = (role) => {
@@ -89,10 +123,11 @@ export default function Users() {
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
-          <table className="w-full min-w-[600px]">
+          <table className="w-full min-w-[720px]">
             <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm">
               <tr>
                 <th className="table-th">#</th>
+                <th className="table-th">Avatar</th>
                 <th className="table-th">Name</th>
                 <th className="table-th">Username</th>
                 <th className="table-th">Role</th>
@@ -101,10 +136,11 @@ export default function Users() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? <TableLoader /> : paged.length === 0 ? <EmptyRow cols={6} /> :
+              {isLoading ? <TableLoader /> : paged.length === 0 ? <EmptyRow cols={7} /> :
                 paged.map((a, idx) => (
                   <tr key={a.username} className="table-tr">
                     <td className="table-td text-gray-400 text-xs">{(page - 1) * ROWS_PER_PAGE + idx + 1}</td>
+                    <td className="table-td"><AvatarCell url={a.photo_url} name={a.full_name} /></td>
                     <td className="table-td font-semibold">{a.full_name}</td>
                     <td className="table-td text-sm text-gray-500">{a.username}</td>
                     <td className="table-td">{roleBadge(a.role)}</td>
@@ -149,6 +185,23 @@ export default function Users() {
               <div>
                 <label className="label">Password {editing && <span className="text-gray-400 font-normal normal-case">(leave blank to keep)</span>}</label>
                 <input type="password" className="input" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder={editing ? 'Leave blank to keep password' : 'New password'} />
+              </div>
+              <div>
+                <label className="label">Avatar</label>
+                <div className="flex items-center gap-3">
+                  {form.photo_url && <img src={getImageDisplayUrl(form.photo_url)} alt="Avatar preview" className="w-12 h-12 rounded-full object-cover border border-gray-200" />}
+                  <div className="flex-1">
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-secondary text-xs" disabled={uploadingAvatar}>
+                      <i className="fas fa-upload mr-1" />{uploadingAvatar ? 'Uploading...' : form.photo_url ? 'Change Avatar' : 'Upload Avatar'}
+                    </button>
+                    {form.photo_url && (
+                      <button type="button" onClick={() => setForm(prev => ({ ...prev, photo_url: '' }))} className="text-xs text-red-600 hover:underline ml-2">
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex gap-2 mt-5 justify-end border-t border-slate-200 bg-white px-6 py-4 shrink-0">

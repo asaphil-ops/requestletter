@@ -120,8 +120,14 @@ html {
   .table-actions .btn-icon {
     @apply flex-none;
   }
+  td .avatar-cell-wrapper {
+    @apply flex items-center gap-3;
+  }
+  td .avatar-cell-wrapper img {
+    @apply flex-shrink-0;
+  }
   .modal-backdrop {
-    @apply fixed inset-0 bg-gray-200/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all;
+    @apply fixed inset-0 bg-gray-200/85 backdrop-blur-sm z-[1500] flex items-center justify-center p-4 transition-all;
   }
   .modal-panel {
     @apply w-full rounded-2xl bg-white text-gray-900 shadow-2xl overflow-hidden transition-all;

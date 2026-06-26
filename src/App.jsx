@@ -26,6 +26,7 @@ import EmbeddedPage from './pages/EmbeddedPage'
 import CFOOBudget from './pages/CFOOBudget'
 import BudgetPage from './pages/BudgetPage'
 import PublicTracker from './pages/PublicTracker'
+import ComplianceCertificates from './pages/ComplianceCertificates'
 import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
 import Swal from 'sweetalert2'
@@ -67,6 +68,7 @@ function AppRoutes() {
         <Route path="it-expenses" element={<ITExpenses />} />
         <Route path="at-expenses" element={<ATExpenses />} />
         <Route path="comms-expenses" element={<CommsExpenses />} />
+        <Route path="compliance/cor-dole" element={<ComplianceCertificates />} />
         <Route path="cfoo-budget" element={<CFOOBudget />} />
         
         <Route path="cost-center/initiatives" element={<InitiativesExpenses />} />

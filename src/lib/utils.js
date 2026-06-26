@@ -8,6 +8,33 @@ export const toTitleCase = (str) =>
 export const normalizeID = (id) =>
   String(id || '').replace(/\s+/g, '').toUpperCase().trim()
 
+export const normalizeText = (text) => {
+  const str = String(text || '')
+  // Attempt to fix common UTF-8 mojibake patterns and corrupted characters
+  let fixed = str
+    .replace(/Ã±/g, 'ñ')
+    .replace(/Ã‘/g, 'Ñ')
+    .replace(/Ã¡/g, 'á')
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã­/g, 'í')
+    .replace(/Ã³/g, 'ó')
+    .replace(/Ãº/g, 'ú')
+    .replace(/Ã¼/g, 'ü')
+  // Replace Unicode replacement character (U+FFFD - often displays as ? or diamond) with ñ
+  fixed = fixed.replace(/\uFFFD/g, 'ñ')
+  // Fix specific known corrupted city names - handle missing ñ completely
+  const knownFixes = [
+    { search: /Paraa que/gi, replace: 'Parañaque' },
+    { search: /Las Pinas/gi, replace: 'Las Piñas' },
+    { search: /Pina/gi, replace: 'Piña' },
+    { search: /Mana/gi, replace: 'Maña' },
+  ]
+  for (const fix of knownFixes) {
+    fixed = fixed.replace(fix.search, fix.replace)
+  }
+  return fixed.normalize('NFC').trim()
+}
+
 export const getTime = () =>
   new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
@@ -99,6 +126,19 @@ export const getDriveInlineUrl = (fileId) =>
 
 export const getDriveThumbnailUrl = (fileId, size = 2200) =>
   fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}` : null
+
+export const getDriveFileIdFromUrl = (url = '') => {
+  const value = String(url || '')
+  return value.match(/\/d\/([^/]+)/)?.[1] || value.match(/[?&]id=([^&]+)/)?.[1] || ''
+}
+
+export const getImageDisplayUrl = (url = '', size = 400) => {
+  const value = String(url || '').trim()
+  if (!value) return ''
+  if (!value.includes('drive.google.com')) return value
+  const fileId = getDriveFileIdFromUrl(value)
+  return fileId ? getDriveThumbnailUrl(fileId, size) : value
+}
 
 export const SUGGESTED_EMAILS = [
   'jinnette.anacio@asaphil.org',

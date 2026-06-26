@@ -87,6 +87,17 @@ export const WORKFLOW_MODULES = {
     owner: row => row.cost_center || row.uploader || '-',
     amount: row => row.amount,
   },
+  compliance: {
+    key: 'compliance',
+    table: 'compliance_certificates',
+    route: '/compliance/cor-dole',
+    label: 'Compliance - COR and DOLE',
+    idField: 'branch_code',
+    dateField: 'created_at',
+    title: row => 'COR and DOLE Certificate',
+    owner: row => row.branch_name || row.branch_code || '-',
+    amount: () => '',
+  },
 }
 
 export const WORKFLOW_LIST = Object.values(WORKFLOW_MODULES)

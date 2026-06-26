@@ -47,6 +47,14 @@ const SECTIONS = [
       { label: 'Reports', icon: 'fa-file-pdf', to: '/reports', permission: 'canViewReports' },
     ],
   },
+  {
+    key: 'compliance',
+    label: 'Compliance',
+    icon: 'fa-clipboard-check',
+    items: [
+      { label: 'COR and DOLE Certificate', icon: 'fa-certificate', to: '/compliance/cor-dole' },
+    ],
+  },
     {
       key: 'admin',
       label: 'Admin Settings',

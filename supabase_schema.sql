@@ -352,6 +352,28 @@ create index if not exists idx_cost_center_other_center on cost_center_other(cos
 create index if not exists idx_cost_center_other_status on cost_center_other(status);
 
 -- ============================================================
+-- COMPLIANCE - COR AND DOLE CERTIFICATE
+-- ============================================================
+create table if not exists compliance_certificates (
+  id uuid primary key default gen_random_uuid(),
+  branch_code text not null,
+  branch_name text,
+  tin text,
+  cor_address text,
+  cor_link text,
+  dole_link text,
+  dole_address text,
+  cams_address text,
+  uploaded_by text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique(branch_code)
+);
+
+create index if not exists idx_compliance_certificates_branch_code on compliance_certificates(branch_code);
+create index if not exists idx_compliance_certificates_branch_name on compliance_certificates(branch_name);
+
+-- ============================================================
 -- CFOO BUDGET PLAN
 -- ============================================================
 -- Drop existing view if it exists to allow table creation
@@ -438,6 +460,7 @@ alter table comms_expenses enable row level security;
 alter table cost_center_initiatives enable row level security;
 alter table cost_center_cfoo enable row level security;
 alter table cost_center_other enable row level security;
+alter table compliance_certificates enable row level security;
 alter table cfoo_budget enable row level security;
 alter table initiative_account_mappings enable row level security;
 alter table employee_list enable row level security;
@@ -457,6 +480,7 @@ create policy "allow_all_comms" on comms_expenses for all using (true) with chec
 create policy "allow_all_cost_center_initiatives" on cost_center_initiatives for all using (true) with check (true);
 create policy "allow_all_cost_center_cfoo" on cost_center_cfoo for all using (true) with check (true);
 create policy "allow_all_cost_center_other" on cost_center_other for all using (true) with check (true);
+create policy "allow_all_compliance_certificates" on compliance_certificates for all using (true) with check (true);
 create policy "allow_all_cfoo_budget" on cfoo_budget for all using (true) with check (true);
 create policy "allow_all_initiative_account_mappings" on initiative_account_mappings for all using (true) with check (true);
 create policy "allow_all_employee_list" on employee_list for all using (true) with check (true);

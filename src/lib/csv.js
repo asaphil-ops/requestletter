@@ -35,3 +35,20 @@ export function parseCSV(text) {
   if (row.some(value => value.trim())) rows.push(row)
   return rows
 }
+
+export function buildCSV(rows) {
+  return rows
+    .map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+}
+
+export function downloadCSV(rows, filename) {
+  const csv = buildCSV(rows)
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
+}

@@ -23,9 +23,11 @@ import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useB
 import { useStaff } from '../hooks/useStaff'
 import { useEmployeeList } from '../hooks/useEmployeeList'
 import { uploadToDrive } from '../lib/gas'
-import { fmtCurrency, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { fmtCurrency, getDriveViewUrl, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate, validateRequired } from '../lib/validation'
+import { downloadCSV } from '../lib/csv'
+import { exportAllRecordsCSV } from '../lib/exportAllRecords'
 import StatusBadge from '../components/shared/StatusBadge'
 import { OpsModal } from '../components/shared/ProcessModal'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
@@ -48,6 +50,24 @@ const OPERATION_EMAIL_MAP = {
 
 const normalizeRequestStatus = (value) => value === 'Approved' ? 'Checked' : value
 const initialStatus = () => new URLSearchParams(window.location.search).get('status') || 'All'
+
+const toCSVText = (value) => {
+  if (!value) return ''
+  const element = document.createElement('div')
+  element.innerHTML = String(value)
+  return (element.textContent || element.innerText || String(value)).replace(/\s+/g, ' ').trim()
+}
+
+const formatCSVDateTime = (date) => {
+  if (!date) return ''
+  return date.toLocaleString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 export default function Requests() {
   const { canCheck, canUpload, isAdmin, isSuperAdmin, canForceDelete } = useAuthStore()
@@ -313,12 +333,42 @@ export default function Requests() {
     } catch (err) { Swal.fire('Error', err.message, 'error') }
   }
 
+  const buildRequestCSVRows = (records) => [
+    ['No.', 'Date Uploaded', 'Type', 'Title', 'Beneficiary', 'Description', 'Amount', 'Status', 'Uploader', 'Attachment Link'],
+    ...records.map((r, index) => {
+      const uploadedAt = getUploadedAt(r)
+      return [
+        index + 1,
+        formatCSVDateTime(uploadedAt),
+        r.type,
+        r.title,
+        r.beneficiary,
+        r.description,
+        r.amount,
+        normalizeRequestStatus(r.status),
+        toCSVText(r.uploader_info || r.uploader),
+        getDriveViewUrl(r.file_id) || '',
+      ]
+    }),
+  ]
+
   const exportCSV = () => {
-    const rows = [['Date', 'Type', 'Beneficiary', 'Title', 'Description', 'Amount', 'Status'],
-      ...filtered.map(r => [r.date_req, r.type, r.beneficiary, r.title, r.description, r.amount, r.status])]
-    const csv = rows.map(row => row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
-    const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv)
-    a.download = `requests_${new Date().toISOString().split('T')[0]}.csv`; a.click()
+    downloadCSV(buildRequestCSVRows(filtered), `requests_${new Date().toISOString().split('T')[0]}.csv`)
+  }
+
+  const exportAllCSV = async () => {
+    try {
+      Swal.fire({
+        title: 'Exporting all records...',
+        text: 'Please wait while all modules are collected.',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      })
+      const count = await exportAllRecordsCSV()
+      Swal.fire('Export ready', `Exported ${count} records from all modules.`, 'success')
+    } catch (err) {
+      Swal.fire('Export failed', err.message || 'Unable to export all records.', 'error')
+    }
   }
 
   const handleSort = (key) => {
@@ -424,6 +474,7 @@ export default function Requests() {
             </>
           )}
           <button onClick={exportCSV} className="btn-secondary inline-flex items-center gap-2 text-xs px-3 py-2"><Download size={15} className="text-emerald-600" />Export</button>
+          <button onClick={exportAllCSV} className="btn-secondary inline-flex items-center gap-2 text-xs px-3 py-2"><Download size={15} className="text-blue-600" />Export All</button>
           {canUpload && <button onClick={() => openModal()} className="btn-primary inline-flex items-center gap-2 text-xs px-3 py-2"><FilePlus2 size={15} />New Request</button>}
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useUIStore } from '../../store/uiStore'
 import { useUpdateAccount } from '../../hooks/useAccounts'
 import { uploadToDrive } from '../../lib/gas'
+import { getDriveThumbnailUrl, getImageDisplayUrl } from '../../lib/utils'
 import Swal from 'sweetalert2'
 
 export default function TopBar() {
@@ -51,8 +52,9 @@ export default function TopBar() {
     try {
       Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
       const result = await uploadToDrive(file)
-      await updateAccount.mutateAsync({ username: user.username, updates: { photo_url: result.viewUrl } })
-      updatePhoto(result.viewUrl)
+      const photoUrl = getDriveThumbnailUrl(result.fileId, 400) || result.viewUrl
+      await updateAccount.mutateAsync({ username: user.username, updates: { photo_url: photoUrl } })
+      updatePhoto(photoUrl)
       Swal.fire('Success', 'Profile picture updated', 'success')
     } catch (err) {
       Swal.fire('Error', err.message, 'error')
@@ -220,17 +222,17 @@ export default function TopBar() {
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setShowProfile(!showProfile)}
-            className="flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+            className="flex items-center gap-2 cursor-pointer flex-shrink-0"
           >
-            <div className="text-right hidden sm:block">
-              <div className="text-sm font-semibold text-gray-800 dark:text-slate-100">{user?.full_name}</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">{user?.role}</div>
+            <div className="text-right hidden sm:block min-w-0">
+              <div className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">{user?.full_name}</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400 truncate">{user?.role}</div>
             </div>
-            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200 dark:border-sky-300/30 bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200 dark:border-sky-300/30 bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center flex-shrink-0 relative">
               {user?.photo_url ? (
-                <img src={user.photo_url} alt="avatar" className="w-full h-full object-cover" />
+                <img src={getImageDisplayUrl(user.photo_url)} alt="avatar" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-white font-bold text-sm">{initial}</span>
+                <span className="text-white font-bold text-sm relative z-10">{initial}</span>
               )}
             </div>
           </button>
@@ -242,7 +244,7 @@ export default function TopBar() {
                 <div className="relative w-16 h-16 mx-auto mb-2">
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 dark:border-sky-300/30 bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center">
                     {user?.photo_url ? (
-                      <img src={user.photo_url} alt="avatar" className="w-full h-full object-cover" />
+                      <img src={getImageDisplayUrl(user.photo_url)} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-white font-bold text-2xl">{initial}</span>
                     )}

@@ -92,8 +92,7 @@ const IMPORT_TYPES = {
     db_conflict: 'req_id',
     required: ['req_id', 'type', 'beneficiary', 'date_req', 'title'],
     columns: ['req_id', 'type', 'beneficiary', 'date_req', 'title', 'description', 'amount', 'status', 'file_id', 'uploader', 'uploader_info', 'ops_info', 'fin_info', 'remarks'],
-    samples: [
-      ['REQ-0001', 'Branch Request', 'B0001 - Caloocan City I', '2026-05-22', 'Supplies', 'Request letter details', '1500', 'Pending', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '', '', ''],
+    samples: [      ['REQ-0001', 'Branch Request', 'B0001 - Caloocan City I', '2026-05-22', 'Supplies', 'Request letter details', '1500', 'Pending', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '', '', ''],
       ['REQ-0002', 'Staff Request', 'Juan Dela Cruz', '2026-05-22', 'Transportation', 'Staff request details', '800', 'Checked', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:45 AM</span>', '', ''], // Status 'Checked'
       ['REQ-0003', 'Branch Request', 'B0002 - Pasig City I', '2026-05-22', 'Utilities', 'Checked request sample', '3200', 'Checked', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:45 AM</span>', '', ''], // Status 'Checked'
     ],
@@ -302,7 +301,15 @@ export default function BulkUpload() {
     const normalized = records.map((record, index) => {
       const cleaned = {}
       selectedConfig.columns.forEach((column) => {
-        const value = String(record[column] ?? '').trim()
+        let value = String(record[column] ?? '').trim()
+        // Fix mojibake: if UTF-8 bytes were decoded as ISO-8859-1, re-decode properly
+        if (value.includes('Ã') && !value.includes('Â')) {
+          try {
+            value = decodeURIComponent(escape(value))
+          } catch (e) {
+            // keep original if decoding fails
+          }
+        }
         if (value) cleaned[column] = value
       })
 
@@ -336,6 +343,13 @@ export default function BulkUpload() {
         const buffer = await file.arrayBuffer();
         const ansiDecoder = new TextDecoder('windows-1252');
         rawText = ansiDecoder.decode(buffer);
+      }
+
+      // Fix common encoding issues with special characters (e.g., ñ, á, é, etc.)
+      if (rawText.includes('Ã')) {
+        const buffer = await file.arrayBuffer();
+        const isoDecoder = new TextDecoder('iso-8859-1');
+        rawText = isoDecoder.decode(buffer);
       }
       // Remove Byte Order Mark (BOM) which often causes the first header to fail validation
       const text = rawText.replace(/^\uFEFF/, '');
