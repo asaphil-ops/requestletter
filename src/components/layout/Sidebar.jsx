@@ -19,7 +19,7 @@ const SECTIONS = [
       { label: 'Aircon & Toilet', icon: 'fa-tools', to: '/at-expenses', badge: 'at' },
       { label: 'Comms Expenses', icon: 'fa-bullhorn', to: '/comms-expenses', badge: 'comms' },
       { label: 'Request Letter Tracker', icon: 'fa-route', to: '/tracker' },
-      { label: 'Online Staff List', icon: 'fa-address-card', to: '/online-list' },
+      { label: 'Online List', icon: 'fa-address-card', to: '/online-list' },
     ],
   },
   {

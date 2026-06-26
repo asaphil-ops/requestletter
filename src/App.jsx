@@ -30,6 +30,7 @@ import ComplianceCertificates from './pages/ComplianceCertificates'
 import OnlineStaffList from './pages/OnlineStaffList'
 import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
+import usePresence from './hooks/usePresence'
 import Swal from 'sweetalert2'
 function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false }) {
   const { user, isAdmin, isSuperAdmin } = useAuthStore()
@@ -56,14 +57,15 @@ function AppRoutes() {
   const { user, canViewReports } = useAuthStore()
   const canOpenReports = canViewReports || permissionsForRole(user?.role).canViewReports
   useRealtime()
+  usePresence()
 
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/tracker" element={<PublicTracker />} />
-      <Route path="/online-list" element={<OnlineStaffList />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
+        <Route path="online-list" element={<OnlineStaffList />} />
         <Route path="action-center" element={<ActionCenter />} />
         <Route path="requests" element={<Requests />} />
         <Route path="sbar" element={<Sbar />} />
