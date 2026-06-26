@@ -75,7 +75,6 @@ const SECTIONS = [
       icon: 'fa-user-secret',
       superAdminSection: true,
       items: [
-        { label: 'Employee List', icon: 'fa-id-badge', to: '/employee-list', permission: 'canManageEmployees' },
         { label: 'Data Management', icon: 'fa-database', to: '/data-management', permission: 'canManageData' },
       ],
     },
