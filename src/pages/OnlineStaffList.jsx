@@ -142,7 +142,7 @@ export default function OnlineStaffList() {
                 <th className="table-th">Email</th>
                 <th className="table-th w-36">Role</th>
                 <th className="table-th w-44">Designation</th>
-                <th className="table-th">Ginagawa</th>
+                <th className="table-th">Action</th>
                 <th className="table-th w-44">Online Since</th>
               </tr>
             </thead>
