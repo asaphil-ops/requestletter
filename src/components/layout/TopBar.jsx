@@ -111,7 +111,7 @@ export default function TopBar() {
   }
 
   return (
-    <header className="h-16 bg-gray-50/90 dark:bg-[#071427]/90 backdrop-blur border-b border-gray-200 dark:border-slate-800/80 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-30">
+    <header className="h-16 bg-gray-50/90 dark:bg-[#071427]/90 backdrop-blur border-b border-gray-200 dark:border-slate-800/80 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-[1200]">
       {/* Left: hamburger */}
       <button
         onClick={toggleSidebar}
@@ -140,7 +140,7 @@ export default function TopBar() {
               <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-700">ESC</kbd>
             </div>
             {filteredSearch.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl dark:shadow-black/30 z-50 max-h-80 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl dark:shadow-black/30 z-[1300] max-h-80 overflow-y-auto">
                 {filteredSearch.map(d => {
                   const active = location.pathname === d.path
                   return (
@@ -197,7 +197,7 @@ export default function TopBar() {
           </button>
 
           {showNotif && (
-            <div className="absolute right-0 top-11 w-72 sm:w-80 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl dark:shadow-black/30 z-50">
+            <div className="absolute right-0 top-11 w-72 sm:w-80 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl dark:shadow-black/30 z-[1300]">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-800">
                 <span className="font-semibold text-sm">Notifications</span>
                 {unreadCount > 0 && (
@@ -238,7 +238,7 @@ export default function TopBar() {
           </button>
 
           {showProfile && (
-            <div className="absolute right-0 top-11 w-72 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl dark:shadow-black/30 z-50">
+            <div className="absolute right-0 top-11 w-72 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl dark:shadow-black/30 z-[1300]">
               {/* Profile header */}
               <div className="p-4 text-center border-b border-gray-100 dark:border-slate-800 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-900 dark:to-sky-950/60 rounded-t-xl">
                 <div className="relative w-16 h-16 mx-auto mb-2">

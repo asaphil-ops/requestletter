@@ -147,9 +147,9 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => useUIStore.getState().setSidebar(false)} />
+      <div className="fixed inset-0 z-[1250] bg-black/50 lg:hidden" onClick={() => useUIStore.getState().setSidebar(false)} />
 
-      <aside className="fixed left-0 top-0 z-50 flex h-screen w-[276px] flex-col border-r border-white/10 bg-[#081321] text-white shadow-2xl shadow-black/40">
+      <aside className="fixed left-0 top-0 z-[1300] flex h-screen w-[276px] flex-col border-r border-white/10 bg-[#081321] text-white shadow-2xl shadow-black/40">
         <div className="border-b border-white/10 px-5 py-5">
           <div className="flex items-center gap-3">
             <img
