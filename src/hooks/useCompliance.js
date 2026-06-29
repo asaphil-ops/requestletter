@@ -44,6 +44,7 @@ export function useCreateComplianceCertificate() {
         cor_address: String(payload.cor_address || '').normalize('NFC'),
         dole_address: String(payload.dole_address || '').normalize('NFC'),
         cams_address: String(payload.cams_address || '').normalize('NFC'),
+        remarks: String(payload.remarks || '').normalize('NFC'),
         uploaded_by: user?.full_name || '',
       }
       const { error } = await supabase.from(TABLE).insert(record)
@@ -70,6 +71,12 @@ export function useUpdateComplianceCertificate() {
       const next = {
         ...updates,
         branch_code: String(updates.branch_code || '').trim().toUpperCase(),
+        branch_name: String(updates.branch_name || '').normalize('NFC'),
+        tin: String(updates.tin || '').normalize('NFC'),
+        cor_address: String(updates.cor_address || '').normalize('NFC'),
+        dole_address: String(updates.dole_address || '').normalize('NFC'),
+        cams_address: String(updates.cams_address || '').normalize('NFC'),
+        remarks: String(updates.remarks || '').normalize('NFC'),
         updated_at: new Date().toISOString(),
       }
       const { error } = await supabase

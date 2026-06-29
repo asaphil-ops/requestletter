@@ -153,10 +153,6 @@ export default function Dashboard() {
   const today = new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   const selectOptions = (items) => items.map(item => ({ value: item, label: item }))
   const openDashboardReport = (key) => {
-    if (key === 'pending') {
-      navigate('/action-center')
-      return
-    }
     const statusMap = { pending: 'Pending', approved: 'Checked', rejected: 'Rejected' }
     const params = new URLSearchParams()
     if (statusMap[key]) params.set('status', statusMap[key])

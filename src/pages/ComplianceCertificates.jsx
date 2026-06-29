@@ -29,6 +29,7 @@ const EMPTY_FORM = {
   cams_address: '',
   cor_link: '',
   dole_link: '',
+  remarks: '',
 }
 
 const csvHeaders = [
@@ -40,9 +41,33 @@ const csvHeaders = [
   'DOLE Link',
   'DOLE Address',
   'CAMS Address',
+  'Status',
+  'Remarks',
 ]
 
 const compact = (value) => normalizeText(value)
+
+const normalizeAddressForMatch = (value) =>
+  compact(value)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const getAddressMatch = (row) => {
+  const addresses = [
+    { label: 'COR', value: row.cor_address },
+    { label: 'DOLE', value: row.dole_address },
+    { label: 'CAMS', value: row.cams_address },
+  ]
+  const normalized = addresses.map(item => ({ ...item, normalized: normalizeAddressForMatch(item.value) }))
+  const missing = normalized.filter(item => !item.normalized).map(item => item.label)
+  const isMatched = !missing.length && normalized.every(item => item.normalized === normalized[0].normalized)
+
+  if (isMatched) return { status: 'Matched', remarks: 'All addresses matched' }
+  if (missing.length) return { status: 'Unmatched', remarks: `Missing ${missing.join(', ')} address` }
+  return { status: 'Unmatched', remarks: 'COR, DOLE, and CAMS addresses differ' }
+}
 
 const safeFilePart = (value) =>
   compact(value)
@@ -155,6 +180,8 @@ export default function ComplianceCertificates() {
         if (certFilter === 'no_cor') return !row.cor_link
         if (certFilter === 'with_dole') return Boolean(row.dole_link)
         if (certFilter === 'no_dole') return !row.dole_link
+        if (certFilter === 'matched') return getAddressMatch(row).status === 'Matched'
+        if (certFilter === 'unmatched') return getAddressMatch(row).status === 'Unmatched'
         return true
       })
       .sort((a, b) => String(a.branch_code || '').localeCompare(String(b.branch_code || '')))
@@ -234,6 +261,7 @@ export default function ComplianceCertificates() {
       cams_address: record.cams_address || '',
       cor_link: record.cor_link || '',
       dole_link: record.dole_link || '',
+      remarks: record.remarks || '',
     } : EMPTY_FORM)
     setShowModal(true)
   }
@@ -322,16 +350,21 @@ export default function ComplianceCertificates() {
   }
 
   const exportCSV = () => {
-    const rows = filtered.map(row => [
-      row.branch_code,
-      row.branch_name,
-      row.tin,
-      row.cor_address,
-      row.cor_link,
-      row.dole_link,
-      row.dole_address,
-      row.cams_address,
-    ])
+    const rows = filtered.map(row => {
+      const addressMatch = getAddressMatch(row)
+      return [
+        row.branch_code,
+        row.branch_name,
+        row.tin,
+        row.cor_address,
+        row.cor_link,
+        row.dole_link,
+        row.dole_address,
+        row.cams_address,
+        addressMatch.status,
+        row.remarks || '',
+      ]
+    })
     downloadCSV([csvHeaders, ...rows], `compliance_certificates_${new Date().toISOString().split('T')[0]}.csv`)
   }
 
@@ -408,49 +441,39 @@ export default function ComplianceCertificates() {
           >
             <i className="fas fa-sync-alt mr-1" />Reset
           </button>
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => { setCertFilter(certFilter === 'with_cor' ? '' : 'with_cor'); setPage(1) }}
-              className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${certFilter === 'with_cor' ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-            >
-              With COR
-            </button>
-            <button
-              onClick={() => { setCertFilter(certFilter === 'no_cor' ? '' : 'no_cor'); setPage(1) }}
-              className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${certFilter === 'no_cor' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-            >
-              No COR
-            </button>
-            <button
-              onClick={() => { setCertFilter(certFilter === 'with_dole' ? '' : 'with_dole'); setPage(1) }}
-              className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${certFilter === 'with_dole' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-            >
-              With DOLE
-            </button>
-            <button
-              onClick={() => { setCertFilter(certFilter === 'no_dole' ? '' : 'no_dole'); setPage(1) }}
-              className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${certFilter === 'no_dole' ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-            >
-              No DOLE
-            </button>
-          </div>
+          <select
+            className="input h-9 w-48 py-1.5 text-xs font-semibold"
+            value={certFilter}
+            onChange={event => { setCertFilter(event.target.value); setPage(1) }}
+            title="Certificate and address status filter"
+          >
+            <option value="">All Certificates</option>
+            <option value="with_cor">With COR</option>
+            <option value="no_cor">No COR</option>
+            <option value="with_dole">With DOLE</option>
+            <option value="no_dole">No DOLE</option>
+            <option value="matched">Matched</option>
+            <option value="unmatched">Unmatched</option>
+          </select>
         </div>
       </div>
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
-          <table className="w-full min-w-[1480px] table-fixed">
+          <table className="w-full min-w-[2100px] table-fixed">
             <colgroup>
               <col className="w-12" />
               <col className="w-32" />
               <col className="w-44" />
               <col className="w-28" />
               <col className="w-36" />
-              <col className="w-36" />
-              <col className="w-36" />
-              <col className="w-36" />
+              <col className="w-72" />
+              <col className="w-72" />
+              <col className="w-72" />
               <col className="w-[4.5rem]" />
               <col className="w-[4.5rem]" />
+              <col className="w-28" />
+              <col className="w-52" />
               <col className="w-44" />
             </colgroup>
             <thead className="sticky top-0 z-20 bg-white shadow-sm dark:bg-slate-900">
@@ -460,46 +483,58 @@ export default function ComplianceCertificates() {
                 <th className="table-th w-44">Branch Name</th>
                 <th className="table-th w-28">Type</th>
                 <th className="table-th w-36">TIN</th>
-                <th className="table-th w-36">COR Addr</th>
-                <th className="table-th w-36">DOLE Addr</th>
-                <th className="table-th w-36">CAMS Addr</th>
+                <th className="table-th w-72">COR Addr</th>
+                <th className="table-th w-72">DOLE Addr</th>
+                <th className="table-th w-72">CAMS Addr</th>
                 <th className="table-th w-[4.5rem]">COR</th>
                 <th className="table-th w-[4.5rem]">DOLE</th>
+                <th className="table-th w-28">Status</th>
+                <th className="table-th w-52">Remarks</th>
                 <th className="table-th w-44 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {isLoading ? <TableLoader /> : paged.length === 0 ? <EmptyRow cols={11} /> : paged.map((row, index) => (
-                <tr key={row.id} className="table-tr">
-                  <td className="table-td text-xs text-gray-400">{(page - 1) * ROWS_PER_PAGE + index + 1}</td>
-                  <td className="table-td font-semibold">{row.branch_code}</td>
-                  <td className="table-td w-44 truncate" title={row.branch_name}>{compact(row.branch_name)}</td>
-                  <td className="table-td w-28 truncate" title={row.branch_type || '-'}>{compact(row.branch_type) || '-'}</td>
-                  <td className="table-td w-36 truncate" title={row.tin || ''}>{row.tin || '-'}</td>
-                  <td className="table-td w-36 truncate" title={row.cor_address || ''}>{compact(row.cor_address || '-')}</td>
-                  <td className="table-td w-36 truncate" title={row.dole_address || ''}>{compact(row.dole_address || '-')}</td>
-                  <td className="table-td w-36 truncate" title={row.cams_address || ''}>{compact(row.cams_address || '-')}</td>
-                  <td className="table-td">
-                    {row.cor_link ? <button type="button" className="text-xs font-bold text-sky-600 hover:underline" onClick={() => previewLink(row.cor_link)}>Preview COR</button> : <span className="text-xs text-gray-400">No file</span>}
-                  </td>
-                  <td className="table-td">
-                    {row.dole_link ? <button type="button" className="text-xs font-bold text-sky-600 hover:underline" onClick={() => previewLink(row.dole_link)}>Preview DOLE</button> : <span className="text-xs text-gray-400">No file</span>}
-                  </td>
-                  <td className="table-td">
-                    <div className="table-actions justify-end">
-                      {canUpload && (
-                        <>
-                          <button onClick={() => handleUpload(row, 'cor_link', 'COR')} className="btn-icon bg-emerald-50 text-emerald-600 hover:bg-emerald-100" title="Upload COR"><i className="fas fa-file-upload" /></button>
-                          <button onClick={() => handleUpload(row, 'dole_link', 'DOLE')} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Upload DOLE"><i className="fas fa-cloud-upload-alt" /></button>
-                          <button onClick={() => openModal(row)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button>
-                        </>
-                      )}
-                      <button onClick={() => setTimelineTarget(row)} className="btn-icon bg-slate-50 text-slate-500 hover:bg-slate-100" title="History"><i className="fas fa-clock-rotate-left" /></button>
-                      {(isAdmin || isSuperAdmin) && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading ? <TableLoader /> : paged.length === 0 ? <EmptyRow cols={13} /> : paged.map((row, index) => {
+                const addressMatch = getAddressMatch(row)
+                const remarks = row.remarks || ''
+                return (
+                  <tr key={row.id} className="table-tr">
+                    <td className="table-td text-xs text-gray-400">{(page - 1) * ROWS_PER_PAGE + index + 1}</td>
+                    <td className="table-td font-semibold">{row.branch_code}</td>
+                    <td className="table-td w-44 truncate" title={row.branch_name}>{compact(row.branch_name)}</td>
+                    <td className="table-td w-28 truncate" title={row.branch_type || '-'}>{compact(row.branch_type) || '-'}</td>
+                    <td className="table-td w-36 truncate" title={row.tin || ''}>{row.tin || '-'}</td>
+                    <td className="table-td w-72 whitespace-normal break-words text-xs leading-relaxed" title={row.cor_address || ''}>{compact(row.cor_address || '-')}</td>
+                    <td className="table-td w-72 whitespace-normal break-words text-xs leading-relaxed" title={row.dole_address || ''}>{compact(row.dole_address || '-')}</td>
+                    <td className="table-td w-72 whitespace-normal break-words text-xs leading-relaxed" title={row.cams_address || ''}>{compact(row.cams_address || '-')}</td>
+                    <td className="table-td">
+                      {row.cor_link ? <button type="button" className="text-xs font-bold text-sky-600 hover:underline" onClick={() => previewLink(row.cor_link)}>Preview COR</button> : <span className="text-xs text-gray-400">No file</span>}
+                    </td>
+                    <td className="table-td">
+                      {row.dole_link ? <button type="button" className="text-xs font-bold text-sky-600 hover:underline" onClick={() => previewLink(row.dole_link)}>Preview DOLE</button> : <span className="text-xs text-gray-400">No file</span>}
+                    </td>
+                    <td className="table-td">
+                      <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-black uppercase ${addressMatch.status === 'Matched' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                        {addressMatch.status}
+                      </span>
+                    </td>
+                    <td className="table-td w-52 truncate" title={remarks}>{remarks || '-'}</td>
+                    <td className="table-td">
+                      <div className="table-actions justify-end">
+                        {canUpload && (
+                          <>
+                            <button onClick={() => handleUpload(row, 'cor_link', 'COR')} className="btn-icon bg-emerald-50 text-emerald-600 hover:bg-emerald-100" title="Upload COR"><i className="fas fa-file-upload" /></button>
+                            <button onClick={() => handleUpload(row, 'dole_link', 'DOLE')} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Upload DOLE"><i className="fas fa-cloud-upload-alt" /></button>
+                            <button onClick={() => openModal(row)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button>
+                          </>
+                        )}
+                        <button onClick={() => setTimelineTarget(row)} className="btn-icon bg-slate-50 text-slate-500 hover:bg-slate-100" title="History"><i className="fas fa-clock-rotate-left" /></button>
+                        {(isAdmin || isSuperAdmin) && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -604,6 +639,19 @@ export default function ComplianceCertificates() {
                 <div className="sm:col-span-2">
                   <label className="label">CAMS Address</label>
                   <input className="input" value={form.cams_address} onChange={event => setField('cams_address', event.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Status</label>
+                  <input className="input font-bold" readOnly value={getAddressMatch(form).status} />
+                </div>
+                <div>
+                  <label className="label">Remarks</label>
+                  <input
+                    className="input"
+                    value={form.remarks}
+                    placeholder="Add remarks..."
+                    onChange={event => setField('remarks', event.target.value)}
+                  />
                 </div>
                 <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="mb-3 text-sm font-bold text-slate-800">Certificate Uploads</div>

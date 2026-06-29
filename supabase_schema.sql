@@ -364,6 +364,7 @@ create table if not exists compliance_certificates (
   dole_link text,
   dole_address text,
   cams_address text,
+  remarks text,
   uploaded_by text,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),

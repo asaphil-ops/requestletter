@@ -2,7 +2,6 @@ import { useLocation, Link } from 'react-router-dom'
 
 const LABELS = {
   '/': 'Dashboard',
-  '/action-center': 'Action Center',
   '/requests': 'Requests',
   '/sbar': 'SBAR',
   '/it-expenses': 'IT Expenses',

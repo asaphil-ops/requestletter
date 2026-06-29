@@ -36,6 +36,7 @@ const FIELD_LABELS = {
   dole_link: 'DOLE Link',
   dole_address: 'DOLE Address',
   cams_address: 'CAMS Address',
+  remarks: 'Remarks',
 }
 
 function formatAuditDetail(action, parsed) {

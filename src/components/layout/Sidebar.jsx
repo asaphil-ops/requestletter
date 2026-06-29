@@ -150,16 +150,16 @@ export default function Sidebar() {
       <div className="fixed inset-0 z-[1250] bg-black/50 lg:hidden" onClick={() => useUIStore.getState().setSidebar(false)} />
 
       <aside className="fixed left-0 top-0 z-[1300] flex h-screen w-[276px] flex-col border-r border-white/10 bg-[#081321] text-white shadow-2xl shadow-black/40">
-        <div className="border-b border-white/10 px-5 py-5">
-          <div className="flex items-center gap-3">
+        <div className="border-b border-white/10 px-4 py-4">
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3">
             <img
               src="https://asaphil.org/wp-content/themes/Philippines/asa-assets/images/Primary_logo.png"
               alt="ASA Philippines"
-              className="h-12 w-auto shrink-0 object-contain"
+              className="h-10 w-auto shrink-0 object-contain"
             />
-            <div className="min-w-0 border-l border-white/10 pl-3">
-              <div className="truncate text-sm font-extrabold text-white">OPs Finance</div>
-              <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Monitoring System</div>
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-black leading-tight text-white">OPs Finance</div>
+              <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Monitoring System</div>
             </div>
           </div>
         </div>
@@ -167,7 +167,6 @@ export default function Sidebar() {
         <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
           <div className="space-y-1">
             <MainLink to="/" icon="fa-th-large" label="Dashboard" />
-            <MainLink to="/action-center" icon="fa-book-open" label="Guidelines" />
             <MainLink to="/send-email" icon="fa-envelope" label="Send to Email" />
           </div>
 

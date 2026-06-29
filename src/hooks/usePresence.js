@@ -5,7 +5,6 @@ import { useAuthStore } from '../store/authStore'
 import { usePresenceStore } from '../store/presenceStore'
 
 const PAGE_LABELS = [
-  ['/action-center', 'Viewing Guidelines'],
   ['/requests', 'Working on Request Letters'],
   ['/sbar', 'Working on SBAR / Transfer'],
   ['/it-expenses', 'Reviewing IT Expenses'],

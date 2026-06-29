@@ -3,7 +3,6 @@ import { useAuthStore } from './store/authStore'
 import Layout from './components/layout/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import ActionCenter from './pages/ActionCenter'
 import Requests from './pages/Requests'
 import Sbar from './pages/Sbar'
 import ITExpenses from './pages/ITExpenses'
@@ -66,7 +65,6 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="online-list" element={<OnlineStaffList />} />
-        <Route path="action-center" element={<ActionCenter />} />
         <Route path="requests" element={<Requests />} />
         <Route path="sbar" element={<Sbar />} />
         <Route path="it-expenses" element={<ITExpenses />} />
