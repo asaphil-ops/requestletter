@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 const toneClass = {
   cyan: 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 dark:bg-cyan-400/10 dark:text-cyan-200',
@@ -33,6 +34,7 @@ function ActionButton({ action, compact = false, onAfterClick }) {
 export default function ActionMenu({ actions = [] }) {
   const menuId = useId()
   const menuRef = useRef(null)
+  const panelRef = useRef(null)
   const moreButtonRef = useRef(null)
   const [open, setOpen] = useState(false)
   const [panelStyle, setPanelStyle] = useState({})
@@ -71,7 +73,9 @@ export default function ActionMenu({ actions = [] }) {
     positionPanel()
 
     const handlePointerDown = (event) => {
-      if (!menuRef.current?.contains(event.target)) setOpen(false)
+      const target = event.target
+      if (menuRef.current?.contains(target) || panelRef.current?.contains(target)) return
+      setOpen(false)
     }
 
     const handleEscape = (event) => {
@@ -120,12 +124,13 @@ export default function ActionMenu({ actions = [] }) {
           >
             <i className="fas fa-ellipsis-h" />
           </button>
-          {open && (
-            <div className="action-menu-panel" role="menu" style={panelStyle}>
+          {open && createPortal(
+            <div ref={panelRef} className="action-menu-panel" role="menu" style={panelStyle}>
               {rest.map((action, index) => (
                 <ActionButton key={`${action.label}-${index}`} action={action} compact onAfterClick={() => setOpen(false)} />
               ))}
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       )}
