@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { fetchAllPages } from '../lib/supabasePagination'
 import { fmtCurrency, fmtDate } from '../lib/utils'
 import { escapeHtml } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
@@ -145,12 +146,11 @@ export default function Reports() {
     queryFn: async () => {
       const [moduleResults, emailLogs] = await Promise.all([
         Promise.all(MODULES.map(async (module) => {
-          const { data: rows, error } = await supabase
-            .from(module.table)
-            .select(module.select)
-            .order('created_at', { ascending: false })
-
-          if (error) throw error
+          const rows = await fetchAllPages(() => supabase
+              .from(module.table)
+              .select(module.select)
+              .order('created_at', { ascending: false })
+          )
           return (rows || []).map(row => ({
             ...row,
             moduleKey: module.key,
@@ -158,14 +158,14 @@ export default function Reports() {
             date: row[module.date] || row.date,
           }))
         })),
-        supabase
-          .from('email_logs')
-          .select('id,sent_by,to_addresses,cc_addresses,subject,ref_type,ref_id,created_at')
-          .order('created_at', { ascending: false }),
+        fetchAllPages(() => supabase
+            .from('email_logs')
+            .select('id,sent_by,to_addresses,cc_addresses,subject,ref_type,ref_id,created_at')
+            .order('created_at', { ascending: false })
+        ),
       ])
 
-      if (emailLogs.error) throw emailLogs.error
-      return { records: moduleResults.flat(), emails: emailLogs.data || [] }
+      return { records: moduleResults.flat(), emails: emailLogs || [] }
     },
     staleTime: 30000,
   })

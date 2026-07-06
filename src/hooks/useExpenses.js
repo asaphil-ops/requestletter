@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { getTime } from '../lib/utils'
+import { fetchAllPages } from '../lib/supabasePagination'
 import { buildWorkflowInfoHtml, escapePostgrestSearch } from '../lib/security'
 import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
@@ -19,19 +20,20 @@ export function useExpenses(type, filters = {}) {
   return useQuery({
     queryKey: [table, filters],
     queryFn: async () => {
-      let q = supabase.from(table).select('*').order('created_at', { ascending: false })
-      if (filters.status && filters.status !== 'All')   q = q.eq('status', filters.status)
-      if (filters.category && filters.category !== 'All') q = q.eq('category', filters.category)
-      if (filters.branchCode) q = q.eq('branch_code', filters.branchCode)
-      if (filters.dateStart)  q = q.gte('date', filters.dateStart)
-      if (filters.dateEnd)    q = q.lte('date', filters.dateEnd)
-      if (filters.search) {
-        const search = escapePostgrestSearch(filters.search)
-        if (search) q = q.or(`branch_name.ilike.%${search}%,item_name.ilike.%${search}%,account_title.ilike.%${search}%,branch_code.ilike.%${search}%`)
+      const buildQuery = () => {
+        let q = supabase.from(table).select('*').order('created_at', { ascending: false })
+        if (filters.status && filters.status !== 'All')   q = q.eq('status', filters.status)
+        if (filters.category && filters.category !== 'All') q = q.eq('category', filters.category)
+        if (filters.branchCode) q = q.eq('branch_code', filters.branchCode)
+        if (filters.dateStart)  q = q.gte('date', filters.dateStart)
+        if (filters.dateEnd)    q = q.lte('date', filters.dateEnd)
+        if (filters.search) {
+          const search = escapePostgrestSearch(filters.search)
+          if (search) q = q.or(`branch_name.ilike.%${search}%,item_name.ilike.%${search}%,account_title.ilike.%${search}%,branch_code.ilike.%${search}%`)
+        }
+        return q
       }
-      const { data, error } = await q
-      if (error) throw error
-      return data || []
+      return fetchAllPages(buildQuery)
     },
     staleTime: 30000,
   })

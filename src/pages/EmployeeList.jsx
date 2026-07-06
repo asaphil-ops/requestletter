@@ -15,6 +15,7 @@ import { ROWS_PER_PAGE } from '../lib/utils'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import Swal from 'sweetalert2'
 import { supabase } from '../lib/supabase'
+import { fetchAllPages } from '../lib/supabasePagination'
 
 const EMPTY_FORM = { id_number: '', full_name: '', designation: '', contact_number: '', email_address: '' }
 
@@ -39,12 +40,12 @@ export default function EmployeeList() {
 
   useEffect(() => {
     let cancelled = false
-    supabase.from('staff').select('id, branch_code').then(({ data }) => {
+    fetchAllPages(() => supabase.from('staff').select('id, branch_code')).then((data) => {
       if (cancelled || !data) return
       const map = {}
       data.forEach(s => { if (s.id && s.branch_code) map[s.id] = s.branch_code })
       setStaffBranchMap(map)
-    })
+    }).catch(error => console.warn('Employee staff branch lookup skipped:', error.message))
     return () => { cancelled = true }
   }, [])
 

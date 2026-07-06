@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { fetchAllPages } from '../lib/supabasePagination'
 
 const TABLE = 'initiative_account_mappings'
 
@@ -7,13 +8,12 @@ export function useInitiativeMappings() {
   return useQuery({
     queryKey: [TABLE],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(TABLE)
-        .select('*')
-        .order('particular', { ascending: true })
-        .order('sub_account', { ascending: true })
-      if (error) throw error
-      return data || []
+      return fetchAllPages(() => supabase
+          .from(TABLE)
+          .select('*')
+          .order('particular', { ascending: true })
+          .order('sub_account', { ascending: true })
+      )
     },
     staleTime: 30000,
   })

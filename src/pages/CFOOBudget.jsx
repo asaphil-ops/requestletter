@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { fetchAllPages } from '../lib/supabasePagination';
 import { fmtCurrency } from '../lib/utils';
 
 /**
@@ -23,11 +24,10 @@ export default function CFOOBudget() {
     async function fetchBudget() {
       try {
         setLoading(true);
-        const { data: dbData, error: dbError } = await supabase
+        const dbData = await fetchAllPages(() => supabase
           .from('cfoo_budget')
-          .select('*');
-
-        if (dbError) throw dbError;
+          .select('*')
+        );
 
         if (dbData && dbData.length > 0) {
           // Kunin ang mga columns mula sa database pero wag isama ang 'id' at 'created_at'

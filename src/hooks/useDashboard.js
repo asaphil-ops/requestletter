@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { fetchAllPages } from '../lib/supabasePagination'
 
 export const PENDING_COUNT_TABLES = {
   req: 'requests',
@@ -40,25 +41,25 @@ export function useDashboard() {
     queryFn: async () => {
       const [staff, requests, sbar, it, at, comms, initiatives, cfoo, otherCostCenter, emailLogs] = await Promise.all([
         supabase.from('staff').select('id', { count: 'exact', head: true }),
-        supabase.from('requests').select('id,status,amount,title,date_req,created_at,uploader,beneficiary'),
-        supabase.from('sbar').select('id,status,amount,date,created_at,giver,receiver'),
-        supabase.from('it_expenses').select('id,status,amount,category,date,branch_code,created_at'),
-        supabase.from('at_expenses').select('id,status,amount,category,date,branch_code,created_at'),
-        supabase.from('comms_expenses').select('id,status,amount,category,date,branch_code,created_at'),
-        supabase.from('cost_center_initiatives').select('id,status,amount,date,created_at'),
-        supabase.from('cost_center_cfoo').select('id,status,amount,date,created_at'),
-        supabase.from('cost_center_other').select('id,status,amount,date,created_at'),
+        fetchAllPages(() => supabase.from('requests').select('id,status,amount,title,date_req,created_at,uploader,beneficiary')),
+        fetchAllPages(() => supabase.from('sbar').select('id,status,amount,date,created_at,giver,receiver')),
+        fetchAllPages(() => supabase.from('it_expenses').select('id,status,amount,category,date,branch_code,created_at')),
+        fetchAllPages(() => supabase.from('at_expenses').select('id,status,amount,category,date,branch_code,created_at')),
+        fetchAllPages(() => supabase.from('comms_expenses').select('id,status,amount,category,date,branch_code,created_at')),
+        fetchAllPages(() => supabase.from('cost_center_initiatives').select('id,status,amount,date,created_at')),
+        fetchAllPages(() => supabase.from('cost_center_cfoo').select('id,status,amount,date,created_at')),
+        fetchAllPages(() => supabase.from('cost_center_other').select('id,status,amount,date,created_at')),
         supabase.from('email_logs').select('id,created_at', { count: 'exact', head: true }),
       ])
 
-      const allReqs = requests.data || []
-      const allSbar = sbar.data || []
-      const allIT   = it.data   || []
-      const allAT   = at.data   || []
-      const allComms = comms.data || []
-      const allInitiatives = initiatives.data || []
-      const allCfoo = cfoo.data || []
-      const allOtherCostCenter = otherCostCenter.data || []
+      const allReqs = requests || []
+      const allSbar = sbar || []
+      const allIT   = it   || []
+      const allAT   = at   || []
+      const allComms = comms || []
+      const allInitiatives = initiatives || []
+      const allCfoo = cfoo || []
+      const allOtherCostCenter = otherCostCenter || []
 
       const combined = [
         ...allReqs.map(r => ({ ...r, _type: 'req', date: r.date_req })),

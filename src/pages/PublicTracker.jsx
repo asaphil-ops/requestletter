@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { fetchAllPages } from '../lib/supabasePagination'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
 import { fetchAllBranches } from '../hooks/useBranches'
@@ -234,22 +235,23 @@ export default function PublicTracker() {
       try {
         const [sourceResults, branchRows, staffResult] = await Promise.all([
           Promise.all(SOURCES.map(async (source) => {
-            const { data, error: sourceError } = await supabase
-              .from(source.table)
-              .select(source.select)
-              .order('created_at', { ascending: false })
-
-            if (sourceError) {
+            try {
+              const data = await fetchAllPages(() => supabase
+                  .from(source.table)
+                  .select(source.select)
+                  .order('created_at', { ascending: false })
+              )
+              return (data || []).map(source.map)
+            } catch (sourceError) {
               console.warn(`Tracker skipped ${source.table}:`, sourceError.message)
               return []
             }
-            return (data || []).map(source.map)
           })),
           fetchAllBranches().catch((branchError) => {
             console.warn('Tracker branch lookup skipped:', branchError.message)
             return []
           }),
-          supabase.from('staff').select('*'),
+          fetchAllPages(() => supabase.from('staff').select('*')).then(data => ({ data })).catch(error => ({ error, data: [] })),
         ])
 
         if (staffResult.error) console.warn('Tracker staff lookup skipped:', staffResult.error.message)

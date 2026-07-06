@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { normalizeID, getTime } from '../lib/utils'
+import { fetchAllPages } from '../lib/supabasePagination'
 import { buildWorkflowInfoHtml, escapePostgrestSearch } from '../lib/security'
 import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
@@ -16,18 +17,19 @@ export function useSbar(filters = {}) {
   return useQuery({
     queryKey: ['sbar', filters],
     queryFn: async () => {
-      let q = supabase.from('sbar').select('*').order('created_at', { ascending: false })
-      if (filters.status && filters.status !== 'All') q = q.eq('status', filters.status)
-      if (filters.type && filters.type !== 'All')     q = q.eq('type',   filters.type)
-      if (filters.dateStart) q = q.gte('date', filters.dateStart)
-      if (filters.dateEnd)   q = q.lte('date', filters.dateEnd)
-      if (filters.search) {
-        const search = escapePostgrestSearch(filters.search)
-        if (search) q = q.or(`giver.ilike.%${search}%,receiver.ilike.%${search}%`)
+      const buildQuery = () => {
+        let q = supabase.from('sbar').select('*').order('created_at', { ascending: false })
+        if (filters.status && filters.status !== 'All') q = q.eq('status', filters.status)
+        if (filters.type && filters.type !== 'All')     q = q.eq('type',   filters.type)
+        if (filters.dateStart) q = q.gte('date', filters.dateStart)
+        if (filters.dateEnd)   q = q.lte('date', filters.dateEnd)
+        if (filters.search) {
+          const search = escapePostgrestSearch(filters.search)
+          if (search) q = q.or(`giver.ilike.%${search}%,receiver.ilike.%${search}%`)
+        }
+        return q
       }
-      const { data, error } = await q
-      if (error) throw error
-      return data || []
+      return fetchAllPages(buildQuery)
     },
     staleTime: 30000,
   })

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { toTitleCase } from '../lib/utils'
+import { fetchAllPages } from '../lib/supabasePagination'
 import { escapePostgrestSearch } from '../lib/security'
 import { useMemo } from 'react'
 import { cleanGeoValue } from './useBranches'
@@ -9,19 +10,21 @@ export function useStaff(filters = {}) {
   return useQuery({
     queryKey: ['staff', filters],
     queryFn: async () => {
-      let q = supabase.from('staff').select('*').order('last_name')
-      if (filters.operation) q = q.eq('operation', filters.operation)
-      if (filters.division)  q = q.eq('division',  filters.division)
-      if (filters.region)    q = q.eq('region',    filters.region)
-      if (filters.area)      q = q.eq('area',      filters.area)
-      if (filters.branchCode) q = q.eq('branch_code', filters.branchCode)
-      if (filters.search) {
-        const search = escapePostgrestSearch(filters.search)
-        if (search) q = q.or(`last_name.ilike.%${search}%,first_name.ilike.%${search}%,id.ilike.%${search}%`)
+      const buildQuery = () => {
+        let q = supabase.from('staff').select('*').order('last_name')
+        if (filters.operation) q = q.eq('operation', filters.operation)
+        if (filters.division)  q = q.eq('division',  filters.division)
+        if (filters.region)    q = q.eq('region',    filters.region)
+        if (filters.area)      q = q.eq('area',      filters.area)
+        if (filters.branchCode) q = q.eq('branch_code', filters.branchCode)
+        if (filters.search) {
+          const search = escapePostgrestSearch(filters.search)
+          if (search) q = q.or(`last_name.ilike.%${search}%,first_name.ilike.%${search}%,id.ilike.%${search}%`)
+        }
+        return q
       }
-      const { data, error } = await q
-      if (error) throw error
-      return (data || []).map((s) => {
+      const data = await fetchAllPages(buildQuery)
+      return data.map((s) => {
         // Fix text encoding issues for "ñ" and "Ñ" globally
         const replacementChar = String.fromCharCode(65533)
         const fix = str => {

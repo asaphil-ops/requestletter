@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { getTime } from '../lib/utils'
+import { fetchAllPages } from '../lib/supabasePagination'
 import { buildWorkflowInfoHtml } from '../lib/security'
 import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
@@ -23,13 +24,12 @@ export function useCostCenter(type) {
   return useQuery({
     queryKey: [table],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(table)
-        .select('*')
-        .order('date', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data || []
+      return fetchAllPages(() => supabase
+          .from(table)
+          .select('*')
+          .order('date', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false })
+      )
     },
     staleTime: 30000,
   })
