@@ -46,16 +46,22 @@ export default function ActionMenu({ actions = [] }) {
 
     const rect = button.getBoundingClientRect()
     const panelWidth = 192
+    const panelHeight = Math.min(360, Math.max(48, rest.length * 38 + 12))
     const gutter = 8
     const left = Math.min(
       Math.max(gutter, rect.right - panelWidth),
       window.innerWidth - panelWidth - gutter
     )
+    const preferredTop = rect.bottom + 6
+    const top = preferredTop + panelHeight > window.innerHeight - gutter
+      ? Math.max(gutter, rect.top - panelHeight - 6)
+      : preferredTop
 
     setPanelStyle({
       left,
-      top: rect.bottom + 6,
+      top,
       width: panelWidth,
+      maxHeight: Math.min(panelHeight, window.innerHeight - gutter * 2),
     })
   }
 
