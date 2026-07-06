@@ -463,7 +463,7 @@ export default function ExpensePage({ type }) {
                 <th className="table-th w-44">Uploader</th>
                 <th className="table-th hidden md:table-cell w-44">Checked By</th>
 
-                <th className="table-th text-right w-56">Actions</th>
+                <th className="table-th text-right w-40">Actions</th>
               </tr>
             </thead>
             <tbody>

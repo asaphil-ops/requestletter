@@ -115,10 +115,13 @@ html {
     @apply hover:bg-blue-50/40 transition-colors;
   }
   .table-actions {
-    @apply flex items-center justify-end gap-1 flex-nowrap whitespace-nowrap;
+    @apply grid justify-end gap-1.5 whitespace-normal;
+    grid-template-columns: repeat(auto-fit, 2rem);
+    max-width: 8.75rem;
+    margin-left: auto;
   }
   .table-actions .btn-icon {
-    @apply flex-none;
+    @apply flex-none shadow-sm;
   }
   td .avatar-cell-wrapper {
     @apply flex items-center gap-3;

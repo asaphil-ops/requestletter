@@ -583,7 +583,7 @@ export default function Requests() {
                 ))}
                 <th className="table-th w-44">Uploader</th>
 
-                <th className="table-th text-right w-56">Actions</th>
+                <th className="table-th text-right w-40">Actions</th>
               </tr>
             </thead>
             <tbody>

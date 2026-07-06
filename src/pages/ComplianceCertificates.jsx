@@ -490,7 +490,7 @@ export default function ComplianceCertificates() {
                 <th className="table-th w-[4.5rem]">DOLE</th>
                 <th className="table-th w-28">Status</th>
                 <th className="table-th w-52">Remarks</th>
-                <th className="table-th w-44 text-right">Actions</th>
+                <th className="table-th w-40 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
