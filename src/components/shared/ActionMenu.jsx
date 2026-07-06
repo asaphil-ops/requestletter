@@ -33,13 +33,36 @@ function ActionButton({ action, compact = false, onAfterClick }) {
 export default function ActionMenu({ actions = [] }) {
   const menuId = useId()
   const menuRef = useRef(null)
+  const moreButtonRef = useRef(null)
   const [open, setOpen] = useState(false)
+  const [panelStyle, setPanelStyle] = useState({})
   const visibleActions = actions.filter(Boolean)
   const primary = visibleActions[0]
   const rest = visibleActions.slice(1)
 
+  const positionPanel = () => {
+    const button = moreButtonRef.current
+    if (!button) return
+
+    const rect = button.getBoundingClientRect()
+    const panelWidth = 192
+    const gutter = 8
+    const left = Math.min(
+      Math.max(gutter, rect.right - panelWidth),
+      window.innerWidth - panelWidth - gutter
+    )
+
+    setPanelStyle({
+      left,
+      top: rect.bottom + 6,
+      width: panelWidth,
+    })
+  }
+
   useEffect(() => {
     if (!open) return
+
+    positionPanel()
 
     const handlePointerDown = (event) => {
       if (!menuRef.current?.contains(event.target)) setOpen(false)
@@ -55,11 +78,15 @@ export default function ActionMenu({ actions = [] }) {
 
     document.addEventListener('pointerdown', handlePointerDown)
     document.addEventListener('keydown', handleEscape)
+    window.addEventListener('scroll', positionPanel, true)
+    window.addEventListener('resize', positionPanel)
     window.addEventListener('action-menu-open', handleOpen)
 
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleEscape)
+      window.removeEventListener('scroll', positionPanel, true)
+      window.removeEventListener('resize', positionPanel)
       window.removeEventListener('action-menu-open', handleOpen)
     }
   }, [menuId, open])
@@ -67,11 +94,12 @@ export default function ActionMenu({ actions = [] }) {
   if (!primary) return null
 
   return (
-    <div className="action-menu" ref={menuRef}>
+    <div className={`action-menu ${open ? 'action-menu-open' : ''}`} ref={menuRef}>
       <ActionButton action={primary} />
       {rest.length > 0 && (
         <div className="action-menu-more">
           <button
+            ref={moreButtonRef}
             type="button"
             className={`btn-icon bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700 ${open ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100' : ''}`}
             title="More actions"
@@ -79,6 +107,7 @@ export default function ActionMenu({ actions = [] }) {
             aria-expanded={open}
             onClick={() => {
               const next = !open
+              if (next) positionPanel()
               setOpen(next)
               if (next) window.dispatchEvent(new CustomEvent('action-menu-open', { detail: menuId }))
             }}
@@ -86,7 +115,7 @@ export default function ActionMenu({ actions = [] }) {
             <i className="fas fa-ellipsis-h" />
           </button>
           {open && (
-            <div className="action-menu-panel" role="menu">
+            <div className="action-menu-panel" role="menu" style={panelStyle}>
               {rest.map((action, index) => (
                 <ActionButton key={`${action.label}-${index}`} action={action} compact onAfterClick={() => setOpen(false)} />
               ))}
