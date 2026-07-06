@@ -16,6 +16,7 @@ import { EmptyRow, TableLoader } from '../components/shared/Loader'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
 import TimelineModal from '../components/shared/TimelineModal'
+import ActionMenu from '../components/shared/ActionMenu'
 import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
@@ -490,7 +491,7 @@ export default function ComplianceCertificates() {
                 <th className="table-th w-[4.5rem]">DOLE</th>
                 <th className="table-th w-28">Status</th>
                 <th className="table-th w-52">Remarks</th>
-                <th className="table-th w-40 text-right">Actions</th>
+                <th className="table-th table-actions-sticky w-28 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -519,18 +520,14 @@ export default function ComplianceCertificates() {
                       </span>
                     </td>
                     <td className="table-td w-52 truncate" title={remarks}>{remarks || '-'}</td>
-                    <td className="table-td">
-                      <div className="table-actions justify-end">
-                        {canUpload && (
-                          <>
-                            <button onClick={() => handleUpload(row, 'cor_link', 'COR')} className="btn-icon bg-emerald-50 text-emerald-600 hover:bg-emerald-100" title="Upload COR"><i className="fas fa-file-upload" /></button>
-                            <button onClick={() => handleUpload(row, 'dole_link', 'DOLE')} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Upload DOLE"><i className="fas fa-cloud-upload-alt" /></button>
-                            <button onClick={() => openModal(row)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button>
-                          </>
-                        )}
-                        <button onClick={() => setTimelineTarget(row)} className="btn-icon bg-slate-50 text-slate-500 hover:bg-slate-100" title="History"><i className="fas fa-clock-rotate-left" /></button>
-                        {(isAdmin || isSuperAdmin) && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
-                      </div>
+                    <td className="table-td table-actions-sticky">
+                      <ActionMenu actions={[
+                        { label: 'History', icon: 'fa-clock-rotate-left', tone: 'slate', onClick: () => setTimelineTarget(row) },
+                        canUpload && { label: 'Upload COR', icon: 'fa-file-upload', tone: 'emerald', onClick: () => handleUpload(row, 'cor_link', 'COR') },
+                        canUpload && { label: 'Upload DOLE', icon: 'fa-cloud-upload-alt', tone: 'blue', onClick: () => handleUpload(row, 'dole_link', 'DOLE') },
+                        canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(row) },
+                        (isAdmin || isSuperAdmin) && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(row) },
+                      ]} />
                     </td>
                   </tr>
                 )

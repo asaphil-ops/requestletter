@@ -81,7 +81,7 @@ export function TableLoader({ rows = 8, cols = 6 }) {
   )
 }
 
-export function EmptyRow({ cols = 10, message = 'No data found' }) {
+export function EmptyRow({ cols = 10, message = 'No records found', hint = 'Try clearing filters or adding a new record.' }) {
   return (
     <tr>
       <td colSpan={cols} className="table-td text-center py-16 text-gray-400 dark:text-slate-400 text-sm">
@@ -91,7 +91,7 @@ export function EmptyRow({ cols = 10, message = 'No data found' }) {
           </div>
           <div>
             <p className="font-medium text-gray-500 dark:text-slate-400">{message}</p>
-            <p className="text-xs text-gray-300 dark:text-slate-600 mt-0.5">No records to display</p>
+            <p className="text-xs text-gray-300 dark:text-slate-600 mt-0.5">{hint}</p>
           </div>
         </div>
       </td>

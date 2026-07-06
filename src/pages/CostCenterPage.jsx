@@ -16,6 +16,7 @@ import StatusBadge from '../components/shared/StatusBadge'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
 import TimelineModal from '../components/shared/TimelineModal'
 import { OpsModal } from '../components/shared/ProcessModal'
+import ActionMenu from '../components/shared/ActionMenu'
 import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
@@ -138,6 +139,7 @@ export default function CostCenterPage({ type }) {
   const [previewFile, setPreviewFile] = useState(null)
   const [timelineTarget, setTimelineTarget] = useState(null)
   const [form, setForm] = useState(config.emptyForm)
+  const [density, setDensity] = useState('comfortable')
   const titles = settings?.titles || []
   const initiativeParticulars = useMemo(
     () => [...new Set(initiativeMappings.map(row => row.particular).filter(Boolean))].sort(),
@@ -658,7 +660,24 @@ export default function CostCenterPage({ type }) {
       </div>
 
       {/* Table */}
-      <div className="card overflow-hidden">
+      <div className={`card overflow-hidden ${density === 'compact' ? 'density-compact' : ''}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 dark:border-slate-800">
+          <div>
+            <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{config.title} Registry</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{filtered.length} records after filters</div>
+          </div>
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-slate-700 dark:bg-slate-900">
+            {['comfortable', 'compact'].map(item => (
+              <button
+                key={item}
+                onClick={() => setDensity(item)}
+                className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition ${density === item ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-sky-200' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
           <table className={`w-full table-fixed ${type === 'cfoo' ? 'min-w-[1760px]' : type === 'initiatives' ? 'min-w-[1520px]' : 'min-w-[1280px]'}`}>
             <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm">
@@ -677,7 +696,7 @@ export default function CostCenterPage({ type }) {
                 <th className="table-th w-44">Uploader</th>
                 <th className="table-th hidden md:table-cell w-44">Checked By</th>
 
-                <th className="table-th text-right w-40">Actions</th>
+                <th className="table-th table-actions-sticky text-right w-28">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -698,24 +717,17 @@ export default function CostCenterPage({ type }) {
                     <td className="table-td text-xs truncate" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(row.uploader_info || row.uploader || '-') }} />
                     <td className="table-td text-xs hidden md:table-cell truncate" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(row.ops_info || '-') }} />
 
-                    <td className="table-td">
-                      <div className="table-actions">
-                        <button onClick={() => row.file_id && setPreviewFile(row.file_id)} className={`btn-icon ${row.file_id ? 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`} title={row.file_id ? 'Preview' : 'No file'}><i className="fas fa-eye" /></button>
-                        <button onClick={() => setTimelineTarget(row)} className="btn-icon bg-slate-50 text-slate-500 hover:bg-slate-100" title="Activity timeline"><i className="fas fa-clock-rotate-left" /></button>
-                        {canUpload && <button onClick={() => handleUpload(row)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Upload"><i className="fas fa-upload" /></button>}
-                        {canUpload && <button onClick={() => openModal(row)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button>}
-                        {(row.status || 'Pending') === 'Pending' && canCheck && <button onClick={() => setOpsTarget(row)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Check"><i className="fas fa-check" /></button>}
-                        <button 
-                          onClick={() => handleSendEmail(row)} 
-                          className={`btn-icon ${row.status === 'Checked' ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`} 
-                          title={row.status === 'Checked' ? 'Send Email' : 'Available only for Checked status'}
-                          disabled={row.status !== 'Checked'}
-                        >
-                          <i className="fas fa-envelope" />
-                        </button>
-                        {isAdmin && !isSuperAdmin && (row.status || 'Pending') !== 'Checked' && <button onClick={() => handleDelete(row)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
-                        {isSuperAdmin && canForceDelete && <button onClick={() => handleDelete(row)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
-                      </div>
+                    <td className="table-td table-actions-sticky">
+                      <ActionMenu actions={[
+                        { label: 'Preview', icon: 'fa-eye', tone: row.file_id ? 'cyan' : 'gray', disabled: !row.file_id, title: row.file_id ? 'Preview' : 'No file', onClick: () => row.file_id && setPreviewFile(row.file_id) },
+                        { label: 'History', icon: 'fa-clock-rotate-left', tone: 'slate', onClick: () => setTimelineTarget(row) },
+                        canUpload && { label: 'Upload', icon: 'fa-upload', tone: 'blue', onClick: () => handleUpload(row) },
+                        canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(row) },
+                        (row.status || 'Pending') === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(row) },
+                        { label: 'Send Email', icon: 'fa-envelope', tone: row.status === 'Checked' ? 'amber' : 'gray', disabled: row.status !== 'Checked', title: row.status === 'Checked' ? 'Send Email' : 'Available only for Checked status', onClick: () => handleSendEmail(row) },
+                        isAdmin && !isSuperAdmin && (row.status || 'Pending') !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(row) },
+                        isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(row) },
+                      ]} />
                     </td>
                   </tr>
                 ))

@@ -35,6 +35,8 @@ import TimelineModal from '../components/shared/TimelineModal'
 import Pagination from '../components/shared/Pagination'
 import { TableLoader, EmptyRow } from '../components/shared/Loader'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
+import ActionMenu from '../components/shared/ActionMenu'
+import RecordDrawer from '../components/shared/RecordDrawer'
 import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
@@ -84,9 +86,11 @@ export default function Requests() {
   const [opsTarget, setOpsTarget] = useState(null) // Keep opsTarget for 'Check' action
   const [previewFile, setPreviewFile] = useState(null) // Keep previewFile
   const [timelineTarget, setTimelineTarget] = useState(null)
+  const [detailTarget, setDetailTarget] = useState(null)
   const [sortKey, setSortKey] = useState('created_at')
   const [branchLookupOpen, setBranchLookupOpen] = useState(false)
   const [sortDir, setSortDir] = useState('desc')
+  const [density, setDensity] = useState('comfortable')
 
   const { data: branches = [] } = useBranches()
   const branchMap = useBranchMap()
@@ -552,7 +556,7 @@ export default function Requests() {
       </div>
 
       {/* Table */}
-      <div className="card relative z-0 overflow-hidden">
+      <div className={`card relative z-0 overflow-hidden ${density === 'compact' ? 'density-compact' : ''}`}>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 dark:border-slate-800">
           <div>
             <div className="text-sm font-bold text-gray-900 dark:text-gray-100">Request Registry</div>
@@ -563,6 +567,17 @@ export default function Requests() {
               {selected.length} selected
             </div>
           )}
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-slate-700 dark:bg-slate-900">
+            {['comfortable', 'compact'].map(item => (
+              <button
+                key={item}
+                onClick={() => setDensity(item)}
+                className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition ${density === item ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-sky-200' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
           <table className="w-full min-w-[1320px] table-fixed">
@@ -583,7 +598,7 @@ export default function Requests() {
                 ))}
                 <th className="table-th w-44">Uploader</th>
 
-                <th className="table-th text-right w-40">Actions</th>
+                <th className="table-th table-actions-sticky text-right w-28">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -611,17 +626,18 @@ export default function Requests() {
                     <td className="table-td whitespace-nowrap"><StatusBadge status={displayStatus} remarks={r.remarks} emailSent={r.email_sent} emailSentAt={r.email_sent_at} fileId={r.file_id} /></td>
                     <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.uploader_info || r.uploader || '-') }} />
 
-                    <td className="table-td">
-                      <div className="table-actions">
-                        <button onClick={() => r.file_id && setPreviewFile(r.file_id)} className={`btn-icon ${r.file_id ? 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`} title={r.file_id ? 'Preview' : 'No attachment'}><i className="fas fa-eye" /></button>
-                        <button onClick={() => setTimelineTarget(r)} className="btn-icon bg-slate-50 text-slate-500 hover:bg-slate-100" title="Activity timeline"><i className="fas fa-clock-rotate-left" /></button>
-                        {canUpload && <button onClick={() => handleUpload(r)} className="btn-icon bg-emerald-50 text-emerald-600 hover:bg-emerald-100" title="Upload File"><i className="fas fa-cloud-upload-alt" /></button>}
-                        {canUpload && <><button onClick={() => handleSendEmail(r)} className="btn-icon bg-amber-50 text-amber-500 hover:bg-amber-100" title="Send Email" disabled={displayStatus !== 'Checked'}><i className="fas fa-envelope" /></button><button onClick={() => openModal(r)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button></>}
-                        {displayStatus === 'Pending' && canCheck && <button onClick={() => setOpsTarget(r)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Check"><i className="fas fa-check" /></button>}
-
-                        {isAdmin && !isSuperAdmin && displayStatus !== 'Checked' && <button onClick={() => handleDelete(r)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
-                        {isSuperAdmin && canForceDelete && <button onClick={() => handleDelete(r)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
-                      </div>
+                    <td className="table-td table-actions-sticky">
+                      <ActionMenu actions={[
+                        { label: 'Preview', icon: 'fa-eye', tone: r.file_id ? 'cyan' : 'gray', disabled: !r.file_id, title: r.file_id ? 'Preview' : 'No attachment', onClick: () => r.file_id && setPreviewFile(r.file_id) },
+                        { label: 'Details', icon: 'fa-table-list', tone: 'slate', onClick: () => setDetailTarget(r) },
+                        { label: 'History', icon: 'fa-clock-rotate-left', tone: 'slate', onClick: () => setTimelineTarget(r) },
+                        canUpload && { label: 'Upload File', icon: 'fa-cloud-upload-alt', tone: 'emerald', onClick: () => handleUpload(r) },
+                        canUpload && { label: 'Send Email', icon: 'fa-envelope', tone: displayStatus === 'Checked' ? 'amber' : 'gray', disabled: displayStatus !== 'Checked', onClick: () => handleSendEmail(r) },
+                        canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
+                        displayStatus === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
+                        isAdmin && !isSuperAdmin && displayStatus !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(r) },
+                        isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(r) },
+                      ]} />
                     </td>
                   </tr>
                   )
@@ -752,6 +768,24 @@ export default function Requests() {
 
       {opsTarget && <OpsModal record={opsTarget} onConfirm={(action, payload) => handleProcess(action, payload, opsTarget)} onClose={() => setOpsTarget(null)} />}
       {timelineTarget && <TimelineModal record={timelineTarget} module={WORKFLOW_MODULES.req} onClose={() => setTimelineTarget(null)} />}
+      {detailTarget && (
+        <RecordDrawer
+          title="Request Letter"
+          subtitle={detailTarget.req_id}
+          record={detailTarget}
+          fields={[
+            { key: 'created_at', label: 'Date Uploaded', render: row => getUploadedAt(row)?.toLocaleString('en-PH') || '-' },
+            { key: 'type', label: 'Type' },
+            { key: 'title', label: 'Title' },
+            { key: 'beneficiary', label: 'Beneficiary' },
+            { key: 'description', label: 'Description' },
+            { key: 'amount', label: 'Amount', render: row => fmtCurrency(row.amount) },
+            { key: 'status', label: 'Status', render: row => normalizeRequestStatus(row.status) },
+            { key: 'uploader_info', label: 'Uploader' },
+          ]}
+          onClose={() => setDetailTarget(null)}
+        />
+      )}
       {previewFile && <FilePreviewModal fileId={previewFile} onClose={() => setPreviewFile(null)} />}
     </div>
   )

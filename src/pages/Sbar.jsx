@@ -26,6 +26,7 @@ import TimelineModal from '../components/shared/TimelineModal'
 import Pagination from '../components/shared/Pagination'
 import { TableLoader, EmptyRow } from '../components/shared/Loader'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
+import ActionMenu from '../components/shared/ActionMenu'
 import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
@@ -48,6 +49,7 @@ export default function Sbar() {
   const [timelineTarget, setTimelineTarget] = useState(null)
   const [sortKey, setSortKey] = useState('created_at')
   const [sortDir, setSortDir] = useState('desc')
+  const [density, setDensity] = useState('comfortable')
   const [giverLookupOpen, setGiverLookupOpen] = useState(false)
   const [receiverLookupOpen, setReceiverLookupOpen] = useState(false)
 
@@ -399,7 +401,24 @@ export default function Sbar() {
       </div>
 
       {/* Table */}
-      <div className="card relative z-0 overflow-hidden">
+      <div className={`card relative z-0 overflow-hidden ${density === 'compact' ? 'density-compact' : ''}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 dark:border-slate-800">
+          <div>
+            <div className="text-sm font-bold text-gray-900 dark:text-gray-100">SBAR Registry</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{filtered.length} records after filters</div>
+          </div>
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-slate-700 dark:bg-slate-900">
+            {['comfortable', 'compact'].map(item => (
+              <button
+                key={item}
+                onClick={() => setDensity(item)}
+                className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition ${density === item ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-sky-200' : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-100'}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh] thick-scrollbar">
           <table className="w-full min-w-[1280px] table-fixed">
             <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm">
@@ -417,7 +436,7 @@ export default function Sbar() {
                 <th className="table-th w-44">Uploader</th>
                 <th className="table-th hidden md:table-cell w-44">Checked By</th>
 
-                <th className="table-th text-right w-40">Actions</th>
+                <th className="table-th table-actions-sticky text-right w-28">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -453,23 +472,17 @@ export default function Sbar() {
                     <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.uploader_info||r.uploader||'—') }} />
                     <td className="table-td text-xs hidden md:table-cell" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.ops_info||'—') }} />
 
-                    <td className="table-td">
-                      <div className="table-actions">
-                        <button onClick={()=>r.file_id&&setPreviewFile(r.file_id)} className={`btn-icon ${r.file_id?'bg-cyan-50 text-cyan-600 hover:bg-cyan-100':'bg-gray-50 text-gray-300 cursor-not-allowed'}`} title={r.file_id ? 'Preview' : 'No file'}><i className="fas fa-eye" /></button>
-                        <button onClick={() => setTimelineTarget(r)} className="btn-icon bg-slate-50 text-slate-500 hover:bg-slate-100" title="Activity timeline"><i className="fas fa-clock-rotate-left" /></button>
-                        {canUpload&&<><button onClick={()=>handleUpload(r)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Upload"><i className="fas fa-upload" /></button><button onClick={()=>openModal(r)} className="btn-icon bg-gray-50 text-gray-500 hover:bg-gray-100" title="Edit"><i className="fas fa-pencil-alt" /></button></>}
-                        {r.status==='Pending'&&canCheck&&<button onClick={()=>setOpsTarget(r)} className="btn-icon bg-blue-50 text-blue-600 hover:bg-blue-100" title="Check"><i className="fas fa-check" /></button>}
-                        <button 
-                          onClick={()=>handleSendEmail(r)} 
-                          className={`btn-icon ${r.status === 'Checked' ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`} 
-                          title={r.status === 'Checked' ? 'Send Email' : 'Available only for Checked status'}
-                          disabled={r.status !== 'Checked'}
-                        >
-                          <i className="fas fa-envelope" />
-                        </button>
-                        {isAdmin && !isSuperAdmin && r.status !== 'Checked' && <button onClick={()=>handleDelete(r)} className="btn-icon bg-red-50 text-red-500 hover:bg-red-100" title="Delete"><i className="fas fa-trash" /></button>}
-                        {isSuperAdmin && canForceDelete && <button onClick={()=>handleDelete(r)} className="btn-icon bg-orange-50 text-orange-500 hover:bg-orange-100" title="Force Delete"><i className="fas fa-trash" /></button>}
-                      </div>
+                    <td className="table-td table-actions-sticky">
+                      <ActionMenu actions={[
+                        { label: 'Preview', icon: 'fa-eye', tone: r.file_id ? 'cyan' : 'gray', disabled: !r.file_id, title: r.file_id ? 'Preview' : 'No file', onClick: () => r.file_id && setPreviewFile(r.file_id) },
+                        { label: 'History', icon: 'fa-clock-rotate-left', tone: 'slate', onClick: () => setTimelineTarget(r) },
+                        canUpload && { label: 'Upload', icon: 'fa-upload', tone: 'blue', onClick: () => handleUpload(r) },
+                        canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
+                        r.status === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
+                        { label: 'Send Email', icon: 'fa-envelope', tone: r.status === 'Checked' ? 'amber' : 'gray', disabled: r.status !== 'Checked', title: r.status === 'Checked' ? 'Send Email' : 'Available only for Checked status', onClick: () => handleSendEmail(r) },
+                        isAdmin && !isSuperAdmin && r.status !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(r) },
+                        isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(r) },
+                      ]} />
                     </td>
                   </tr>
                   )
