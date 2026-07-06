@@ -1,3 +1,5 @@
+import { useEffect, useId, useRef, useState } from 'react'
+
 const toneClass = {
   cyan: 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 dark:bg-cyan-400/10 dark:text-cyan-200',
   slate: 'bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300',
@@ -9,12 +11,15 @@ const toneClass = {
   orange: 'bg-orange-50 text-orange-500 hover:bg-orange-100 dark:bg-orange-400/10 dark:text-orange-200',
 }
 
-function ActionButton({ action, compact = false }) {
+function ActionButton({ action, compact = false, onAfterClick }) {
   const tone = toneClass[action.tone] || toneClass.gray
   return (
     <button
       type="button"
-      onClick={action.onClick}
+      onClick={(event) => {
+        action.onClick?.(event)
+        onAfterClick?.()
+      }}
       disabled={action.disabled}
       title={action.title || action.label}
       className={`${compact ? 'action-menu-item' : 'btn-icon'} ${tone} ${action.disabled ? 'cursor-not-allowed opacity-45 hover:bg-gray-50 dark:hover:bg-slate-800' : ''}`}
@@ -26,26 +31,68 @@ function ActionButton({ action, compact = false }) {
 }
 
 export default function ActionMenu({ actions = [] }) {
+  const menuId = useId()
+  const menuRef = useRef(null)
+  const [open, setOpen] = useState(false)
   const visibleActions = actions.filter(Boolean)
   const primary = visibleActions[0]
   const rest = visibleActions.slice(1)
 
+  useEffect(() => {
+    if (!open) return
+
+    const handlePointerDown = (event) => {
+      if (!menuRef.current?.contains(event.target)) setOpen(false)
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    const handleOpen = (event) => {
+      if (event.detail !== menuId) setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+    window.addEventListener('action-menu-open', handleOpen)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+      window.removeEventListener('action-menu-open', handleOpen)
+    }
+  }, [menuId, open])
+
   if (!primary) return null
 
   return (
-    <div className="action-menu">
+    <div className="action-menu" ref={menuRef}>
       <ActionButton action={primary} />
       {rest.length > 0 && (
-        <details className="action-menu-more">
-          <summary className="btn-icon bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700" title="More actions">
+        <div className="action-menu-more">
+          <button
+            type="button"
+            className={`btn-icon bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700 ${open ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100' : ''}`}
+            title="More actions"
+            aria-haspopup="menu"
+            aria-expanded={open}
+            onClick={() => {
+              const next = !open
+              setOpen(next)
+              if (next) window.dispatchEvent(new CustomEvent('action-menu-open', { detail: menuId }))
+            }}
+          >
             <i className="fas fa-ellipsis-h" />
-          </summary>
-          <div className="action-menu-panel">
-            {rest.map((action, index) => (
-              <ActionButton key={`${action.label}-${index}`} action={action} compact />
-            ))}
-          </div>
-        </details>
+          </button>
+          {open && (
+            <div className="action-menu-panel" role="menu">
+              {rest.map((action, index) => (
+                <ActionButton key={`${action.label}-${index}`} action={action} compact onAfterClick={() => setOpen(false)} />
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
