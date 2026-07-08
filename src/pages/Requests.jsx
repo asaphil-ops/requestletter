@@ -298,11 +298,34 @@ export default function Requests() {
     return branchEmail || staffEmail || operationEmail
   }
 
+  const buildRequestEmailSubject = (rec) => {
+    const beneficiary = String(rec.beneficiary || '').trim()
+    let branchCode = ''
+    let branchName = ''
+
+    if (beneficiary.includes(' - ')) {
+      const parts = beneficiary.split(' - ')
+      branchCode = parts[0]?.trim().toUpperCase() || ''
+      branchName = parts.slice(1).join(' - ').trim()
+    } else {
+      const beneficiaryKey = beneficiary.toLowerCase()
+      const staff = staffList.find(s =>
+        (s.name && s.name.toLowerCase() === beneficiaryKey) ||
+        (`${s.first_name || ''} ${s.last_name || ''}`.trim().toLowerCase() === beneficiaryKey)
+      )
+      branchCode = String(staff?.branch_code || '').trim().toUpperCase()
+      branchName = branchMap[branchCode]?.name || ''
+    }
+
+    const requestText = String(rec.description || rec.title || rec.req_id || 'Request Letter').trim()
+    return [branchCode, branchName, requestText].filter(Boolean).join(' - ')
+  }
+
   const handleSendEmail = (rec) => {
     const receiverEmail = resolveRequestEmail(rec)
     useUIStore.getState().openSendEmailModal({
       to: receiverEmail ? [receiverEmail] : [],
-      subject: `${rec.type || 'Request Letter'} - ${rec.beneficiary || rec.req_id} (Checked)`,
+      subject: buildRequestEmailSubject(rec),
       refId: rec.req_id,
       refType: 'Request Letter',
       fileId: rec.file_id || '',

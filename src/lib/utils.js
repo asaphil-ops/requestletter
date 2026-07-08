@@ -112,20 +112,36 @@ export const getFileIcon = (filename = '') => {
   return map[ext] || { icon: 'fa-file', cls: 'text-gray-500 bg-gray-50' }
 }
 
-export const getDrivePreviewUrl = (fileId) =>
-  fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null
+const normalizeDriveFileId = (fileId) => {
+  const value = String(fileId || '').trim()
+  if (!value) return ''
+  return getDriveFileIdFromUrl(value) || value
+}
 
-export const getDriveViewUrl = (fileId) =>
-  fileId ? `https://drive.google.com/file/d/${fileId}/view?usp=sharing` : null
+export const getDrivePreviewUrl = (fileId) => {
+  const id = normalizeDriveFileId(fileId)
+  return id ? `https://drive.google.com/file/d/${id}/preview` : null
+}
 
-export const getDriveDownloadUrl = (fileId) =>
-  fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : null
+export const getDriveViewUrl = (fileId) => {
+  const id = normalizeDriveFileId(fileId)
+  return id ? `https://drive.google.com/file/d/${id}/view?usp=sharing` : null
+}
 
-export const getDriveInlineUrl = (fileId) =>
-  fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : null
+export const getDriveDownloadUrl = (fileId) => {
+  const id = normalizeDriveFileId(fileId)
+  return id ? `https://drive.google.com/uc?export=download&id=${id}` : null
+}
 
-export const getDriveThumbnailUrl = (fileId, size = 2200) =>
-  fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}` : null
+export const getDriveInlineUrl = (fileId) => {
+  const id = normalizeDriveFileId(fileId)
+  return id ? `https://drive.google.com/uc?export=view&id=${id}` : null
+}
+
+export const getDriveThumbnailUrl = (fileId, size = 2200) => {
+  const id = normalizeDriveFileId(fileId)
+  return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${size}` : null
+}
 
 export const getDriveFileIdFromUrl = (url = '') => {
   const value = String(url || '')

@@ -113,9 +113,17 @@ export default function ExpensePage({ type }) {
     if (type === 'at') refType = 'Aircon/Toilet Maintenance'
     if (type === 'comms') refType = 'Comms Expense'
 
+    const branchName = String(rec.branch_name || branch.name || rec.uniq_id || '').trim()
+    const categoryText = String(rec.category || '').trim()
+    const itemName = String(rec.item_name || rec.description || refType).trim()
+    const itemDetail = categoryText
+      ? itemName.replace(new RegExp(`\\b${categoryText}\\b`, 'ig'), '').replace(/\s+/g, ' ').trim()
+      : itemName
+    const requestText = ['Request', categoryText, itemDetail].filter(Boolean).join(' ')
+
     useUIStore.getState().openSendEmailModal({
       to: operationEmail ? [operationEmail] : [],
-      subject: `${rec.item_name || refType} - ${rec.branch_code} - ${rec.branch_name || rec.uniq_id} (Checked)`,
+      subject: `${branchCode}-${branchName} -${requestText}`,
       refId: rec.uniq_id,
       refType: refType,
       fileId: rec.file_id || '',

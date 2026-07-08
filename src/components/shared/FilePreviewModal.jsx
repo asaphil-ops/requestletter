@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getFileContent } from '../../lib/gas'
-import { getDriveDownloadUrl, getDriveThumbnailUrl, getDriveViewUrl } from '../../lib/utils'
+import { getDriveDownloadUrl, getDriveFileIdFromUrl, getDriveThumbnailUrl, getDriveViewUrl } from '../../lib/utils'
 
 function base64ToBlob(base64, mimeType) {
   const binary = atob(base64)
@@ -16,9 +16,10 @@ export default function FilePreviewModal({ fileId, onClose, showOpenButton = tru
   const [error, setError] = useState('')
   const [legacyFallback, setLegacyFallback] = useState(false)
 
-  const driveViewUrl = getDriveViewUrl(fileId)
-  const driveDownloadUrl = getDriveDownloadUrl(fileId)
-  const thumbnailUrl = getDriveThumbnailUrl(fileId)
+  const cleanFileId = getDriveFileIdFromUrl(fileId) || String(fileId || '').trim()
+  const driveViewUrl = getDriveViewUrl(cleanFileId)
+  const driveDownloadUrl = getDriveDownloadUrl(cleanFileId)
+  const thumbnailUrl = getDriveThumbnailUrl(cleanFileId)
   const canInlinePreview = file?.mimeType === 'application/pdf' || file?.mimeType?.startsWith('image/')
   const downloadName = file?.name || 'attachment'
 
@@ -27,7 +28,7 @@ export default function FilePreviewModal({ fileId, onClose, showOpenButton = tru
     let objectUrl = ''
 
     async function loadFile() {
-      if (!fileId) return
+      if (!cleanFileId) return
       setLoading(true)
       setError('')
       setFile(null)
@@ -35,7 +36,7 @@ export default function FilePreviewModal({ fileId, onClose, showOpenButton = tru
       setLegacyFallback(false)
 
       try {
-        const data = await getFileContent(fileId)
+        const data = await getFileContent(cleanFileId)
         const blob = base64ToBlob(data.base64, data.mimeType)
         objectUrl = URL.createObjectURL(blob)
 
@@ -49,7 +50,12 @@ export default function FilePreviewModal({ fileId, onClose, showOpenButton = tru
       } catch (err) {
         if (!active) return
         const message = err.message || 'Unable to load attachment preview.'
-        if (message.includes('Unknown action: GET_FILE_CONTENT')) {
+        if (
+          message.includes('Unknown action: GET_FILE_CONTENT') ||
+          message.includes('Unknown action') ||
+          message.includes('not found') ||
+          message.includes('File not found')
+        ) {
           setLegacyFallback(true)
           return
         }
@@ -65,11 +71,11 @@ export default function FilePreviewModal({ fileId, onClose, showOpenButton = tru
       active = false
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [fileId])
+  }, [cleanFileId])
 
   const localDownloadUrl = useMemo(() => blobUrl || driveDownloadUrl, [blobUrl, driveDownloadUrl])
 
-  if (!fileId) return null
+  if (!cleanFileId) return null
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" onClick={onClose}>

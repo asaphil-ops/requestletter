@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { SUGGESTED_EMAILS, formatBytes, getFileIcon } from '../lib/utils'
 import { useBranchEmailMap } from '../hooks/useBranches'
 import { useEmployeeList } from '../hooks/useEmployeeList'
+import FilePreviewModal from '../components/shared/FilePreviewModal'
 import Swal from 'sweetalert2'
 
 const DEFAULT_NOTE = 'NOTE: FOR VP/SVP APPROVAL'
@@ -105,6 +106,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const [note, setNote] = useState(DEFAULT_NOTE)
   const [attachments, setAttachments] = useState([])
   const [driveAttachment, setDriveAttachment] = useState(null)
+  const [previewFile, setPreviewFile] = useState(null)
   const [showSugg, setShowSugg] = useState(null)
   const [suggQuery, setSuggQuery] = useState('')
   const [sending, setSending] = useState(false)
@@ -164,12 +166,12 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         .then(file => {
           const fileName = file?.name || d.fileName || 'Request Letter Attachment'
           setDriveAttachment({ fileId: d.fileId, name: fileName, fileName })
-          setSubject(`Request Letter - ${fileName}`)
+          setSubject(d.subject || (d.fileName ? `Request Letter - ${d.fileName}` : `Request Letter - ${fileName}`))
         })
         .catch(() => {
           const fileName = d.fileName || 'Request Letter Attachment'
           setDriveAttachment({ fileId: d.fileId, name: fileName, fileName })
-          setSubject(`Request Letter - ${fileName}`)
+          setSubject(d.subject || `Request Letter - ${fileName}`)
         })
     }
   }, [draft])
@@ -249,6 +251,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     if (unread.length) return Swal.fire('Wait', 'Files still loading, please try again', 'info')
 
     setSending(true)
+    let sentSuccessfully = false
     try {
       const to = toTags.join(', ')
       const cc = ccTags.join(', ')
@@ -283,7 +286,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         sentBy: user?.full_name,
       })
 
-      Swal.fire('Sent!', 'Email sent successfully.', 'success')
+      sentSuccessfully = true
       setToTags([])
       setCcTags([])
       setSubject('')
@@ -291,10 +294,14 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       setNote(DEFAULT_NOTE)
       setAttachments([])
       setDriveAttachment(null)
+      setPreviewFile(null)
+      setSending(false)
+      onClose?.()
+      await Swal.fire('Sent!', 'Email sent successfully.', 'success')
     } catch (err) {
       Swal.fire('Error', err.message || 'Failed to send', 'error')
     } finally {
-      setSending(false)
+      if (!sentSuccessfully) setSending(false)
     }
   }
 
@@ -308,6 +315,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setNote(DEFAULT_NOTE)
     setAttachments([])
     setDriveAttachment(null)
+    setPreviewFile(null)
   }
 
 
@@ -545,6 +553,9 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                           <div className="font-medium text-sm text-gray-700 dark:text-gray-300 truncate">{driveAttachment.name}</div>
                           <div className="text-xs text-gray-400">Auto-detected from approved request</div>
                         </div>
+                        <button onClick={() => setPreviewFile(driveAttachment.fileId)} className="w-7 h-7 rounded-lg hover:bg-blue-100 hover:text-blue-600 text-gray-400 flex items-center justify-center transition-colors" type="button" title="Preview attachment" aria-label="Preview attachment">
+                          <i className="fas fa-eye text-xs" />
+                        </button>
                         <button onClick={() => setDriveAttachment(null)} className="w-7 h-7 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 flex items-center justify-center transition-colors" type="button">
                           <i className="fas fa-times text-xs" />
                         </button>
@@ -584,6 +595,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
           </div>
         </div>
       </div>
+      {previewFile && <FilePreviewModal fileId={previewFile} onClose={() => setPreviewFile(null)} />}
     </div>
   )
 }
