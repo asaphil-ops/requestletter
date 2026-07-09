@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/uiStore'
 import {
@@ -71,6 +71,69 @@ const formatCSVDateTime = (date) => {
   })
 }
 
+function StaffBeneficiaryInput({ value, options, onChange }) {
+  const [open, setOpen] = useState(false)
+  const wrapperRef = useRef(null)
+
+  useEffect(() => {
+    const handleClick = (event) => {
+      if (!wrapperRef.current?.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const matches = useMemo(() => {
+    const needle = value.trim().toLowerCase()
+    const source = needle
+      ? options.filter(option => option.searchText.includes(needle))
+      : options
+    return source.slice(0, 12)
+  }, [options, value])
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <input
+        className="input"
+        placeholder="Search or encode staff name..."
+        value={value}
+        onFocus={() => setOpen(true)}
+        onChange={event => {
+          onChange(event.target.value)
+          setOpen(true)
+        }}
+      />
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-72 overflow-y-auto rounded-xl border border-blue-500 bg-white shadow-xl dark:border-sky-500 dark:bg-slate-900">
+          {matches.length === 0 ? (
+            <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+              No employee found. You can continue typing a new name.
+            </div>
+          ) : matches.map(option => (
+            <button
+              key={option.value}
+              type="button"
+              className="block w-full border-b border-slate-100 px-4 py-2.5 text-left text-sm transition last:border-b-0 hover:bg-blue-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-sky-400/10"
+              onMouseDown={event => {
+                event.preventDefault()
+                onChange(option.value)
+                setOpen(false)
+              }}
+            >
+              <span className="block font-semibold text-slate-900 dark:text-slate-100">{option.value}</span>
+              {(option.idNumber || option.designation) && (
+                <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                  {[option.idNumber, option.designation].filter(Boolean).join(' | ')}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Requests() {
   const { canCheck, canUpload, isAdmin, isSuperAdmin, canForceDelete } = useAuthStore()
   const navigate = useNavigate()
@@ -107,6 +170,25 @@ export default function Requests() {
   const { data: employeeList = [] } = useEmployeeList()
 
   const titles = settings?.titles || []
+
+  const employeeBeneficiaryOptions = useMemo(() => {
+    const byName = new Map()
+    employeeList.forEach(employee => {
+      const fullName = String(employee.full_name || '').trim()
+      if (!fullName || byName.has(fullName.toLowerCase())) return
+      byName.set(fullName.toLowerCase(), {
+        value: fullName,
+        idNumber: String(employee.id_number || '').trim(),
+        designation: String(employee.designation || '').trim(),
+        searchText: [
+          fullName,
+          employee.id_number,
+          employee.designation,
+        ].filter(Boolean).join(' ').toLowerCase(),
+      })
+    })
+    return [...byName.values()].sort((a, b) => a.value.localeCompare(b.value))
+  }, [employeeList])
 
   // Form state
   const [form, setForm] = useState({ type: 'Staff Request', beneficiary: '', date_req: '', title: '', description: '', amount: '' })
@@ -753,12 +835,11 @@ export default function Requests() {
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <input className="input" list="benList" placeholder="Name..." value={form.beneficiary} onChange={e => setForm(f => ({ ...f, beneficiary: e.target.value }))} />
-                    <datalist id="benList">
-                      {staffList.map(s => <option key={s.id} value={s.name} />)}
-                    </datalist>
-                  </>
+                  <StaffBeneficiaryInput
+                    value={form.beneficiary}
+                    options={employeeBeneficiaryOptions}
+                    onChange={beneficiary => setForm(f => ({ ...f, beneficiary }))}
+                  />
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3">
