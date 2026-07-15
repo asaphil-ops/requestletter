@@ -5,15 +5,6 @@ import { useSbar, useCreateSbar, useUpdateSbar, useDeleteSbar, useProcessSbar } 
 import { useSettings } from '../hooks/useAccounts'
 import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useBranchOptions, useBranchEmailMap } from '../hooks/useBranches'
 import { useAuthStore } from '../store/authStore'
-// Mapping of operations to recipient email addresses
-const OPERATION_EMAIL_MAP = {
-  "LUZON I": "jinnette.anacio@asaphil.org",
-  "LUZON II": "cynthia.casido@asaphil.org",
-  "VISAYAS I": "jonnie.borgonia@asaphil.org",
-  "VISAYAS II": "sharon.galeno@asaphil.org",
-  "MINDANAO I": "taib.abduraji@asaphil.org",
-  "MINDANAO II": "arlyn.yagaya@asaphil.org",
-};
 import { uploadToDrive } from '../lib/gas'
 import { supabase } from '../lib/supabase'
 import { fmtNum, fmtCurrency, fmtDate, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
@@ -72,7 +63,7 @@ export default function Sbar() {
 
     // Auto-detect based on Giver's Operation (Case-insensitive lookup)
     const opKey = String(gDet.operation || '').toUpperCase()
-    const opEmail = OPERATION_EMAIL_MAP[opKey] || branchEmailMap[giverCode]
+    const opEmail = branchEmailMap[opKey] || branchEmailMap[giverCode]
 
     useUIStore.getState().openSendEmailModal({
       to: opEmail ? [opEmail] : [],
@@ -91,7 +82,7 @@ export default function Sbar() {
       const gCode = (r.giver || '').split(' - ')[0].trim().toUpperCase()
       const gDet = branchMap[gCode] || {}
       const opKey = String(gDet.operation || '').toUpperCase()
-      return OPERATION_EMAIL_MAP[opKey] || branchEmailMap[gCode]
+      return branchEmailMap[opKey] || branchEmailMap[gCode]
     }).filter(Boolean)
 
     useUIStore.getState().openSendEmailModal({

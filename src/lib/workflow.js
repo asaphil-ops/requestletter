@@ -43,6 +43,17 @@ export const WORKFLOW_MODULES = {
     owner: row => row.branch_name || row.branch_code || row.uploader || '-',
     amount: row => row.amount,
   },
+  generator: {
+    key: 'generator',
+    table: 'generator_expenses',
+    route: '/generator-expenses',
+    label: 'Generator Expenses',
+    idField: 'uniq_id',
+    dateField: 'date',
+    title: row => row.item_name || row.category || 'Generator Expense',
+    owner: row => row.branch_name || row.branch_code || row.uploader || '-',
+    amount: row => row.amount,
+  },
   comms: {
     key: 'comms',
     table: 'comms_expenses',

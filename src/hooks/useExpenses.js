@@ -6,7 +6,7 @@ import { buildWorkflowInfoHtml, escapePostgrestSearch } from '../lib/security'
 import { logAudit } from '../lib/audit'
 import { useAuthStore } from '../store/authStore'
 
-const TABLE_MAP = { it: 'it_expenses', at: 'at_expenses', comms: 'comms_expenses' }
+const TABLE_MAP = { it: 'it_expenses', at: 'at_expenses', generator: 'generator_expenses', comms: 'comms_expenses' }
 
 const invalidateWorkflowQueries = (qc, table) => {
   qc.invalidateQueries({ queryKey: [table] })

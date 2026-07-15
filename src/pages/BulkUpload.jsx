@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useQueryClient } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useStaffFilters } from '../hooks/useStaff'
@@ -145,8 +145,21 @@ const IMPORT_TYPES = {
     columns: ['uniq_id', 'category', 'date', 'branch_code', 'branch_name', 'account_title', 'item_name', 'description', 'amount', 'status', 'file_id', 'uploader', 'uploader_info', 'ops_info', 'fin_info', 'remarks'],
     samples: [
       ['COMMS-0001', 'GTR', '2026-05-22', 'B0001', 'Caloocan City I', 'Branch Signage', 'Comms request details', '5000', 'Pending', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '', '', ''],
-      ['COMMS-0002', 'FAF', '2026-05-22', 'B0002', 'Pasig City I', 'Calendar', 'Calendar printing sample', '2200', 'Checked', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:45 AM</span>', '', ''],
-      ['COMMS-0003', 'Others', '2026-05-22', 'B0003', 'Manila City I', 'Tarpaulin', 'Checked comms request', '1800', 'Checked', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:45 AM</span>', '', ''], // Status 'Checked'
+      ['COMMS-0002', 'FAF', '2026-05-22', 'B0002', 'Pasig City I', 'Calendar', 'Calendar printing sample', '2200', 'Checked', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 10:45 AM</span>', '', ''],
+      ['COMMS-0003', 'Others', '2026-05-22', 'B0003', 'Manila City I', 'Tarpaulin', 'Checked comms request', '1800', 'Checked', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 10:45 AM</span>', '', ''], // Status 'Checked'
+    ],
+  },
+  generator_expenses: {
+    label: 'Generator Expenses',
+    table: 'generator_expenses',
+    conflict: 'uniq_id',
+    db_conflict: 'uniq_id',
+    required: ['uniq_id', 'category', 'date', 'branch_code', 'branch_name', 'item_name'],
+    columns: ['uniq_id', 'category', 'date', 'branch_code', 'branch_name', 'account_title', 'item_name', 'description', 'amount', 'status', 'file_id', 'uploader', 'uploader_info', 'ops_info', 'fin_info', 'remarks'],
+    samples: [
+      ['GEN-0001', 'Generator', '2026-05-22', 'B0001', 'Caloocan City I', 'Supplies', 'Generator purchase', '15000', 'Pending', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '', '', ''],
+      ['GEN-0002', 'Parts & Repair', '2026-05-22', 'B0002', 'Pasig City I', 'Repair services', 'Generator repair sample', '3500', 'Checked', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 10:45 AM</span>', '', ''],
+      ['GEN-0003', 'Fuel', '2026-05-22', 'B0003', 'Manila City I', 'Fuel for generator', 'Fuel expense sample', '2800', 'Checked', '', 'Admin', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">May 22, 2026, 10:34 AM</span>', '<b>Ops User</b><br><span style="font-size:10px;color:#64748b">Jun 1, 2026, 10:45 AM</span>', '', ''], // Status 'Checked'
     ],
   },
   cfoo_budget: {
@@ -221,6 +234,7 @@ function downloadCSV(filename, rows) {
 
 export default function BulkUpload() {
   const { user } = useAuthStore()
+  const qc = useQueryClient()
   const [type, setType] = useState('branches')
   const [fileName, setFileName] = useState('')
   const [rows, setRows] = useState([])
@@ -532,6 +546,10 @@ export default function BulkUpload() {
       setRows([])
       setFileName('')
       setErrors([])
+
+      // Invalidate cache so the app reads the newly uploaded data
+      if (type === 'branches') qc.invalidateQueries({ queryKey: ['branches'] })
+      if (type === 'staff') qc.invalidateQueries({ queryKey: ['staff'] })
     } catch (err) {
       Swal.fire('Upload failed', err.message || 'Could not upload CSV.', 'error')
     } finally {

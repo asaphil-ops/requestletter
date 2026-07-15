@@ -20,16 +20,6 @@ import ActionMenu from '../components/shared/ActionMenu'
 import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
-// Operation email mapping for fallback
-const OPERATION_EMAIL_MAP = {
-  "LUZON I": "jinnette.anacio@asaphil.org",
-  "LUZON II": "cynthia.casido@asaphil.org",
-  "VISAYAS I": "jonnie.borgonia@asaphil.org",
-  "VISAYAS II": "sharon.galeno@asaphil.org",
-  "MINDANAO I": "taib.abduraji@asaphil.org",
-  "MINDANAO II": "arlyn.yagaya@asaphil.org",
-};
-
 const TYPE_OPTIONS = ['Cash', 'Check', 'Online Transfer', 'Reimbursement', 'Others']
 
 const CONFIG = {

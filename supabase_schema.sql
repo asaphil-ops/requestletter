@@ -185,6 +185,39 @@ create index if not exists idx_at_status on at_expenses(status);
 create index if not exists idx_at_branch on at_expenses(branch_code);
 
 -- ============================================================
+-- GENERATOR EXPENSES
+-- ============================================================
+create table if not exists generator_expenses (
+  id uuid primary key default gen_random_uuid(),
+  uniq_id text unique not null,
+  category text,
+  date date,
+  branch_code text,
+  branch_name text,
+  account_title text,
+  item_name text,
+  description text,
+  amount numeric(15,2) default 0,
+  status text default 'Pending',
+  file_id text,
+  uploader text,
+  uploader_info text,
+  ops_info text,
+  fin_info text,
+  email_sent boolean default false,
+  email_sent_at timestamptz,
+  email_sent_by text,
+  email_subject text,
+  remarks text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_generator_status on generator_expenses(status);
+create index if not exists idx_generator_branch on generator_expenses(branch_code);
+create index if not exists idx_generator_category on generator_expenses(category);
+
+-- ============================================================
 -- COMMS EXPENSES
 -- ============================================================
 create table if not exists comms_expenses (
@@ -477,6 +510,7 @@ create policy "allow_all_requests" on requests for all using (true) with check (
 create policy "allow_all_sbar" on sbar for all using (true) with check (true);
 create policy "allow_all_it" on it_expenses for all using (true) with check (true);
 create policy "allow_all_at" on at_expenses for all using (true) with check (true);
+create policy "allow_all_generator" on generator_expenses for all using (true) with check (true);
 create policy "allow_all_comms" on comms_expenses for all using (true) with check (true);
 create policy "allow_all_cost_center_initiatives" on cost_center_initiatives for all using (true) with check (true);
 create policy "allow_all_cost_center_cfoo" on cost_center_cfoo for all using (true) with check (true);

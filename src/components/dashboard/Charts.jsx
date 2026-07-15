@@ -3,8 +3,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 
-const COLORS = { req: '#2563eb', sbar: '#7c3aed', it: '#f59e0b', at: '#10b981', comms: '#ef4444' }
-const CAT_LABELS = { req: 'Request Letter', sbar: 'SBAR', it: 'IT Expenses', at: 'Aircon & Toilet', comms: 'Comms' }
+const COLORS = { req: '#2563eb', sbar: '#7c3aed', it: '#f59e0b', at: '#10b981', generator: '#f59f00', comms: '#ef4444' }
+const CAT_LABELS = { req: 'Request Letter', sbar: 'SBAR', it: 'IT Expenses', at: 'Aircon & Toilet', generator: 'Generator', comms: 'Comms' }
 const STATUS_COLORS = { Pending: '#f59e0b', Approved: '#10b981', Rejected: '#ef4444', Checked: '#2563eb' }
 
 function buildMonthly(data) {

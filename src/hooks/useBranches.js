@@ -113,6 +113,11 @@ export function useBranchEmailMap() {
           map[alias] = branch.email
         })
       }
+      // Also map operation -> email for auto-detect in SendEmail
+      const op = cleanGeoValue(branch.operation)
+      if (op && branch.email) {
+        map[op] = branch.email
+      }
     })
     return map
   }, [branches])

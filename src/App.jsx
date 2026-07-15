@@ -7,6 +7,7 @@ import Requests from './pages/Requests'
 import Sbar from './pages/Sbar'
 import ITExpenses from './pages/ITExpenses'
 import ATExpenses from './pages/ATExpenses'
+import GeneratorExpenses from './pages/GeneratorExpenses'
 import CommsExpenses from './pages/CommsExpenses'
 import InitiativesExpenses from './pages/InitiativesExpenses'
 import CfooExpenses from './pages/CfooExpenses'
@@ -69,6 +70,7 @@ function AppRoutes() {
         <Route path="sbar" element={<Sbar />} />
         <Route path="it-expenses" element={<ITExpenses />} />
         <Route path="at-expenses" element={<ATExpenses />} />
+        <Route path="generator-expenses" element={<GeneratorExpenses />} />
         <Route path="comms-expenses" element={<CommsExpenses />} />
         <Route path="compliance/cor-dole" element={<ComplianceCertificates />} />
         <Route path="cfoo-budget" element={<CFOOBudget />} />

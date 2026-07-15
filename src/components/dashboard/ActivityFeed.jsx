@@ -6,6 +6,7 @@ const TYPE_META = {
   sbar:   { icon: 'fa-exchange-alt', color: 'bg-purple-500', label: 'SBAR', path: '/sbar' },
   it:     { icon: 'fa-laptop', color: 'bg-emerald-500', label: 'IT Expense', path: '/it-expenses' },
   at:     { icon: 'fa-fan', color: 'bg-amber-500', label: 'Aircon/Toilet', path: '/at-expenses' },
+  generator: { icon: 'fa-bolt', color: 'bg-orange-500', label: 'Generator', path: '/generator-expenses' },
   comms:  { icon: 'fa-phone', color: 'bg-pink-500', label: 'Comms', path: '/comms-expenses' },
   cfoo:   { icon: 'fa-users', color: 'bg-cyan-500', label: 'CFOO', path: '/cost-center/cfoo' },
   init:   { icon: 'fa-lightbulb', color: 'bg-orange-500', label: 'Initiatives', path: '/cost-center/initiatives' },

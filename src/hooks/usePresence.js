@@ -9,6 +9,7 @@ const PAGE_LABELS = [
   ['/sbar', 'Working on SBAR / Transfer'],
   ['/it-expenses', 'Reviewing IT Expenses'],
   ['/at-expenses', 'Reviewing Aircon & Toilet'],
+  ['/generator-expenses', 'Reviewing Generator Expenses'],
   ['/comms-expenses', 'Reviewing Comms Expenses'],
   ['/compliance/cor-dole', 'Checking COR and DOLE Certificates'],
   ['/cfoo-budget', 'Checking CFOO Budget'],

@@ -6,15 +6,6 @@ import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useB
 import { useSettings } from '../hooks/useAccounts'
 import { useUIStore } from '../store/uiStore'
 
-// Mapping of operations to recipient email addresses
-const OPERATION_EMAIL_MAP = {
-  "LUZON I": "jinnette.anacio@asaphil.org",
-  "LUZON II": "cynthia.casido@asaphil.org",
-  "VISAYAS I": "jonnie.borgonia@asaphil.org",
-  "VISAYAS II": "sharon.galeno@asaphil.org",
-  "MINDANAO I": "taib.abduraji@asaphil.org",
-  "MINDANAO II": "arlyn.yagaya@asaphil.org",
-};
 import { uploadToDrive } from '../lib/gas'
 import { supabase } from '../lib/supabase'
 import { fmtCurrency, getUploadedAt, IT_BUDGETS, AT_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
@@ -52,13 +43,22 @@ const CONFIG = {
     table: 'at_expenses',
   },
   comms: {
-    title: 'Comms Expenses',
+    label: 'Comms Expenses',
     subtitle: 'Budget Monitoring for communications-related expenses',
     icon: 'fa-bullhorn',
     categories: ['GTR', 'FAF', 'Calendar', 'Branch Signage', 'Others'],
     budgets: null,
     budgetColors: { GTR: 'from-blue-600 to-blue-700', FAF: 'from-emerald-500 to-emerald-600', Calendar: 'from-amber-500 to-amber-600', 'Branch Signage': 'from-red-500 to-red-600', Others: 'from-purple-600 to-purple-700' },
     table: 'comms_expenses',
+  },
+  generator: {
+    label: 'Generator Expenses',
+    subtitle: 'Budget Monitoring for generator-related expenses',
+    icon: 'fa-bolt',
+    categories: ['Generator', 'Parts & Repair', 'Fuel'],
+    budgets: null,
+    budgetColors: { Generator: 'from-amber-500 to-amber-600', 'Parts & Repair': 'from-blue-600 to-blue-700', Fuel: 'from-emerald-500 to-emerald-600' },
+    table: 'generator_expenses',
   },
 }
 
@@ -107,10 +107,11 @@ export default function ExpensePage({ type }) {
 
     // Auto-detect based on Operation (Case-insensitive)
     const opKey = String(branch.operation || '').toUpperCase()
-    const operationEmail = OPERATION_EMAIL_MAP[opKey] || branchEmailMap[branchCode]
+    const operationEmail = branchEmailMap[opKey] || branchEmailMap[branchCode]
 
     let refType = 'IT Expense'
     if (type === 'at') refType = 'Aircon/Toilet Maintenance'
+    if (type === 'generator') refType = 'Generator Expense'
     if (type === 'comms') refType = 'Comms Expense'
 
     const branchName = String(rec.branch_name || branch.name || rec.uniq_id || '').trim()
@@ -138,7 +139,7 @@ export default function ExpensePage({ type }) {
       const branchCode = String(r.branch_code || '').trim().toUpperCase()
       const branch = branchMap[branchCode] || {}
       const opKey = String(branch.operation || '').toUpperCase()
-      return OPERATION_EMAIL_MAP[opKey] || branchEmailMap[branchCode]
+      return branchEmailMap[opKey] || branchEmailMap[branchCode]
     }).filter(Boolean)
 
     let refType = 'IT Expense'
@@ -153,7 +154,7 @@ export default function ExpensePage({ type }) {
     })
   }
 
-  const defaultAccountTitle = ['it', 'at', 'comms'].includes(type) ? 'Supplies' : ''
+  const defaultAccountTitle = ['it', 'at', 'generator', 'comms'].includes(type) ? 'Supplies' : ''
   const EMPTY_FORM = { category: config.categories[0], date: '', branchCode: '', branchName: '', accountTitle: defaultAccountTitle, itemName: '', description: '', amount: '' }
   const [form, setForm] = useState(EMPTY_FORM)
 

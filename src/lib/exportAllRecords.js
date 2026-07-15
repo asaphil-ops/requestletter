@@ -9,6 +9,7 @@ const MODULES = [
   { label: 'SBAR / Budget Transfer', table: 'sbar', idKey: 'uniq_id', map: mapSbar },
   { label: 'IT Expenses', table: 'it_expenses', idKey: 'uniq_id', map: mapFieldExpense },
   { label: 'AT Expenses', table: 'at_expenses', idKey: 'uniq_id', map: mapFieldExpense },
+  { label: 'Generator Expenses', table: 'generator_expenses', idKey: 'uniq_id', map: mapFieldExpense },
   { label: 'Comms Expenses', table: 'comms_expenses', idKey: 'uniq_id', map: mapFieldExpense },
   { label: 'Cost Center - Initiatives', table: 'cost_center_initiatives', idKey: 'uniq_id', map: mapCostCenter },
   { label: 'Cost Center - CFOO', table: 'cost_center_cfoo', idKey: 'uniq_id', map: mapCostCenter },

@@ -40,16 +40,6 @@ import RecordDrawer from '../components/shared/RecordDrawer'
 import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
-// Mapping of operations to recipient email addresses
-const OPERATION_EMAIL_MAP = {
-  "LUZON I": "jinnette.anacio@asaphil.org",
-  "LUZON II": "cynthia.casido@asaphil.org",
-  "VISAYAS I": "jonnie.borgonia@asaphil.org",
-  "VISAYAS II": "sharon.galeno@asaphil.org",
-  "MINDANAO I": "taib.abduraji@asaphil.org",
-  "MINDANAO II": "arlyn.yagaya@asaphil.org",
-};
-
 const normalizeRequestStatus = (value) => value === 'Approved' ? 'Checked' : value
 const initialStatus = () => new URLSearchParams(window.location.search).get('status') || 'All'
 
@@ -367,7 +357,7 @@ export default function Requests() {
       const beneficiaryKey = beneficiary.toLowerCase()
       const staff = staffList.find(s =>
         (s.name && s.name.toLowerCase() === beneficiaryKey) ||
-        (`${s.first_name || ''} ${s.last_name || ''}`.trim().toLowerCase() === beneficiaryKey)
+        ((`${s.first_name || ''} ${s.last_name || ''}`.trim().toLowerCase() === beneficiaryKey))
       )
       bCode = String(staff?.branch_code || '').trim().toUpperCase()
       const emp = employeeList.find(e => String(e.full_name || '').toLowerCase() === beneficiaryKey)
@@ -375,7 +365,7 @@ export default function Requests() {
     }
 
     const branchEmail = branchEmailMap[bCode] || branchMap[bCode]?.email || ''
-    const operationEmail = OPERATION_EMAIL_MAP[branchMap[bCode]?.operation] || ''
+    const operationEmail = branchEmailMap[branchMap[bCode]?.operation] || ''
 
     return branchEmail || staffEmail || operationEmail
   }

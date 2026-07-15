@@ -17,6 +17,7 @@ const SECTIONS = [
       { label: 'SBAR / Transfer', icon: 'fa-exchange-alt', to: '/sbar', badge: 'sbar' },
       { label: 'IT Expenses', icon: 'fa-print', to: '/it-expenses', badge: 'it' },
       { label: 'Aircon & Toilet', icon: 'fa-tools', to: '/at-expenses', badge: 'at' },
+      { label: 'Generator', icon: 'fa-bolt', to: '/generator-expenses', badge: 'generator' },
       { label: 'Comms Expenses', icon: 'fa-bullhorn', to: '/comms-expenses', badge: 'comms' },
       { label: 'Request Letter Tracker', icon: 'fa-route', to: '/tracker' },
       { label: 'Online List', icon: 'fa-address-card', to: '/online-list' },
