@@ -28,9 +28,9 @@ const CONFIG = {
     title: 'IT Equipment Procurement',
     subtitle: 'Budget Monitoring and Inventory Tracking',
     icon: 'fa-print',
-    categories: ['CCTV', 'Printer', 'Monitor'],
+    categories: ['CCTV', 'Printer', 'Monitor', 'Starlink'],
     budgets: IT_BUDGETS,
-    budgetColors: { CCTV: 'from-blue-600 to-blue-700', Printer: 'from-emerald-500 to-emerald-600', Monitor: 'from-amber-500 to-amber-600' },
+    budgetColors: { CCTV: 'from-blue-600 to-blue-700', Printer: 'from-emerald-500 to-emerald-600', Monitor: 'from-amber-500 to-amber-600', Starlink: 'from-purple-600 to-purple-700' },
     table: 'it_expenses',
   },
   at: {
