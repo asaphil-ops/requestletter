@@ -165,13 +165,13 @@ export const SUGGESTED_EMAILS = [
   'arlyn.yagaya@asaphil.org',
 ]
 
-export const IT_BUDGETS = { CCTV: 13000000, Printer: 9000000, Monitor: 8000000, Starlink: 5000000 }
+export const IT_BUDGETS = { CCTV: 13000000, Printer: 9000000, Monitor: 8000000, Starlink: null }
 export const AT_BUDGETS = { Aircon: 5000000, Toilet: 3000000 }
 
 export const GENERATOR_BUDGETS = {
-  Generator: 2500000,
-  'Parts & Repair': 1500000,
-  Fuel: 2000000,
+  Generator: null,
+  'Parts & Repair': null,
+  Fuel: null,
 }
 
 export const ROLES = ['Staff', 'Governance', 'Ops Finance', 'Finance', 'Planning', 'Admin', 'Super Admin']
