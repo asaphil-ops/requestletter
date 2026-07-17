@@ -65,7 +65,18 @@ export function useUpdateSbar() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ uniqId, updates }) => {
-      const { error } = await supabase.from('sbar').update({ ...updates, updated_at: new Date().toISOString() }).eq('uniq_id', uniqId)
+      const mapped = {
+        type: updates.type,
+        date: updates.date,
+        giver: updates.giver,
+        receiver: updates.receiver,
+        giver_title: updates.giverTitle,
+        receiver_title: updates.receiverTitle,
+        description: updates.description,
+        amount: updates.amount,
+        updated_at: new Date().toISOString()
+      }
+      const { error } = await supabase.from('sbar').update(mapped).eq('uniq_id', uniqId)
       if (error) throw error
     },
     onSuccess: () => invalidateWorkflowQueries(qc),
