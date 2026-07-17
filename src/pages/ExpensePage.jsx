@@ -590,7 +590,17 @@ export default function ExpensePage({ type }) {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="label">Category</label>
-                    <select className="input" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                    <select className="input" value={form.category} onChange={e => {
+                      const selectedCategory = e.target.value
+                      setForm(f => {
+                        const updates = { category: selectedCategory }
+                        // Auto-fill item name for Printer category in IT expenses
+                        if (type === 'it' && selectedCategory === 'Printer') {
+                          updates.itemName = 'Printer Epson L5290'
+                        }
+                        return { ...f, ...updates }
+                      })
+                    }}>
                       {config.categories.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
