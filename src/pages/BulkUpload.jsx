@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect, useQueryClient } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useStaffFilters } from '../hooks/useStaff'

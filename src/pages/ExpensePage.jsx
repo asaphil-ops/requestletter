@@ -62,6 +62,21 @@ const CONFIG = {
   },
 }
 
+const AUTO_PARTICULARS = {
+  it: {
+    Printer: 'Printer Epson L5290',
+  },
+  at: {
+    Aircon: 'Branch Aircon Installation',
+    Toilet: 'branch comfort room renovation',
+  },
+  comms: {
+    'Branch Signage': 'Branch Signage',
+  },
+}
+
+const getAutoParticulars = (type, category) => AUTO_PARTICULARS[type]?.[category] || ''
+
 const initialStatus = () => new URLSearchParams(window.location.search).get('status') || 'All'
 
 export default function ExpensePage({ type }) {
@@ -155,7 +170,8 @@ export default function ExpensePage({ type }) {
   }
 
   const defaultAccountTitle = ['it', 'at', 'generator', 'comms'].includes(type) ? 'Supplies' : ''
-  const EMPTY_FORM = { category: config.categories[0], date: '', branchCode: '', branchName: '', accountTitle: defaultAccountTitle, itemName: '', description: '', amount: '' }
+  const defaultCategory = config.categories[0]
+  const EMPTY_FORM = { category: defaultCategory, date: '', branchCode: '', branchName: '', accountTitle: defaultAccountTitle, itemName: getAutoParticulars(type, defaultCategory), description: '', amount: '' }
   const [form, setForm] = useState(EMPTY_FORM)
 
   const setGeo = (key, val) => {
@@ -593,12 +609,12 @@ export default function ExpensePage({ type }) {
                     <select className="input" value={form.category} onChange={e => {
                       const selectedCategory = e.target.value
                       setForm(f => {
-                        const updates = { category: selectedCategory }
-                        // Auto-fill item name for Printer category in IT expenses
-                        if (type === 'it' && selectedCategory === 'Printer') {
-                          updates.itemName = 'Printer Epson L5290'
+                        const autoParticulars = getAutoParticulars(type, selectedCategory)
+                        return {
+                          ...f,
+                          category: selectedCategory,
+                          ...(autoParticulars ? { itemName: autoParticulars } : {}),
                         }
-                        return { ...f, ...updates }
                       })
                     }}>
                       {config.categories.map(c => <option key={c}>{c}</option>)}
