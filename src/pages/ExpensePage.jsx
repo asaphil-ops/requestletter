@@ -28,7 +28,7 @@ const CONFIG = {
     title: 'IT Equipment Procurement',
     subtitle: 'Budget Monitoring and Inventory Tracking',
     icon: 'fa-print',
-    categories: ['CCTV', 'Printer', 'Monitor', 'Starlink'],
+    categories: ['Printer', 'CCTV', 'Monitor', 'Starlink'],
     budgets: IT_BUDGETS,
     budgetColors: { CCTV: 'from-blue-600 to-blue-700', Printer: 'from-emerald-500 to-emerald-600', Monitor: 'from-amber-500 to-amber-600', Starlink: 'from-purple-600 to-purple-700' },
     table: 'it_expenses',
@@ -46,7 +46,7 @@ const CONFIG = {
     label: 'Comms Expenses',
     subtitle: 'Budget Monitoring for communications-related expenses',
     icon: 'fa-bullhorn',
-    categories: ['GTR', 'FAF', 'Calendar', 'Branch Signage', 'Others'],
+    categories: ['Branch Signage', 'GTR', 'FAF', 'Calendar', 'Others'],
     budgets: null,
     budgetColors: { GTR: 'from-blue-600 to-blue-700', FAF: 'from-emerald-500 to-emerald-600', Calendar: 'from-amber-500 to-amber-600', 'Branch Signage': 'from-red-500 to-red-600', Others: 'from-purple-600 to-purple-700' },
     table: 'comms_expenses',
@@ -68,7 +68,7 @@ const AUTO_PARTICULARS = {
   },
   at: {
     Aircon: 'Branch Aircon Installation',
-    Toilet: 'branch comfort room renovation',
+    Toilet: 'Branch Comfort Room Renovation',
   },
   comms: {
     'Branch Signage': 'Branch Signage',
