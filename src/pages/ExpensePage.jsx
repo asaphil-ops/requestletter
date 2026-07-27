@@ -78,6 +78,16 @@ const AUTO_PARTICULARS = {
 const getAutoParticulars = (type, category) => AUTO_PARTICULARS[type]?.[category] || ''
 
 const initialStatus = () => new URLSearchParams(window.location.search).get('status') || 'All'
+const escapeLetterHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;')
+const formatLetterAmount = (value) => Number(value || 0).toLocaleString('en-PH', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
 
 export default function ExpensePage({ type }) {
   const config = CONFIG[type]
@@ -378,6 +388,132 @@ export default function ExpensePage({ type }) {
     } catch (err) { Swal.fire('Error', err.message, 'error') }
   }
 
+  const handleGenerateRequest = () => {
+    const records = allData.filter(record => selected.includes(record.uniq_id))
+    if (!records.length) return Swal.fire('Info', 'Select expense records first.', 'info')
+
+    const selectedCategories = [...new Set(records.map(record => String(record.category || '').trim()).filter(Boolean))]
+    if (selectedCategories.length !== 1) {
+      return Swal.fire(
+        'Select one category only',
+        'To create the correct subject and request letter, select records from only one category.',
+        'warning',
+      )
+    }
+
+    const requestCategory = selectedCategories[0]
+    const selectedItems = [...new Set(records.map(record => String(record.item_name || '').trim()).filter(Boolean))]
+    const itemDescription = selectedItems.length === 1 ? selectedItems[0] : ''
+    const requestSubject = itemDescription && itemDescription.toLowerCase() !== requestCategory.toLowerCase()
+      ? `Consolidated Request for ${requestCategory} (${itemDescription})`
+      : `Consolidated Request for ${requestCategory}`
+
+    const grouped = new Map()
+    records.forEach(record => {
+      const branchCode = String(record.branch_code || '').trim().toUpperCase()
+      const branch = branchMap[branchCode] || {}
+      const branchName = String(record.branch_name || branch.name || '').trim()
+      const key = branchCode || branchName.toLowerCase() || record.uniq_id
+      const current = grouped.get(key) || {
+        division: branch.division || '-',
+        region: branch.region || '-',
+        area: branch.area || '-',
+        branch: [branchCode, branchName].filter(Boolean).join(' - ') || 'Unassigned',
+        amount: 0,
+      }
+      current.amount += Number(record.amount || 0)
+      grouped.set(key, current)
+    })
+
+    const rows = [...grouped.values()].sort((a, b) =>
+      `${a.division} ${a.region} ${a.area} ${a.branch}`.localeCompare(`${b.division} ${b.region} ${b.area} ${b.branch}`)
+    )
+    const total = rows.reduce((sum, row) => sum + row.amount, 0)
+    const requestDate = new Date().toLocaleDateString('en-PH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+    const tableRows = rows.map(row => `
+      <tr>
+        <td>${escapeLetterHtml(row.division)}</td>
+        <td>${escapeLetterHtml(row.region)}</td>
+        <td>${escapeLetterHtml(row.area)}</td>
+        <td>${escapeLetterHtml(row.branch)}</td>
+        <td class="amount">${formatLetterAmount(row.amount)}</td>
+      </tr>
+    `).join('')
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      return Swal.fire('Pop-up blocked', 'Allow pop-ups for this site, then click Generate Request again.', 'warning')
+    }
+    printWindow.opener = null
+    printWindow.document.write(`<!doctype html>
+      <html>
+        <head>
+          <title></title>
+          <style>
+            @page { size: A4; margin: 0; }
+            * { box-sizing: border-box; }
+            body { margin: 0; padding: 18mm 20mm; color: #111827; font: 11pt Verdana, Arial, sans-serif; line-height: 1.45; }
+            .toolbar { position: fixed; top: 12px; right: 12px; }
+            .toolbar button { border: 0; border-radius: 6px; background: #0369a1; color: #fff; padding: 9px 14px; cursor: pointer; }
+            .letter { max-width: 760px; margin: 0 auto; }
+            .date { margin-bottom: 22px; }
+            .address-grid { display: grid; grid-template-columns: 72px 1fr; gap: 4px 10px; margin-bottom: 18px; }
+            .address-grid > :nth-child(3), .address-grid > :nth-child(4) { margin-top: 2.9em; }
+            .label, .subject { font-weight: 700; }
+            .subject { margin: 20px 0; }
+            table { width: 100%; margin: 18px 0 22px; border-collapse: collapse; font-size: 11pt; }
+            th, td { border: 1px solid #374151; padding: 7px 8px; vertical-align: middle; }
+            th { background: #e5e7eb; text-align: center; }
+            .amount { text-align: right; white-space: nowrap; }
+            .total td { background: #f3f4f6; font-weight: 700; }
+            .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; font-size: 11pt; }
+            .signature-role { min-height: 42px; }
+            .signature-name { padding-top: 5px; font-weight: 700; }
+            .signature-title { font-size: 10pt; }
+            @media print {
+              html, body { width: 210mm; min-height: 297mm; }
+              body { padding: 18mm 20mm; }
+              .toolbar { display: none; }
+              .letter { max-width: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="toolbar"><button onclick="window.print()">Print / Save as PDF</button></div>
+          <main class="letter">
+            <div class="date">${escapeLetterHtml(requestDate)}</div>
+            <div class="address-grid">
+              <div class="label">To:</div><div><strong>Mr. Rafael C. Lopa</strong><br>President and CEO</div>
+              <div class="label">Through:</div><div><strong>Ms. Imee H. Centeno</strong><br>Chief Operating Officer</div>
+            </div>
+            <div class="subject">Subject: ${escapeLetterHtml(requestSubject)}</div>
+            <p>Dear Sir,</p>
+            <p>We respectfully seek your approval for the consolidated request for ${escapeLetterHtml(requestCategory)}${itemDescription ? ` (${escapeLetterHtml(itemDescription)})` : ''}. The expense will be funded through the available Cost Center Budget to support the operational requirements of the offices listed below.</p>
+            <p>Below is the summary of expenses:</p>
+            <table>
+              <thead><tr><th>Division</th><th>Region</th><th>Area</th><th>Branch</th><th>Amount</th></tr></thead>
+              <tbody>
+                ${tableRows}
+                <tr class="total"><td colspan="4">Total</td><td class="amount">${formatLetterAmount(total)}</td></tr>
+              </tbody>
+            </table>
+            <p>We appreciate your kind assistance and continued support.</p>
+            <p>Thank you and God Bless!</p>
+            <div class="signatures">
+              <div><div class="signature-role">Prepared by:</div><div class="signature-name">Deo Aldrin Pagatpatan</div><div class="signature-title">RA - Operation Finance</div></div>
+              <div><div class="signature-role">Recommended by:</div><div class="signature-name">Pedro F. Erero</div><div class="signature-title">VP - Operation Finance</div></div>
+              <div><div class="signature-role">Approved by:</div><div class="signature-name">Nilo Cellon Jr.</div><div class="signature-title">CFOO</div></div>
+            </div>
+          </main>
+        </body>
+      </html>`)
+    printWindow.document.close()
+  }
+
   const exportCSV = () => {
     const rows = [['Date', 'Account Title', 'Category', 'Branch Code', 'Branch Name', 'Item', 'Amount', 'Status', 'Uploader'],
       ...filtered.map(r => [r.date, r.account_title, r.category, r.branch_code, r.branch_name, r.item_name, r.amount, r.status, r.uploader])]
@@ -398,16 +534,32 @@ export default function ExpensePage({ type }) {
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">{config.title}</h1>
           <p className="text-sm font-semibold text-gray-500">{config.subtitle}</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {selected.length > 0 && (
-            <>
-              {canCheck && <button onClick={() => handleBatchProcess('OPS_CHECK')} className="btn-primary text-xs px-3 py-2"><i className="fas fa-check-double mr-1" />Check ({selected.length})</button>}
-              <button onClick={handleBatchSendEmail} className="btn-icon bg-amber-500 text-white text-xs px-3 py-2 rounded-lg"><i className="fas fa-envelope mr-1" />Email ({selected.length})</button>
-              {isAdmin && <button onClick={handleBatchDelete} className="btn-danger text-xs px-3 py-2"><i className="fas fa-trash mr-1" />Delete ({selected.length})</button>}
-            </>
+            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <span className="px-2 text-xs font-bold text-slate-500 dark:text-slate-300">
+                {selected.length} selected
+              </span>
+              {canCheck && (
+                <button onClick={() => handleBatchProcess('OPS_CHECK')} className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-600 px-3 text-xs font-bold text-white transition hover:bg-blue-700">
+                  <i className="fas fa-check-double" />Check
+                </button>
+              )}
+              <button onClick={handleBatchSendEmail} className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-amber-500 px-3 text-xs font-bold text-white transition hover:bg-amber-600">
+                <i className="fas fa-envelope" />Email
+              </button>
+              <button onClick={handleGenerateRequest} className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-sky-50 px-3 text-xs font-bold text-sky-700 ring-1 ring-inset ring-sky-200 transition hover:bg-sky-100 dark:bg-sky-400/10 dark:text-sky-200 dark:ring-sky-400/20">
+                <i className="fas fa-file-contract" />Generate Request
+              </button>
+              {isAdmin && (
+                <button onClick={handleBatchDelete} className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-rose-600 px-3 text-xs font-bold text-white transition hover:bg-rose-700">
+                  <i className="fas fa-trash" />Delete
+                </button>
+              )}
+            </div>
           )}
-          <button onClick={exportCSV} className="btn-secondary text-xs px-3 py-2"><i className="fas fa-file-excel mr-1 text-green-600" />Export</button>
-          {canUpload && <button onClick={() => openModal()} className="btn-primary text-xs px-3 py-2"><i className="fas fa-plus mr-1" />New Entry</button>}
+          <button onClick={exportCSV} className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"><i className="fas fa-file-excel text-emerald-600" />Export</button>
+          {canUpload && <button onClick={() => openModal()} className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700"><i className="fas fa-plus" />New Entry</button>}
         </div>
       </div>
 
