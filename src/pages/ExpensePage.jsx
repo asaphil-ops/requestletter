@@ -488,7 +488,7 @@ export default function ExpensePage({ type }) {
             <div class="date">${escapeLetterHtml(requestDate)}</div>
             <div class="address-grid">
               <div class="label">To:</div><div><strong>Mr. Rafael C. Lopa</strong><br>President and CEO</div>
-              <div class="label">Through:</div><div><strong>Ms. Imee H. Centeno</strong><br>Chief Operating Officer</div>
+              <div class="label">Through:</div><div><strong>Mr. Pedro F. Erero</strong><br>VP-Operations Finance</div>
             </div>
             <div class="subject">Subject: ${escapeLetterHtml(requestSubject)}</div>
             <p>Dear Sir,</p>
