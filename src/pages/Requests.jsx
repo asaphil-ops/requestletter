@@ -688,7 +688,7 @@ export default function Requests() {
           </div>
         </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
-          <table className="w-full min-w-[1320px] table-fixed">
+          <table className="w-full min-w-[1440px] table-fixed">
             <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm">
               <tr>
                 <th className="table-th w-10"><input type="checkbox" className="rounded" checked={paged.length > 0 && paged.every(r => selected.includes(r.req_id))} onChange={e => setSelected(e.target.checked ? [...new Set([...selected, ...paged.map(r => r.req_id)])] : selected.filter(id => !paged.map(r => r.req_id).includes(id)))} /></th>
@@ -699,6 +699,7 @@ export default function Requests() {
                     k === 'type' ? 'w-36' :
                     k === 'title' ? 'w-64' :
                     k === 'description' ? 'w-48' :
+                    k === 'status' ? 'w-60' :
                     'w-32'
                   }`} onClick={() => { handleSort(k); setPage(1) }}>
                     {l}<SortIcon k={k} />
@@ -743,7 +744,7 @@ export default function Requests() {
                         canUpload && { label: 'Send Email', icon: 'fa-envelope', tone: displayStatus === 'Checked' ? 'amber' : 'gray', disabled: displayStatus !== 'Checked', onClick: () => handleSendEmail(r) },
                         canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
                         displayStatus === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
-                        canCheck && !['Forwarded to OPS Planning', 'Rejected'].includes(displayStatus) && { label: 'Forward to OPS Planning', icon: 'fa-share-from-square', tone: 'cyan', onClick: () => handleForwardToOpsPlanning(r) },
+                        canCheck && !['Forwarded to OPS Planning', 'Rejected'].includes(displayStatus) && { label: 'Forward to OPS Planning', icon: 'fa-paper-plane', tone: 'cyan', onClick: () => handleForwardToOpsPlanning(r) },
                         isAdmin && !isSuperAdmin && displayStatus !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(r) },
                         isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(r) },
                       ]} />

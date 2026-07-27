@@ -3,7 +3,7 @@ import { STATUS_COLORS } from '../../lib/utils'
 const STATUS_ICONS = {
   Pending: 'fa-clock',
   Checked: 'fa-paper-plane',
-  'Forwarded to OPS Planning': 'fa-share-from-square',
+  'Forwarded to OPS Planning': 'fa-paper-plane',
   Approved: 'fa-check-circle',
   Rejected: 'fa-circle-xmark',
   'Recommended Ops Fin': 'fa-paper-plane',
@@ -14,7 +14,7 @@ export default function StatusBadge({ status, remarks, emailSent, emailSentAt, f
   const cls = STATUS_COLORS[status] || 'badge-pending'
   const icon = STATUS_ICONS[status] || 'fa-circle'
   return (
-    <span className="inline-flex flex-wrap items-center gap-1">
+    <span className="inline-flex max-w-full flex-col items-start gap-1">
       <span className={`badge ${cls} inline-flex items-center gap-1.5`}>
         <i className={`fas ${icon} text-[10px]`} />
         {status}

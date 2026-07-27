@@ -348,6 +348,19 @@ export default function ExpensePage({ type }) {
     } catch (err) { Swal.fire('Error', err.message, 'error') }
   }
 
+  const handleForwardToOpsPlanning = async (record) => {
+    const result = await Swal.fire({
+      title: 'Forward to OPS Planning?',
+      text: `${record.uniq_id} will be marked as forwarded.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, forward',
+      confirmButtonColor: '#0284c7',
+    })
+    if (!result.isConfirmed) return
+    await handleProcess('OPS_FORWARD', {}, record)
+  }
+
   const handleUpload = async (rec) => {
     const input = document.createElement('input'); input.type = 'file'
     input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg'
@@ -456,21 +469,22 @@ export default function ExpensePage({ type }) {
           <style>
             @page { size: A4; margin: 0; }
             * { box-sizing: border-box; }
-            body { margin: 0; padding: 18mm 20mm; color: #111827; font: 11pt Verdana, Arial, sans-serif; line-height: 1.45; }
+            body { margin: 0; padding: 10mm 14mm; color: #111827; font: 11pt Verdana, Arial, sans-serif; line-height: 1.3; }
             .toolbar { position: fixed; top: 12px; right: 12px; }
             .toolbar button { border: 0; border-radius: 6px; background: #0369a1; color: #fff; padding: 9px 14px; cursor: pointer; }
             .letter { max-width: 760px; margin: 0 auto; }
-            .date { margin-bottom: 22px; }
-            .address-grid { display: grid; grid-template-columns: 72px 1fr; gap: 4px 10px; margin-bottom: 0; }
-            .address-grid > :nth-child(3), .address-grid > :nth-child(4) { margin-top: 2.9em; }
+            .date { margin-bottom: 12px; }
+            .address-grid { display: grid; grid-template-columns: 72px 1fr; gap: 2px 10px; margin-bottom: 0; }
+            .address-grid > :nth-child(3), .address-grid > :nth-child(4) { margin-top: 1.3em; }
             .label, .subject { font-weight: 700; }
-            .subject { margin: 2.9em 0 20px; }
-            table { width: 100%; margin: 18px 0 22px; border-collapse: collapse; font-size: 11pt; }
-            th, td { border: 1px solid #374151; padding: 7px 8px; vertical-align: middle; }
+            .subject { margin: 1.3em 0 12px; }
+            p { margin: 0 0 9px; }
+            table { width: 100%; margin: 10px 0 12px; border-collapse: collapse; table-layout: fixed; font-size: 9.5pt; line-height: 1.15; }
+            th, td { border: 1px solid #374151; padding: 4px 6px; vertical-align: middle; overflow-wrap: anywhere; }
             th { background: #e5e7eb; text-align: center; }
             .amount { text-align: right; white-space: nowrap; }
             .total td { background: #f3f4f6; font-weight: 700; }
-            .signatures { margin-top: 44px; font-size: 11pt; }
+            .signatures { margin-top: 24px; font-size: 11pt; }
             .signature-block { margin-bottom: 4.5em; break-inside: avoid; page-break-inside: avoid; }
             .signature-block:last-child { margin-bottom: 0; }
             .signature-role { margin-bottom: 2.9em; }
@@ -478,7 +492,7 @@ export default function ExpensePage({ type }) {
             .signature-title { font-size: 10pt; }
             @media print {
               html, body { width: 210mm; min-height: 297mm; }
-              body { padding: 18mm 20mm; }
+              body { padding: 10mm 14mm; }
               .toolbar { display: none; }
               .letter { max-width: none; }
             }
@@ -497,6 +511,7 @@ export default function ExpensePage({ type }) {
             <p>We respectfully seek your approval for the consolidated request for ${escapeLetterHtml(requestCategory)}${itemDescription ? ` (${escapeLetterHtml(itemDescription)})` : ''}. The expense will be funded through the available Cost Center Budget to support the operational requirements of the offices listed below.</p>
             <p>Below is the summary of expenses:</p>
             <table>
+              <colgroup><col style="width:13%"><col style="width:13%"><col style="width:21%"><col style="width:35%"><col style="width:18%"></colgroup>
               <thead><tr><th>Division</th><th>Region</th><th>Area</th><th>Branch</th><th>Amount</th></tr></thead>
               <tbody>
                 ${tableRows}
@@ -611,7 +626,7 @@ export default function ExpensePage({ type }) {
           </select>
           <select className="input text-sm py-1.5 w-auto" value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}>
             <option value="All">All Status</option>
-            {['Pending', 'Checked', 'Rejected'].map(s => <option key={s}>{s}</option>)}
+            {['Pending', 'Checked', 'Forwarded to OPS Planning', 'Rejected'].map(s => <option key={s}>{s}</option>)}
           </select>
           <input type="date" className="input text-sm py-1.5 w-auto" value={dateStart} onChange={e => { setDateStart(e.target.value); setPage(1) }} />
           <span className="self-center text-gray-400">to</span>
@@ -647,7 +662,7 @@ export default function ExpensePage({ type }) {
           </div>
         </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
-          <table className="w-full min-w-[1240px] table-fixed">
+          <table className="w-full min-w-[1360px] table-fixed">
             <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm">
               <tr>
                 <th className="table-th w-10">
@@ -662,6 +677,7 @@ export default function ExpensePage({ type }) {
                     k === 'created_at' ? 'w-44' :
                     k === 'account_title' ? 'w-52' :
                     k === 'branch_code' ? 'w-72' :
+                    k === 'status' ? 'w-60' :
                     'w-36'
                   }`} onClick={() => handleSort(k)}>{l}<SortIcon k={k} /></th>
                 ))}
@@ -726,6 +742,7 @@ export default function ExpensePage({ type }) {
                         canUpload && { label: 'Upload', icon: 'fa-upload', tone: 'blue', onClick: () => handleUpload(r) },
                         canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
                         r.status === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
+                        canCheck && !['Forwarded to OPS Planning', 'Rejected'].includes(r.status) && { label: 'Forward to OPS Planning', icon: 'fa-paper-plane', tone: 'cyan', onClick: () => handleForwardToOpsPlanning(r) },
                         { label: r.email_sent ? 'Resend Email' : 'Send Email', icon: r.email_sent ? 'fa-redo' : 'fa-envelope', tone: r.status === 'Checked' ? (r.email_sent ? 'red' : 'amber') : 'gray', disabled: r.status !== 'Checked', title: r.status === 'Checked' ? (r.email_sent ? 'Already sent - Click to resend' : 'Send Email') : 'Available only for Checked status', onClick: () => handleSendEmail(r) },
                         isAdmin && !isSuperAdmin && r.status !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(r) },
                         isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(r) },

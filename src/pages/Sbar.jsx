@@ -288,6 +288,19 @@ export default function Sbar() {
     } catch (err) { Swal.fire('Error', err.message, 'error') }
   }
 
+  const handleForwardToOpsPlanning = async (record) => {
+    const result = await Swal.fire({
+      title: 'Forward to OPS Planning?',
+      text: `${record.uniq_id} will be marked as forwarded.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, forward',
+      confirmButtonColor: '#0284c7',
+    })
+    if (!result.isConfirmed) return
+    await handleProcess('OPS_FORWARD', {}, record)
+  }
+
   const handleUpload = async (rec) => {
     const input = document.createElement('input'); input.type = 'file'
     input.onchange = async (e) => {
@@ -370,7 +383,7 @@ export default function Sbar() {
           </select>
           <select className="input text-sm py-1.5 w-auto" value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}>
             <option value="All">All Status</option>
-            {['Pending','Checked','Rejected'].map(s => <option key={s}>{s}</option>)}
+            {['Pending','Checked','Forwarded to OPS Planning','Rejected'].map(s => <option key={s}>{s}</option>)}
           </select>
           <input type="date" className="input text-sm py-1.5 w-auto" value={dateStart} onChange={e => { setDateStart(e.target.value); setPage(1) }} />
           <span className="self-center text-gray-400">to</span>
@@ -411,7 +424,7 @@ export default function Sbar() {
           </div>
         </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh] thick-scrollbar">
-          <table className="w-full min-w-[1280px] table-fixed">
+          <table className="w-full min-w-[1400px] table-fixed">
             <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm">
               <tr>
                 <th className="table-th w-10"><input type="checkbox" className="rounded" checked={paged.length>0&&paged.every(r=>selected.includes(r.uniq_id))} onChange={e=>setSelected(e.target.checked?[...new Set([...selected,...paged.map(r=>r.uniq_id)])]:selected.filter(id=>!paged.map(r=>r.uniq_id).includes(id)))} /></th>
@@ -423,7 +436,7 @@ export default function Sbar() {
                 <th className="table-th w-44">Account Titles</th>
                 <th className="table-th w-48">Description</th>
                 <th className="table-th cursor-pointer sticky-header w-32" onClick={()=>handleSort('amount')}>Amount<SortIcon k="amount" /></th>
-                <th className="table-th cursor-pointer sticky-header w-32" onClick={()=>handleSort('status')}>Status<SortIcon k="status" /></th>
+                <th className="table-th cursor-pointer sticky-header w-60" onClick={()=>handleSort('status')}>Status<SortIcon k="status" /></th>
                 <th className="table-th w-44">Uploader</th>
                 <th className="table-th hidden md:table-cell w-44">Checked By</th>
 
@@ -470,6 +483,7 @@ export default function Sbar() {
                         canUpload && { label: 'Upload', icon: 'fa-upload', tone: 'blue', onClick: () => handleUpload(r) },
                         canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
                         r.status === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
+                        canCheck && !['Forwarded to OPS Planning', 'Rejected'].includes(r.status) && { label: 'Forward to OPS Planning', icon: 'fa-paper-plane', tone: 'cyan', onClick: () => handleForwardToOpsPlanning(r) },
                         { label: 'Send Email', icon: 'fa-envelope', tone: r.status === 'Checked' ? 'amber' : 'gray', disabled: r.status !== 'Checked', title: r.status === 'Checked' ? 'Send Email' : 'Available only for Checked status', onClick: () => handleSendEmail(r) },
                         isAdmin && !isSuperAdmin && r.status !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(r) },
                         isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(r) },

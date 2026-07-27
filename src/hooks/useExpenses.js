@@ -108,6 +108,9 @@ export function useProcessExpense(type) {
       if (action === 'OPS_CHECK') {
         updates.status = 'Checked'
         updates.ops_info = info
+      } else if (action === 'OPS_FORWARD') {
+        updates.status = 'Forwarded to OPS Planning'
+        updates.ops_info = info
       } else if (action === 'FINANCE_APPROVE') {
         updates.status = 'Approved'
         updates.fin_info = info
