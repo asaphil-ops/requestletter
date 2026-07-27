@@ -461,18 +461,20 @@ export default function ExpensePage({ type }) {
             .toolbar button { border: 0; border-radius: 6px; background: #0369a1; color: #fff; padding: 9px 14px; cursor: pointer; }
             .letter { max-width: 760px; margin: 0 auto; }
             .date { margin-bottom: 22px; }
-            .address-grid { display: grid; grid-template-columns: 72px 1fr; gap: 4px 10px; margin-bottom: 18px; }
+            .address-grid { display: grid; grid-template-columns: 72px 1fr; gap: 4px 10px; margin-bottom: 0; }
             .address-grid > :nth-child(3), .address-grid > :nth-child(4) { margin-top: 2.9em; }
             .label, .subject { font-weight: 700; }
-            .subject { margin: 20px 0; }
+            .subject { margin: 2.9em 0 20px; }
             table { width: 100%; margin: 18px 0 22px; border-collapse: collapse; font-size: 11pt; }
             th, td { border: 1px solid #374151; padding: 7px 8px; vertical-align: middle; }
             th { background: #e5e7eb; text-align: center; }
             .amount { text-align: right; white-space: nowrap; }
             .total td { background: #f3f4f6; font-weight: 700; }
-            .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; font-size: 11pt; }
-            .signature-role { min-height: 42px; }
-            .signature-name { padding-top: 5px; font-weight: 700; }
+            .signatures { margin-top: 44px; font-size: 11pt; }
+            .signature-block { margin-bottom: 4.5em; break-inside: avoid; page-break-inside: avoid; }
+            .signature-block:last-child { margin-bottom: 0; }
+            .signature-role { margin-bottom: 2.9em; }
+            .signature-name { font-weight: 700; }
             .signature-title { font-size: 10pt; }
             @media print {
               html, body { width: 210mm; min-height: 297mm; }
@@ -504,9 +506,9 @@ export default function ExpensePage({ type }) {
             <p>We appreciate your kind assistance and continued support.</p>
             <p>Thank you and God Bless!</p>
             <div class="signatures">
-              <div><div class="signature-role">Prepared by:</div><div class="signature-name">Deo Aldrin Pagatpatan</div><div class="signature-title">RA - Operation Finance</div></div>
-              <div><div class="signature-role">Recommended by:</div><div class="signature-name">Pedro F. Erero</div><div class="signature-title">VP - Operation Finance</div></div>
-              <div><div class="signature-role">Approved by:</div><div class="signature-name">Nilo Cellon Jr.</div><div class="signature-title">CFOO</div></div>
+              <div class="signature-block"><div class="signature-role">Prepared by:</div><div class="signature-name">Deo Aldrin R. Pagatpatan</div><div class="signature-title">RA- Operations Finance</div></div>
+              <div class="signature-block"><div class="signature-role">Recommended by:</div><div class="signature-name">Pedro F. Erero</div><div class="signature-title">VP-Operations Finance</div></div>
+              <div class="signature-block"><div class="signature-role">Approved by:</div><div class="signature-name">Nilo B. Cellon Jr.</div><div class="signature-title">CFOO</div></div>
             </div>
           </main>
         </body>

@@ -182,6 +182,7 @@ export const CAN_UPLOAD_ROLES = ['Planning', 'Governance', 'Admin', 'Super Admin
 export const STATUS_COLORS = {
   Pending: 'badge-pending',
   Checked: 'badge-checked',
+  'Forwarded to OPS Planning': 'badge-approved',
   'Recommended Ops Fin': 'badge-checked',
   'Pending For Recommendation of OPs Finance': 'badge-checked',
   Rejected: 'badge-rejected',
@@ -190,6 +191,7 @@ export const STATUS_COLORS = {
 export const STATUS_LABELS = {
   Pending: 'Pending For Recommendation of OPs Finance',
   Checked: 'Already sent to Group Head',
+  'Forwarded to OPS Planning': 'Forwarded to OPS Planning',
   'Recommended Ops Fin': 'Already sent to Group Head',
   'Pending For Recommendation of OPs Finance': 'Pending For Recommendation of OPs Finance',
   Rejected: 'Rejected',

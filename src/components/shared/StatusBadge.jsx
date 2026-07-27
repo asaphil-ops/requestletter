@@ -3,6 +3,7 @@ import { STATUS_COLORS } from '../../lib/utils'
 const STATUS_ICONS = {
   Pending: 'fa-clock',
   Checked: 'fa-paper-plane',
+  'Forwarded to OPS Planning': 'fa-share-from-square',
   Approved: 'fa-check-circle',
   Rejected: 'fa-circle-xmark',
   'Recommended Ops Fin': 'fa-paper-plane',

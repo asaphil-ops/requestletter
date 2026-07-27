@@ -329,6 +329,19 @@ export default function Requests() {
     } catch (err) { Swal.fire('Error', err.message, 'error') }
   }
 
+  const handleForwardToOpsPlanning = async (record) => {
+    const result = await Swal.fire({
+      title: 'Forward to OPS Planning?',
+      text: `${record.req_id} will be marked as forwarded.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, forward',
+      confirmButtonColor: '#0284c7',
+    })
+    if (!result.isConfirmed) return
+    await handleProcess('OPS_FORWARD', {}, record)
+  }
+
   const handleUpload = async (rec) => {
     const input = document.createElement('input'); input.type = 'file'
     input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg'
@@ -628,7 +641,7 @@ export default function Requests() {
         <div className="flex flex-wrap gap-2">
           <select className="input text-sm py-1.5 w-auto" value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}>
             <option value="All">All Status</option>
-            {['Pending','Checked','Rejected'].map(s => <option key={s}>{s}</option>)}
+            {['Pending','Checked','Forwarded to OPS Planning','Rejected'].map(s => <option key={s}>{s}</option>)}
           </select>
           <input type="date" className="input text-sm py-1.5 w-auto" value={dateStart} onChange={e => { setDateStart(e.target.value); setPage(1) }} />
           <span className="text-gray-400 self-center">to</span>
@@ -730,6 +743,7 @@ export default function Requests() {
                         canUpload && { label: 'Send Email', icon: 'fa-envelope', tone: displayStatus === 'Checked' ? 'amber' : 'gray', disabled: displayStatus !== 'Checked', onClick: () => handleSendEmail(r) },
                         canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
                         displayStatus === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
+                        canCheck && !['Forwarded to OPS Planning', 'Rejected'].includes(displayStatus) && { label: 'Forward to OPS Planning', icon: 'fa-share-from-square', tone: 'cyan', onClick: () => handleForwardToOpsPlanning(r) },
                         isAdmin && !isSuperAdmin && displayStatus !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(r) },
                         isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(r) },
                       ]} />
