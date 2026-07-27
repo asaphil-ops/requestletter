@@ -484,9 +484,9 @@ export default function ExpensePage({ type }) {
             th { background: #e5e7eb; text-align: center; }
             .amount { text-align: right; white-space: nowrap; }
             .total td { background: #f3f4f6; font-weight: 700; }
-            .signatures { margin-top: 24px; font-size: 11pt; }
-            .signature-block { margin-bottom: 4.5em; break-inside: avoid; page-break-inside: avoid; }
-            .signature-block:last-child { margin-bottom: 0; }
+            .signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 64px; row-gap: 5em; margin-top: 24px; font-size: 11pt; }
+            .signature-block { break-inside: avoid; page-break-inside: avoid; }
+            .signature-block:first-child { grid-column: 1 / -1; }
             .signature-role { margin-bottom: 2.9em; }
             .signature-name { font-weight: 700; }
             .signature-title { font-size: 10pt; }
