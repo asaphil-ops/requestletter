@@ -401,7 +401,7 @@ export default function ExpensePage({ type }) {
     } catch (err) { Swal.fire('Error', err.message, 'error') }
   }
 
-  const handleGenerateRequest = () => {
+  const handleGenerateRequest = async () => {
     const records = allData.filter(record => selected.includes(record.uniq_id))
     if (!records.length) return Swal.fire('Info', 'Select expense records first.', 'info')
 
@@ -529,6 +529,30 @@ export default function ExpensePage({ type }) {
         </body>
       </html>`)
     printWindow.document.close()
+
+    const recordsToForward = records.filter(record =>
+      !['Forwarded to OPS Planning', 'Rejected'].includes(record.status)
+    )
+
+    try {
+      await Promise.all(recordsToForward.map(record =>
+        processExp.mutateAsync({ uniqId: record.uniq_id, action: 'OPS_FORWARD', payload: {} })
+      ))
+      setSelected([])
+      if (recordsToForward.length) {
+        Swal.fire(
+          'Request generated',
+          `${recordsToForward.length} record(s) automatically forwarded to OPS Planning.`,
+          'success',
+        )
+      }
+    } catch (err) {
+      Swal.fire(
+        'Request generated, but status update failed',
+        err.message,
+        'warning',
+      )
+    }
   }
 
   const exportCSV = () => {
