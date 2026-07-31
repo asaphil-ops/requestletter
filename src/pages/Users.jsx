@@ -4,6 +4,7 @@ import { getDriveThumbnailUrl, getImageDisplayUrl, ROLES, ROWS_PER_PAGE } from '
 import { uploadToDrive } from '../lib/gas'
 import Pagination from '../components/shared/Pagination'
 import { TableLoader, EmptyRow } from '../components/shared/Loader'
+import PageHeader from '../components/shared/PageHeader'
 import Swal from 'sweetalert2'
 
 export default function Users() {
@@ -104,15 +105,14 @@ export default function Users() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">User Accounts</h1>
-          <p className="text-sm font-semibold text-gray-500">Manage system access and roles</p>
-        </div>
-        <button onClick={() => openModal()} className="btn-primary text-xs px-3 py-2">
+      <PageHeader
+        title="User Accounts"
+        subtitle="Manage system access and roles"
+        icon="fa-user-cog"
+        actions={<button onClick={() => openModal()} className="btn-primary text-xs px-3 py-2">
           <i className="fas fa-plus mr-1" />Add User
-        </button>
-      </div>
+        </button>}
+      />
 
       <div className="card p-3 mb-4">
         <div className="relative">

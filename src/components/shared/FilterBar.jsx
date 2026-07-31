@@ -51,7 +51,7 @@ export default function FilterBar({ value = {}, onChange }) {
   const options = (list) => list.map(item => ({ value: item, label: item }))
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="module-filter-row flex flex-wrap gap-2">
       <SegmentedSearchSelect label="Operation" value={value.operation || ''} options={options(operations)} onChange={val => set('operation', val)} />
       <SegmentedSearchSelect label="Division" value={value.division || ''} options={options(divisions)} onChange={val => set('division', val)} />
       <SegmentedSearchSelect label="Region" value={value.region || ''} options={options(regions)} onChange={val => set('region', val)} />

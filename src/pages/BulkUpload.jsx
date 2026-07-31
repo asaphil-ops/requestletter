@@ -7,6 +7,7 @@ import { fetchAllBranches } from '../hooks/useBranches'
 import { buildWorkflowInfoHtml, hashPassword } from '../lib/security'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import Swal from 'sweetalert2'
+import PageHeader from '../components/shared/PageHeader'
 import Papa from 'papaparse'
 
 const WORKFLOW_IMPORT_TYPES = new Set(['requests', 'sbar', 'it_expenses', 'at_expenses', 'comms_expenses'])
@@ -560,15 +561,14 @@ export default function BulkUpload() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Bulk CSV Upload</h1>
-          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Download a template, fill it out, then upload records directly to the system.</p>
-        </div>
-        <button onClick={handleTemplate} className="btn-secondary">
+      <PageHeader
+        title="Bulk CSV Upload"
+        subtitle="Download a template, fill it out, then upload records directly to the system."
+        icon="fa-file-upload"
+        actions={<button onClick={handleTemplate} className="btn-secondary">
           <i className="fas fa-download mr-2" />Download Template
-        </button>
-      </div>
+        </button>}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="card p-5 lg:col-span-1">

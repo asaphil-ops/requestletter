@@ -17,6 +17,7 @@ import FilePreviewModal from '../components/shared/FilePreviewModal'
 import TimelineModal from '../components/shared/TimelineModal'
 import { OpsModal } from '../components/shared/ProcessModal'
 import ActionMenu from '../components/shared/ActionMenu'
+import PageHeader from '../components/shared/PageHeader'
 import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
@@ -490,16 +491,15 @@ export default function CostCenterPage({ type }) {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{config.subtitle}</p>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">{config.title}</h1>
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        title={config.title}
+        subtitle={config.subtitle}
+        icon={config.icon}
+        actions={<>
           <button onClick={exportCSV} className="btn-secondary text-xs px-3 py-2"><i className="fas fa-file-excel mr-1 text-green-600" />Export</button>
           {canUpload && <button onClick={() => openModal()} className="btn-primary text-xs px-3 py-2"><i className="fas fa-plus mr-1" />New Entry</button>}
-        </div>
-      </div>
+        </>}
+      />
 
       {/* Enhanced Score Cards */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -714,7 +714,7 @@ export default function CostCenterPage({ type }) {
                         canUpload && { label: 'Upload', icon: 'fa-upload', tone: 'blue', onClick: () => handleUpload(row) },
                         canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(row) },
                         (row.status || 'Pending') === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(row) },
-                        { label: 'Send Email', icon: 'fa-envelope', tone: row.status === 'Checked' ? 'amber' : 'gray', disabled: row.status !== 'Checked', title: row.status === 'Checked' ? 'Send Email' : 'Available only for Checked status', onClick: () => handleSendEmail(row) },
+                        { label: 'Send Email', icon: 'fa-envelope', tone: ['Checked', 'Forwarded to OPS Planning'].includes(row.status) ? 'amber' : 'gray', disabled: !['Checked', 'Forwarded to OPS Planning'].includes(row.status), title: ['Checked', 'Forwarded to OPS Planning'].includes(row.status) ? 'Send Email' : 'Available only for Checked or Forwarded status', onClick: () => handleSendEmail(row) },
                         isAdmin && !isSuperAdmin && (row.status || 'Pending') !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(row) },
                         isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(row) },
                       ]} />

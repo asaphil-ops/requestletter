@@ -15,14 +15,13 @@ export default function Layout() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#06111f]">
+    <div className="app-shell min-h-screen bg-gray-50 dark:bg-[#06111f]">
       <Sidebar />
       <div
-        className="transition-all duration-300 flex flex-col min-h-screen"
-        style={{ marginLeft: sidebarOpen ? '276px' : '0' }}
+        className={`app-content transition-all duration-300 flex flex-col min-h-screen ${sidebarOpen ? 'app-content--sidebar' : ''}`}
       >
         <TopBar />
-        <main className="flex-1 p-6">
+        <main className="app-main flex-1">
           <Breadcrumbs />
           <Outlet />
         </main>

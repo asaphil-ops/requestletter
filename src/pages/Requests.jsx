@@ -741,7 +741,7 @@ export default function Requests() {
                         { label: 'Details', icon: 'fa-table-list', tone: 'slate', onClick: () => setDetailTarget(r) },
                         { label: 'History', icon: 'fa-clock-rotate-left', tone: 'slate', onClick: () => setTimelineTarget(r) },
                         canUpload && { label: 'Upload File', icon: 'fa-cloud-upload-alt', tone: 'emerald', onClick: () => handleUpload(r) },
-                        canUpload && { label: 'Send Email', icon: 'fa-envelope', tone: displayStatus === 'Checked' ? 'amber' : 'gray', disabled: displayStatus !== 'Checked', onClick: () => handleSendEmail(r) },
+                        canUpload && { label: 'Send Email', icon: 'fa-envelope', tone: ['Checked', 'Forwarded to OPS Planning'].includes(displayStatus) ? 'amber' : 'gray', disabled: !['Checked', 'Forwarded to OPS Planning'].includes(displayStatus), onClick: () => handleSendEmail(r) },
                         canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
                         displayStatus === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
                         canCheck && !['Forwarded to OPS Planning', 'Rejected'].includes(displayStatus) && { label: 'Forward to OPS Planning', icon: 'fa-paper-plane', tone: 'cyan', onClick: () => handleForwardToOpsPlanning(r) },

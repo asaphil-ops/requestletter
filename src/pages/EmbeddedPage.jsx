@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import PageHeader from '../components/shared/PageHeader'
 
 const EMBEDS = {
   circular: {
@@ -36,20 +37,19 @@ export default function EmbeddedPage({ type }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">{embed.title}</h1>
-          <p className="text-sm font-semibold text-gray-500">{embed.subtitle}</p>
-        </div>
-        <a
+      <PageHeader
+        title={embed.title}
+        subtitle={embed.subtitle}
+        icon="fa-chart-line"
+        actions={<a
           href={embed.src}
           target="_blank"
           rel="noreferrer"
           className="btn-secondary text-xs px-3 py-2 inline-flex items-center gap-1.5"
         >
           <i className="fas fa-external-link-alt" />Open in new tab
-        </a>
-      </div>
+        </a>}
+      />
 
       <div className="card flex-1 overflow-hidden rounded-xl bg-white relative">
         {isLoading && (

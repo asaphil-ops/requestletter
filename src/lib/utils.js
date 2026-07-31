@@ -165,7 +165,8 @@ export const SUGGESTED_EMAILS = [
   'arlyn.yagaya@asaphil.org',
 ]
 
-export const IT_BUDGETS = { CCTV: 13000000, Printer: 9000000, Monitor: 8000000, Starlink: null }
+export const IT_BUDGETS = { CCTV: 13400000, Printer: 9648000, Monitor: 8040000, Starlink: null }
+export const COMMS_BUDGETS = { 'Branch Signage': 19760000, GTR: null, FAF: null, Calendar: null, Others: null }
 export const AT_BUDGETS = { Aircon: 5000000, Toilet: 3000000 }
 
 export const GENERATOR_BUDGETS = {

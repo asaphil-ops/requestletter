@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { fmtDate, ROWS_PER_PAGE } from '../lib/utils'
 import Pagination from '../components/shared/Pagination'
 import { TableLoader, EmptyRow } from '../components/shared/Loader'
+import PageHeader from '../components/shared/PageHeader'
 
 export default function AuditLogs() {
   const [page, setPage] = useState(1)
@@ -48,12 +49,7 @@ export default function AuditLogs() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Audit Logs</h1>
-          <p className="text-sm font-semibold text-gray-500">System activity history · last 500 entries</p>
-        </div>
-      </div>
+      <PageHeader title="Audit Logs" subtitle="System activity history · last 500 entries" icon="fa-history" />
 
       <div className="card p-3 mb-4">
         <div className="relative">

@@ -6,6 +6,7 @@ import { fmtNum, ROWS_PER_PAGE, toTitleCase } from '../lib/utils'
 import Pagination from '../components/shared/Pagination'
 import { TableLoader, EmptyRow } from '../components/shared/Loader'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
+import PageHeader from '../components/shared/PageHeader'
 import Swal from 'sweetalert2'
 
 export default function Directory() {
@@ -124,17 +125,17 @@ export default function Directory() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Employee Directory</h1>
-          <p className="text-sm font-semibold text-gray-500">Staff records and branch assignments · {fmtNum(filtered.length)} records</p>
-        </div>
-        {isAdmin && (
+      <PageHeader
+        title="Employee Directory"
+        subtitle="Staff records and branch assignments"
+        icon="fa-address-book"
+        badge={`${fmtNum(filtered.length)} records`}
+        actions={isAdmin && (
           <button onClick={() => { setForm(EMPTY_FORM); setShowModal(true) }} className="btn-primary text-xs px-3 py-2">
             <i className="fas fa-plus mr-1" />Add Staff
           </button>
         )}
-      </div>
+      />
 
       {/* Filters */}
       <div className="card p-4 mb-4">

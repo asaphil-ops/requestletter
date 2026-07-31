@@ -44,7 +44,7 @@ export default function SegmentedSearchSelect({
   const widthClass = className ? className : 'w-[220px]'
 
   return (
-    <div ref={wrapperRef} className={`relative z-[60] inline-flex min-w-0 max-w-full ${widthClass}`}>
+    <div ref={wrapperRef} className={`segmented-search-select relative z-[60] inline-flex min-w-0 max-w-full ${widthClass}`}>
       <div className="inline-flex w-full overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900">
         <span className="flex shrink-0 items-center border-r border-slate-300 bg-slate-50 px-2.5 text-xs font-semibold text-slate-900 sm:px-3 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
           {label}

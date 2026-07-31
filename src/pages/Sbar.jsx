@@ -18,6 +18,7 @@ import Pagination from '../components/shared/Pagination'
 import { TableLoader, EmptyRow } from '../components/shared/Loader'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import ActionMenu from '../components/shared/ActionMenu'
+import PageHeader from '../components/shared/PageHeader'
 import { WORKFLOW_MODULES } from '../lib/workflow'
 import Swal from 'sweetalert2'
 
@@ -329,12 +330,11 @@ export default function Sbar() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">SBAR / Budget Transfer</h1>
-          <p className="text-sm text-gray-500">Manage budget transfers and SBAR requests</p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
+      <PageHeader
+        title="SBAR / Budget Transfer"
+        subtitle="Manage budget transfers and SBAR requests"
+        icon="fa-exchange-alt"
+        actions={<>
           {selected.length > 0 && (
             <>
               {canCheck && <button onClick={() => handleBatchProcess('OPS_CHECK')} className="btn-primary text-xs px-3 py-2"><i className="fas fa-check-double mr-1" />Check ({selected.length})</button>}
@@ -344,8 +344,8 @@ export default function Sbar() {
           )}
           <button onClick={exportCSV} className="btn-secondary text-xs px-3 py-2"><i className="fas fa-file-excel mr-1 text-green-600" />Export</button>
           {canUpload && <button onClick={() => openModal()} className="btn-primary text-xs px-3 py-2"><i className="fas fa-plus mr-1" />New SBAR</button>}
-        </div>
-      </div>
+        </>}
+      />
 
       {/* Scorecard */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
@@ -484,7 +484,7 @@ export default function Sbar() {
                         canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
                         r.status === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
                         canCheck && !['Forwarded to OPS Planning', 'Rejected'].includes(r.status) && { label: 'Forward to OPS Planning', icon: 'fa-paper-plane', tone: 'cyan', onClick: () => handleForwardToOpsPlanning(r) },
-                        { label: 'Send Email', icon: 'fa-envelope', tone: r.status === 'Checked' ? 'amber' : 'gray', disabled: r.status !== 'Checked', title: r.status === 'Checked' ? 'Send Email' : 'Available only for Checked status', onClick: () => handleSendEmail(r) },
+                        { label: 'Send Email', icon: 'fa-envelope', tone: ['Checked', 'Forwarded to OPS Planning'].includes(r.status) ? 'amber' : 'gray', disabled: !['Checked', 'Forwarded to OPS Planning'].includes(r.status), title: ['Checked', 'Forwarded to OPS Planning'].includes(r.status) ? 'Send Email' : 'Available only for Checked or Forwarded status', onClick: () => handleSendEmail(r) },
                         isAdmin && !isSuperAdmin && r.status !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(r) },
                         isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(r) },
                       ]} />

@@ -8,10 +8,11 @@ import { useUIStore } from '../store/uiStore'
 
 import { uploadToDrive } from '../lib/gas'
 import { supabase } from '../lib/supabase'
-import { fmtCurrency, getUploadedAt, IT_BUDGETS, AT_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { fmtCurrency, getUploadedAt, IT_BUDGETS, COMMS_BUDGETS, AT_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate, validateRequired } from '../lib/validation'
 import StatusBadge from '../components/shared/StatusBadge'
+import PageHeader from '../components/shared/PageHeader'
 import { OpsModal } from '../components/shared/ProcessModal'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
 import TimelineModal from '../components/shared/TimelineModal'
@@ -47,7 +48,7 @@ const CONFIG = {
     subtitle: 'Budget Monitoring for communications-related expenses',
     icon: 'fa-bullhorn',
     categories: ['Branch Signage', 'GTR', 'FAF', 'Calendar', 'Others'],
-    budgets: null,
+    budgets: COMMS_BUDGETS,
     budgetColors: { GTR: 'from-blue-600 to-blue-700', FAF: 'from-emerald-500 to-emerald-600', Calendar: 'from-amber-500 to-amber-600', 'Branch Signage': 'from-red-500 to-red-600', Others: 'from-purple-600 to-purple-700' },
     table: 'comms_expenses',
   },
@@ -568,14 +569,13 @@ export default function ExpensePage({ type }) {
   const selectOptions = (items) => items.map(item => ({ value: item, label: item }))
 
   return (
-    <div>
+    <div className="page-stack">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">{config.title}</h1>
-          <p className="text-sm font-semibold text-gray-500">{config.subtitle}</p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
+      <PageHeader
+        title={config.title}
+        subtitle={config.subtitle}
+        icon={config.icon}
+        actions={<>
           {selected.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <span className="px-2 text-xs font-bold text-slate-500 dark:text-slate-300">
@@ -599,34 +599,37 @@ export default function ExpensePage({ type }) {
               )}
             </div>
           )}
-          <button onClick={exportCSV} className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"><i className="fas fa-file-excel text-emerald-600" />Export</button>
-          {canUpload && <button onClick={() => openModal()} className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700"><i className="fas fa-plus" />New Entry</button>}
-        </div>
-      </div>
+          <button onClick={exportCSV} className="btn-secondary page-action-button"><i className="fas fa-file-excel text-emerald-600" />Export</button>
+          {canUpload && <button onClick={() => openModal()} className="btn-primary page-action-button"><i className="fas fa-plus" />New Entry</button>}
+        </>}
+      />
 
       {/* Budget Cards */}
-      <div className={`grid gap-3 mb-5 ${config.categories.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : config.categories.length === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'}`}>
+      <div
+        className="budget-grid"
+        style={{ '--budget-columns': Math.min(config.categories.length, 5) }}
+      >
         {config.categories.map(cat => {
           const stats = budgetStats[cat] || { count: 0, spent: 0 }
           const budget = config.budgets?.[cat]
           const pct = budget ? Math.min(100, Math.round(stats.spent / budget * 100)) : null
           return (
-            <div key={cat} className={`bg-gradient-to-br ${config.budgetColors[cat]} rounded-xl p-4 text-white shadow-sm`}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold opacity-80 uppercase tracking-wide">{cat}</span>
-                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-semibold">{stats.count} items</span>
+            <div key={cat} className={`budget-card bg-gradient-to-br ${config.budgetColors[cat]}`}>
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <span className="text-sm font-extrabold opacity-90 uppercase tracking-wide truncate">{cat}</span>
+                <span className="budget-card-count">{stats.count} items</span>
               </div>
-              {budget && <div className="text-xs opacity-70 mb-1">Budget: {fmtCurrency(budget)}</div>}
-              <div className="text-xl font-bold mb-2">{fmtCurrency(stats.spent)}</div>
+              {budget && <div className="text-sm opacity-85 mb-1.5">Budget: {fmtCurrency(budget)}</div>}
+              <div className="text-2xl font-extrabold tracking-tight mb-3">{fmtCurrency(stats.spent)}</div>
               {budget && (
                 <>
-                  <div className="h-1.5 bg-white/25 rounded-full overflow-hidden mb-1">
+                  <div className="h-2 bg-white/25 rounded-full overflow-hidden mb-2">
                     <div className="h-full bg-white rounded-full transition-all" style={{ width: `${pct}%` }} />
                   </div>
-                  <div className="text-xs opacity-75">Remaining: {fmtCurrency(budget - stats.spent)}</div>
+                  <div className="text-sm opacity-85">Remaining: {fmtCurrency(budget - stats.spent)}</div>
                 </>
               )}
-              {!budget && <div className="text-xs opacity-75">Total Spent</div>}
+              {!budget && <div className="text-sm opacity-85">Total Spent</div>}
             </div>
           )
         })}
@@ -767,7 +770,7 @@ export default function ExpensePage({ type }) {
                         canUpload && { label: 'Edit', icon: 'fa-pencil-alt', tone: 'gray', onClick: () => openModal(r) },
                         r.status === 'Pending' && canCheck && { label: 'Check', icon: 'fa-check', tone: 'blue', onClick: () => setOpsTarget(r) },
                         canCheck && !['Forwarded to OPS Planning', 'Rejected'].includes(r.status) && { label: 'Forward to OPS Planning', icon: 'fa-paper-plane', tone: 'cyan', onClick: () => handleForwardToOpsPlanning(r) },
-                        { label: r.email_sent ? 'Resend Email' : 'Send Email', icon: r.email_sent ? 'fa-redo' : 'fa-envelope', tone: r.status === 'Checked' ? (r.email_sent ? 'red' : 'amber') : 'gray', disabled: r.status !== 'Checked', title: r.status === 'Checked' ? (r.email_sent ? 'Already sent - Click to resend' : 'Send Email') : 'Available only for Checked status', onClick: () => handleSendEmail(r) },
+                        { label: r.email_sent ? 'Resend Email' : 'Send Email', icon: r.email_sent ? 'fa-redo' : 'fa-envelope', tone: ['Checked', 'Forwarded to OPS Planning'].includes(r.status) ? (r.email_sent ? 'red' : 'amber') : 'gray', disabled: !['Checked', 'Forwarded to OPS Planning'].includes(r.status), title: ['Checked', 'Forwarded to OPS Planning'].includes(r.status) ? (r.email_sent ? 'Already sent - Click to resend' : 'Send Email') : 'Available only for Checked or Forwarded status', onClick: () => handleSendEmail(r) },
                         isAdmin && !isSuperAdmin && r.status !== 'Checked' && { label: 'Delete', icon: 'fa-trash', tone: 'red', onClick: () => handleDelete(r) },
                         isSuperAdmin && canForceDelete && { label: 'Force Delete', icon: 'fa-trash', tone: 'orange', onClick: () => handleDelete(r) },
                       ]} />
