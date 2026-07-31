@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useUIStore } from '../../store/uiStore'
 import { permissionsForRole } from '../../lib/permissions'
 import { usePendingCounts } from '../../hooks/useDashboard'
+import { useSettings } from '../../hooks/useAccounts'
 import { ADMIN_ROLES, SUPER_ADMIN_ROLES } from '../../lib/utils'
 import Swal from 'sweetalert2'
 
@@ -122,6 +123,8 @@ export default function Sidebar() {
   const rolePermissions = permissionsForRole(user?.role)
   const { sidebarOpen } = useUIStore()
   const { data: pendingByBadge = {} } = usePendingCounts()
+  const { data: settings } = useSettings()
+  const hiddenModules = new Set(settings?.hiddenModules || [])
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState({})
 
@@ -179,6 +182,7 @@ export default function Sidebar() {
               if (section.superAdminSection && !isSuperAdmin) return null
               const visibleItems = section.items.filter(item => {
                 if (item.permission && !(auth[item.permission] || rolePermissions[item.permission])) return false
+                if (hiddenModules.has(item.to)) return false
                 return true
               })
               if (!visibleItems.length) return null

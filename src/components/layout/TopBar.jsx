@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useUIStore } from '../../store/uiStore'
-import { useUpdateAccount } from '../../hooks/useAccounts'
+import { useSettings, useUpdateAccount } from '../../hooks/useAccounts'
 import { uploadToDrive } from '../../lib/gas'
 import { getDriveThumbnailUrl, getImageDisplayUrl } from '../../lib/utils'
 import Swal from 'sweetalert2'
@@ -13,6 +13,7 @@ export default function TopBar() {
   const navigate = useNavigate()
   const location = useLocation()
   const updateAccount = useUpdateAccount()
+  const { data: settings } = useSettings()
   const [showProfile, setShowProfile] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
   const [newPass, setNewPass] = useState('')
@@ -98,11 +99,14 @@ export default function TopBar() {
   ], [])
 
   const filteredSearch = useMemo(() => {
-    if (!searchQuery.trim()) return searchDestinations.slice(0, 6)
-    return searchDestinations.filter(d =>
+    const visibleDestinations = searchDestinations.filter(
+      destination => !(settings?.hiddenModules || []).includes(destination.path),
+    )
+    if (!searchQuery.trim()) return visibleDestinations.slice(0, 6)
+    return visibleDestinations.filter(d =>
       d.label.toLowerCase().includes(searchQuery.toLowerCase())
     ).slice(0, 8)
-  }, [searchQuery, searchDestinations])
+  }, [searchQuery, searchDestinations, settings?.hiddenModules])
 
   const handleSearchSelect = (path) => {
     navigate(path)

@@ -1,13 +1,56 @@
 import { useState, useEffect } from 'react'
 import { useSettings, useUpdateSettings } from '../hooks/useAccounts'
 import Swal from 'sweetalert2'
+import PageHeader from '../components/shared/PageHeader'
+import { DEFAULT_MODULE_BUDGETS } from '../lib/utils'
+import { useAuthStore } from '../store/authStore'
+
+const BUDGET_MODULES = [
+  { key: 'it', label: 'IT Equipment', icon: 'fa-print', tone: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' },
+  { key: 'comms', label: 'Communications', icon: 'fa-bullhorn', tone: 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400' },
+  { key: 'at', label: 'Aircon & Toilet', icon: 'fa-tools', tone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' },
+  { key: 'generator', label: 'Generator', icon: 'fa-bolt', tone: 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400' },
+]
+
+const VISIBILITY_MODULES = [
+  { key: '/requests', label: 'Request Letter', group: 'Field Operations', icon: 'fa-file-contract' },
+  { key: '/sbar', label: 'SBAR / Transfer', group: 'Field Operations', icon: 'fa-exchange-alt' },
+  { key: '/it-expenses', label: 'IT Expenses', group: 'Field Operations', icon: 'fa-print' },
+  { key: '/at-expenses', label: 'Aircon & Toilet', group: 'Field Operations', icon: 'fa-tools' },
+  { key: '/generator-expenses', label: 'Generator', group: 'Field Operations', icon: 'fa-bolt' },
+  { key: '/comms-expenses', label: 'Comms Expenses', group: 'Field Operations', icon: 'fa-bullhorn' },
+  { key: '/tracker', label: 'Request Letter Tracker', group: 'Field Operations', icon: 'fa-route' },
+  { key: '/online-list', label: 'Online List', group: 'Field Operations', icon: 'fa-address-card' },
+  { key: '/cfoo-budget', label: 'CFOO Budget', group: 'Cost Center', icon: 'fa-chart-pie' },
+  { key: '/cost-center/initiatives', label: 'Initiatives Monthly', group: 'Cost Center', icon: 'fa-lightbulb' },
+  { key: '/cost-center/cfoo', label: 'CFOO Per Staff', group: 'Cost Center', icon: 'fa-user-tie' },
+  { key: '/cost-center/other', label: 'Other Cost Center', group: 'Cost Center', icon: 'fa-building-columns' },
+  { key: '/data-management', label: 'Data Management', group: 'Cost Center', icon: 'fa-database' },
+  { key: '/employee-list', label: 'Employee List', group: 'Cost Center', icon: 'fa-id-card' },
+  { key: '/circular', label: 'Circular & Admin Order', group: 'Monitoring', icon: 'fa-file-circle-check' },
+  { key: '/lantaw', label: 'Lantaw', group: 'Monitoring', icon: 'fa-chart-pie' },
+  { key: '/cashflow', label: 'Cash Flow', group: 'Monitoring', icon: 'fa-money-bill-wave' },
+  { key: '/budget', label: 'Budget Monitoring', group: 'Monitoring', icon: 'fa-chart-line' },
+  { key: '/reports', label: 'Reports', group: 'Monitoring', icon: 'fa-file-pdf' },
+  { key: '/compliance/cor-dole', label: 'COR and DOLE Certificate', group: 'Compliance', icon: 'fa-certificate' },
+]
+
+const mergeBudgets = (saved = {}) => Object.fromEntries(
+  Object.entries(DEFAULT_MODULE_BUDGETS).map(([module, defaults]) => [
+    module,
+    { ...defaults, ...(saved[module] || {}) },
+  ]),
+)
 
 const SETTINGS_CATEGORIES = [
   { key: 'general', label: 'General', icon: 'fa-cog', description: 'System-wide settings' },
   { key: 'titles', label: 'Request Titles', icon: 'fa-file-alt', description: 'Manage available request titles' },
+  { key: 'budgets', label: 'Budgets', icon: 'fa-wallet', description: 'Manage module allocations' },
+  { key: 'modules', label: 'Module Visibility', icon: 'fa-eye', description: 'Show or hide navigation modules' },
 ]
 
 export default function Settings() {
+  const { user } = useAuthStore()
   const { data: settings, isLoading } = useSettings()
   const updateSettings = useUpdateSettings()
   const [activeTab, setActiveTab] = useState('general')
@@ -15,13 +58,37 @@ export default function Settings() {
   const [titles, setTitles] = useState([])
   const [newTitle, setNewTitle] = useState('')
   const [saving, setSaving] = useState(false)
+  const [budgets, setBudgets] = useState(() => mergeBudgets())
+  const [hiddenModules, setHiddenModules] = useState([])
+  const [savedSnapshot, setSavedSnapshot] = useState('')
+
+  const snapshot = JSON.stringify({ maintenance, titles, budgets, hiddenModules })
+  const hasUnsavedChanges = Boolean(savedSnapshot && savedSnapshot !== snapshot)
 
   useEffect(() => {
     if (settings) {
       setMaintenance(settings.maintenance)
       setTitles(settings.titles || [])
+      setBudgets(mergeBudgets(settings.budgets))
+      setHiddenModules(settings.hiddenModules || [])
+      setSavedSnapshot(JSON.stringify({
+        maintenance: settings.maintenance,
+        titles: settings.titles || [],
+        budgets: mergeBudgets(settings.budgets),
+        hiddenModules: settings.hiddenModules || [],
+      }))
     }
   }, [settings])
+
+  useEffect(() => {
+    const warnIfUnsaved = event => {
+      if (!hasUnsavedChanges) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warnIfUnsaved)
+    return () => window.removeEventListener('beforeunload', warnIfUnsaved)
+  }, [hasUnsavedChanges])
 
   const addTitle = () => {
     const t = newTitle.trim()
@@ -33,10 +100,25 @@ export default function Settings() {
 
   const removeTitle = (t) => setTitles(prev => prev.filter(x => x !== t))
 
+  const setBudgetAmount = (module, category, value) => {
+    const amount = value === '' ? null : Math.max(0, Number(value) || 0)
+    setBudgets(previous => ({
+      ...previous,
+      [module]: { ...previous[module], [category]: amount },
+    }))
+  }
+
+  const toggleModule = (key) => {
+    setHiddenModules(previous => previous.includes(key)
+      ? previous.filter(item => item !== key)
+      : [...previous, key])
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
-      await updateSettings.mutateAsync({ maintenance, titles })
+      await updateSettings.mutateAsync({ maintenance, titles, budgets, hiddenModules, updatedBy: user?.full_name || user?.username })
+      setSavedSnapshot(snapshot)
       Swal.fire({ icon: 'success', title: 'Settings saved', timer: 2000, showConfirmButton: false, toast: true, position: 'top-end' })
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Error', text: err.message })
@@ -58,13 +140,12 @@ export default function Settings() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Administration</p>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">System Settings</h1>
-        </div>
-        <button
+      <PageHeader
+        title="System Settings"
+        subtitle="Manage application configuration without changing the code"
+        eyebrow="Administration"
+        icon="fa-sliders-h"
+        actions={<button
           onClick={handleSave}
           disabled={saving}
           className="btn-primary px-6 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-60"
@@ -77,11 +158,20 @@ export default function Settings() {
           ) : (
             <>
               <i className="fas fa-save text-xs" />
-              Save Changes
+              {hasUnsavedChanges ? 'Save Changes' : 'Saved'}
             </>
           )}
-        </button>
-      </div>
+        </button>}
+      />
+
+      {(settings?.updatedAt || hasUnsavedChanges) && (
+        <div className={`mb-5 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3 text-xs ${hasUnsavedChanges ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/10 dark:text-amber-300' : 'border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'}`}>
+          <i className={`fas ${hasUnsavedChanges ? 'fa-circle-exclamation' : 'fa-clock'}`} />
+          {hasUnsavedChanges
+            ? 'You have unsaved changes. Save before leaving or closing this page.'
+            : `Last updated ${new Date(settings.updatedAt).toLocaleString('en-PH')} by ${settings.updatedBy || 'Administrator'}`}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar Tabs */}
@@ -350,6 +440,96 @@ export default function Settings() {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'budgets' && (
+            <div className="space-y-4">
+              <div className="card p-6">
+                <div className="mb-5 flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
+                    <i className="fas fa-wallet" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 dark:text-white">Module Budget Allocations</h3>
+                    <p className="text-xs leading-relaxed text-gray-500 dark:text-slate-400">Enter the approved total budget for each category. Leave an amount blank when the category has no fixed allocation.</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {BUDGET_MODULES.map(module => (
+                    <section key={module.key} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 dark:border-slate-700 dark:bg-slate-800/30">
+                      <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3.5 dark:border-slate-700 dark:bg-slate-900">
+                        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${module.tone}`}>
+                          <i className={`fas ${module.icon} text-sm`} />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-slate-900 dark:text-white">{module.label}</div>
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{Object.keys(budgets[module.key] || {}).length} categories</div>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 p-4 sm:grid-cols-2">
+                        {Object.entries(budgets[module.key] || {}).map(([category, amount]) => (
+                          <label key={category} className="block min-w-0">
+                            <span className="mb-1.5 block truncate text-xs font-bold text-slate-600 dark:text-slate-300" title={category}>{category}</span>
+                            <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 dark:border-slate-700 dark:bg-slate-900">
+                              <span className="flex items-center border-r border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-800">₱</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={amount ?? ''}
+                                onChange={event => setBudgetAmount(module.key, category, event.target.value)}
+                                placeholder="No fixed budget"
+                                className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-right text-sm font-bold text-slate-900 outline-none placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 dark:text-white"
+                              />
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'modules' && (
+            <div className="card p-6">
+              <div className="mb-5 flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                  <i className="fas fa-eye" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white">Module Visibility</h3>
+                  <p className="text-xs leading-relaxed text-gray-500 dark:text-slate-400">Turn off a module to hide it from the sidebar and global search for everyone, including administrators. System Settings always remains available so modules can be restored.</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {VISIBILITY_MODULES.map(module => {
+                  const visible = !hiddenModules.includes(module.key)
+                  return (
+                    <button
+                      key={module.key}
+                      type="button"
+                      onClick={() => toggleModule(module.key)}
+                      className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${visible ? 'border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900' : 'border-slate-200 bg-slate-100 opacity-70 dark:border-slate-700 dark:bg-slate-800/50'}`}
+                    >
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${visible ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+                        <i className={`fas ${module.icon}`} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">{module.label}</span>
+                        <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400">{module.group}</span>
+                      </span>
+                      <span className={`relative h-7 w-12 shrink-0 rounded-full transition ${visible ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}>
+                        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${visible ? 'left-6' : 'left-1'}`} />
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}

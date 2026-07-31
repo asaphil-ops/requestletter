@@ -117,6 +117,10 @@ export function useSettings() {
       return {
         maintenance: map.maintenance_mode === 'true',
         titles: JSON.parse(map.req_titles || '[]'),
+        budgets: JSON.parse(map.module_budgets || '{}'),
+        hiddenModules: JSON.parse(map.hidden_modules || '[]'),
+        updatedAt: map.settings_updated_at || '',
+        updatedBy: map.settings_updated_by || '',
       }
     },
   })
@@ -125,7 +129,7 @@ export function useSettings() {
 export function useUpdateSettings() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ maintenance, titles }) => {
+    mutationFn: async ({ maintenance, titles, budgets, hiddenModules, updatedBy }) => {
       const updates = []
       if (maintenance !== undefined) {
         updates.push(supabase.from('system_settings').upsert({ key: 'maintenance_mode', value: String(maintenance) }))
@@ -133,7 +137,17 @@ export function useUpdateSettings() {
       if (titles) {
         updates.push(supabase.from('system_settings').upsert({ key: 'req_titles', value: JSON.stringify(titles) }))
       }
-      await Promise.all(updates)
+      if (budgets) {
+        updates.push(supabase.from('system_settings').upsert({ key: 'module_budgets', value: JSON.stringify(budgets) }))
+      }
+      if (hiddenModules) {
+        updates.push(supabase.from('system_settings').upsert({ key: 'hidden_modules', value: JSON.stringify(hiddenModules) }))
+      }
+      updates.push(supabase.from('system_settings').upsert({ key: 'settings_updated_at', value: new Date().toISOString() }))
+      updates.push(supabase.from('system_settings').upsert({ key: 'settings_updated_by', value: updatedBy || 'Administrator' }))
+      const results = await Promise.all(updates)
+      const failed = results.find(result => result.error)
+      if (failed?.error) throw failed.error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['settings'] }),
   })

@@ -8,7 +8,7 @@ import { useUIStore } from '../store/uiStore'
 
 import { uploadToDrive } from '../lib/gas'
 import { supabase } from '../lib/supabase'
-import { fmtCurrency, getUploadedAt, IT_BUDGETS, COMMS_BUDGETS, AT_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { fmtCurrency, getUploadedAt, IT_BUDGETS, COMMS_BUDGETS, AT_BUDGETS, DEFAULT_MODULE_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate, validateRequired } from '../lib/validation'
 import StatusBadge from '../components/shared/StatusBadge'
@@ -126,6 +126,10 @@ export default function ExpensePage({ type }) {
   const branchEmailMap = useBranchEmailMap()
   const navigate = useNavigate()
   const titles = settings?.titles || []
+  const moduleBudgets = {
+    ...(DEFAULT_MODULE_BUDGETS[type] || config.budgets || {}),
+    ...(settings?.budgets?.[type] || {}),
+  }
 
   const handleSendEmail = (rec) => {
     const branchCode = String(rec.branch_code || '').trim().toUpperCase()
@@ -611,7 +615,7 @@ export default function ExpensePage({ type }) {
       >
         {config.categories.map(cat => {
           const stats = budgetStats[cat] || { count: 0, spent: 0 }
-          const budget = config.budgets?.[cat]
+          const budget = moduleBudgets?.[cat]
           const pct = budget ? Math.min(100, Math.round(stats.spent / budget * 100)) : null
           return (
             <div key={cat} className={`budget-card bg-gradient-to-br ${config.budgetColors[cat]}`}>

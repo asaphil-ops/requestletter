@@ -175,6 +175,13 @@ export const GENERATOR_BUDGETS = {
   Fuel: null,
 }
 
+export const DEFAULT_MODULE_BUDGETS = {
+  it: IT_BUDGETS,
+  at: AT_BUDGETS,
+  comms: COMMS_BUDGETS,
+  generator: GENERATOR_BUDGETS,
+}
+
 export const ROLES = ['Staff', 'Governance', 'Ops Finance', 'Finance', 'Planning', 'Admin', 'Super Admin']
 export const ADMIN_ROLES = ['Admin', 'Super Admin']
 export const SUPER_ADMIN_ROLES = ['Super Admin']
