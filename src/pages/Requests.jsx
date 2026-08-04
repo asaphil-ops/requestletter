@@ -13,6 +13,7 @@ import {
   CircleDollarSign,
   Search,
   ShieldCheck,
+  Sheet,
   Trash2,
   X,
 } from 'lucide-react'
@@ -22,7 +23,7 @@ import { useAuthStore } from '../store/authStore'
 import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useBranchOptions, useBranchEmailMap } from '../hooks/useBranches'
 import { useStaff } from '../hooks/useStaff'
 import { useEmployeeList } from '../hooks/useEmployeeList'
-import { uploadToDrive } from '../lib/gas'
+import { syncRequestTrackerToGoogleSheet, uploadToDrive } from '../lib/gas'
 import { fmtCurrency, getDriveViewUrl, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate, validateRequired } from '../lib/validation'
@@ -144,6 +145,7 @@ export default function Requests() {
   const [branchLookupOpen, setBranchLookupOpen] = useState(false)
   const [sortDir, setSortDir] = useState('desc')
   const [density, setDensity] = useState('comfortable')
+  const [isSyncingSheet, setIsSyncingSheet] = useState(false)
 
   const { data: branches = [] } = useBranches()
   const branchMap = useBranchMap()
@@ -483,6 +485,35 @@ export default function Requests() {
     }
   }
 
+  const sendToGoogleSheet = async () => {
+    if (!allRequests.length) return Swal.fire('Nothing to send', 'The Request Letter Tracker has no records.', 'info')
+
+    try {
+      setIsSyncingSheet(true)
+      Swal.fire({
+        title: 'Sending to Google Sheet...',
+        text: `Preparing ${allRequests.length} request letter record(s).`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      })
+      const result = await syncRequestTrackerToGoogleSheet(buildRequestCSVRows(sortByLatest(allRequests)))
+      await Swal.fire({
+        title: 'Google Sheet updated',
+        text: `${result.rowCount} request letter record(s) were sent successfully.`,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Open Google Sheet',
+        cancelButtonText: 'Close',
+      }).then(({ isConfirmed }) => {
+        if (isConfirmed) window.open(result.spreadsheetUrl, '_blank', 'noopener,noreferrer')
+      })
+    } catch (err) {
+      Swal.fire('Send failed', err.message || 'Unable to update the Google Sheet.', 'error')
+    } finally {
+      setIsSyncingSheet(false)
+    }
+  }
+
   const handleSort = (key) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortKey(key); setSortDir('asc') }
@@ -587,6 +618,7 @@ export default function Requests() {
           )}
           <button onClick={exportCSV} className="btn-secondary inline-flex items-center gap-2 text-xs px-3 py-2"><Download size={15} className="text-emerald-600" />Export</button>
           <button onClick={exportAllCSV} className="btn-secondary inline-flex items-center gap-2 text-xs px-3 py-2"><Download size={15} className="text-blue-600" />Export All</button>
+          <button onClick={sendToGoogleSheet} disabled={isSyncingSheet || isLoading} className="btn-secondary inline-flex items-center gap-2 text-xs px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"><Sheet size={15} className="text-emerald-600" />{isSyncingSheet ? 'Sending...' : 'Send to Google Sheet'}</button>
           {canUpload && <button onClick={() => openModal()} className="btn-primary inline-flex items-center gap-2 text-xs px-3 py-2"><FilePlus2 size={15} />New Request</button>}
           </div>
         </div>

@@ -4,10 +4,14 @@
 // ============================================================
 
 const DRIVE_FOLDER_ID = "1Auzl4oiIP2iugjprOYk8rx2nSc85V7OJ"; // your folder
+const REQUEST_TRACKER_SPREADSHEET_ID = "12DNNTUggWl6Ff_-3a0qYuDbs1_nt9RBsTNwiNuGxHZ8";
+const REQUEST_TRACKER_SHEET_NAME = "Request Letter Tracker";
 
 function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
+    const data = e.parameter && e.parameter.payload
+      ? JSON.parse(e.parameter.payload)
+      : JSON.parse(e.postData.contents);
     
     switch(data.action) {
       case 'SEND_EMAIL':       return handleSendEmail(data);
@@ -15,6 +19,7 @@ function doPost(e) {
       case 'DELETE_FILE':      return handleDeleteFile(data);
       case 'GET_FILE_URL':     return handleGetFileUrl(data);
       case 'GET_FILE_CONTENT': return handleGetFileContent(data);
+      case 'SYNC_REQUEST_TRACKER': return handleSyncRequestTracker(data);
       default:                 return err('Unknown action: ' + data.action);
     }
   } catch(ex) {
@@ -22,9 +27,70 @@ function doPost(e) {
   }
 }
 
+// ============================================================
+// SYNC REQUEST LETTER TRACKER TO GOOGLE SHEETS
+// ============================================================
+function handleSyncRequestTracker(data) {
+  if (!Array.isArray(data.rows) || data.rows.length === 0) {
+    throw new Error('No request tracker rows were supplied.');
+  }
+
+  const spreadsheet = SpreadsheetApp.openById(REQUEST_TRACKER_SPREADSHEET_ID);
+  // Write to the first/default worksheet so the synced data is immediately
+  // visible when the destination spreadsheet is opened.
+  const sheet = spreadsheet.getSheets()[0];
+
+  const width = data.rows[0].length;
+  const rows = data.rows.map(function(row) {
+    const values = Array.isArray(row) ? row.slice(0, width) : [];
+    while (values.length < width) values.push('');
+    return values;
+  });
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    if (data.replace) sheet.clearContents();
+    const startRow = Number(data.startRow) || (data.replace ? 1 : Math.max(sheet.getLastRow() + 1, 1));
+    sheet.getRange(startRow, 1, rows.length, width).setValues(rows);
+
+    if (data.replace) {
+      sheet.setFrozenRows(1);
+      sheet.getRange(1, 1, 1, width)
+        .setFontWeight('bold')
+        .setBackground('#1e3a5f')
+        .setFontColor('#ffffff');
+      sheet.autoResizeColumns(1, width);
+    }
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
+
+  return ok({
+    rowCount: Math.max(rows.length - 1, 0),
+    sheetName: sheet.getName(),
+    spreadsheetUrl: spreadsheet.getUrl() + '#gid=' + sheet.getSheetId()
+  });
+}
+
 function doGet(e) {
   // Health check
   return ok({ status: 'GAS service running', time: new Date().toISOString() });
+}
+
+// Run this manually from the Apps Script editor to verify that this project
+// can open and write to the configured Request Letter Tracker spreadsheet.
+function testRequestTrackerSheet() {
+  const spreadsheet = SpreadsheetApp.openById(REQUEST_TRACKER_SPREADSHEET_ID);
+  const sheet = spreadsheet.getSheets()[0];
+  sheet.getRange(1, 1, 2, 3).setValues([
+    ['Connection Test', 'Status', 'Timestamp'],
+    ['Request Letter Tracker', 'Connected', new Date()]
+  ]);
+  sheet.setFrozenRows(1);
+  SpreadsheetApp.flush();
+  Logger.log('Test data written to: ' + spreadsheet.getUrl() + '#gid=' + sheet.getSheetId());
 }
 
 // ============================================================

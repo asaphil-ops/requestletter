@@ -45,6 +45,72 @@ export async function getFileContent(fileId) {
   return callGAS({ action: 'GET_FILE_CONTENT', fileId })
 }
 
+export async function syncRequestTrackerToGoogleSheet(rows) {
+  if (!GAS_URL) throw new Error('Google Apps Script URL is not configured.')
+
+  const chunkSize = 200
+  for (let offset = 0; offset < rows.length; offset += chunkSize) {
+    const chunk = rows.slice(offset, offset + chunkSize)
+    await postToGASHiddenForm({
+        action: 'SYNC_REQUEST_TRACKER',
+        rows: chunk,
+        replace: offset === 0,
+        startRow: offset + 1,
+    })
+  }
+
+  return {
+    rowCount: Math.max(rows.length - 1, 0),
+    sheetName: 'Request Letter Tracker',
+    spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/12DNNTUggWl6Ff_-3a0qYuDbs1_nt9RBsTNwiNuGxHZ8/edit',
+  }
+}
+
+function postToGASHiddenForm(payload) {
+  return new Promise((resolve, reject) => {
+    const frameName = `gas_sync_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const iframe = document.createElement('iframe')
+    const form = document.createElement('form')
+    const field = document.createElement('input')
+    let submitted = false
+    let timeoutId
+
+    iframe.name = frameName
+    iframe.hidden = true
+    form.hidden = true
+    form.method = 'POST'
+    form.action = GAS_URL
+    form.target = frameName
+    field.type = 'hidden'
+    field.name = 'payload'
+    field.value = JSON.stringify(payload)
+    form.appendChild(field)
+
+    const cleanup = () => {
+      clearTimeout(timeoutId)
+      form.remove()
+      iframe.remove()
+    }
+
+    document.body.appendChild(form)
+    iframe.onload = () => {
+      if (!submitted) {
+        submitted = true
+        form.submit()
+        return
+      }
+      cleanup()
+      resolve()
+    }
+    iframe.src = 'about:blank'
+    document.body.appendChild(iframe)
+    timeoutId = setTimeout(() => {
+      cleanup()
+      reject(new Error('Google Apps Script did not respond. Check the deployment execution history.'))
+    }, 30000)
+  })
+}
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

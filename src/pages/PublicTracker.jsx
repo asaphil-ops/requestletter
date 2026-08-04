@@ -4,8 +4,10 @@ import { supabase } from '../lib/supabase'
 import { fetchAllPages } from '../lib/supabasePagination'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
-import { fetchAllBranches } from '../hooks/useBranches'
-import { sortByLatest } from '../lib/utils'
+import { branchCodesMatch, cleanGeoValue, fetchAllBranches, getBranchCodeAliases } from '../hooks/useBranches'
+import { getDriveViewUrl, sortByLatest } from '../lib/utils'
+import { syncRequestTrackerToGoogleSheet } from '../lib/gas'
+import Swal from 'sweetalert2'
 
 const TRACKER_ROWS_PER_PAGE = 100
 const TRACKER_ENCODER_NAME = 'Mary Jane Cared Lapitan'
@@ -168,6 +170,12 @@ function TrackerRecordCard({ record, onPreview }) {
           <div className="text-[11px] font-bold uppercase text-slate-400">Beneficiary / Branch</div>
           <div className="mt-0.5 break-words font-medium text-slate-800">{record.party}</div>
         </div>
+        <div>
+          <div className="text-[11px] font-bold uppercase text-slate-400">Description / Remarks</div>
+          <div className="mt-0.5 whitespace-pre-wrap break-words text-slate-700">
+            {[record.description, record.remarks].filter(Boolean).join(' — ') || '-'}
+          </div>
+        </div>
         <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="text-[11px] font-bold uppercase text-slate-400">Amount</div>
@@ -179,11 +187,7 @@ function TrackerRecordCard({ record, onPreview }) {
           </div>
         </div>
         <div className="flex items-center justify-between gap-3">
-          {record.remarks ? (
-            <div className="min-w-0 truncate text-xs font-semibold text-red-500">{record.remarks}</div>
-          ) : (
-            <span className="min-w-0" />
-          )}
+          <span className="min-w-0" />
           {record.file_id ? (
             <button
               type="button"
@@ -207,6 +211,9 @@ function extractBranchCode(value) {
   return match ? match[1].toUpperCase() : ''
 }
 
+const normalizeGeo = (value) => cleanGeoValue(value).toLowerCase()
+const geoMatches = (left, right) => normalizeGeo(left) === normalizeGeo(right)
+
 export default function PublicTracker() {
   const [records, setRecords] = useState([])
   const [branches, setBranches] = useState([])
@@ -214,6 +221,7 @@ export default function PublicTracker() {
   const [error, setError] = useState('')
   const [previewFile, setPreviewFile] = useState(null)
   const [page, setPage] = useState(1)
+  const [isSyncingSheet, setIsSyncingSheet] = useState(false)
   const [filters, setFilters] = useState({
     search: '',
     module: 'All',
@@ -256,7 +264,10 @@ export default function PublicTracker() {
 
         if (staffResult.error) console.warn('Tracker staff lookup skipped:', staffResult.error.message)
 
-        const branchMap = Object.fromEntries(branchRows.map(branch => [String(branch.code || '').toUpperCase(), branch]))
+        const branchMap = {}
+        branchRows.forEach(branch => {
+          getBranchCodeAliases(branch.code).forEach(alias => { branchMap[alias] = branch })
+        })
         const staffMap = {}
         ;(staffResult.data || []).forEach((staff) => {
           const names = [
@@ -265,15 +276,17 @@ export default function PublicTracker() {
             `${staff.first_name || ''} ${staff.last_name || ''}`.trim(),
             `${staff.last_name || ''}, ${staff.first_name || ''}`.trim(),
           ].filter(Boolean)
-          names.forEach(name => { staffMap[String(name).toLowerCase()] = staff.branch_code })
+          names.forEach(name => {
+            staffMap[String(name).replace(/\s+/g, ' ').trim().toLowerCase()] = staff.branch_code
+          })
         })
 
         const enriched = sourceResults.flat().map((record) => {
           const staffBranchCode = record.module === 'Request Letter' && !record.branch_code
-            ? staffMap[String(record.party || '').toLowerCase()]
+            ? staffMap[String(record.party || '').replace(/\s+/g, ' ').trim().toLowerCase()]
             : ''
           const branchCode = String(record.branch_code || staffBranchCode || '').toUpperCase()
-          const branch = branchMap[branchCode] || {}
+          const branch = getBranchCodeAliases(branchCode).map(alias => branchMap[alias]).find(Boolean) || {}
 
           return {
             ...record,
@@ -309,11 +322,11 @@ export default function PublicTracker() {
   const selectOptions = (items) => items.map(item => ({ value: item, label: item }))
   const geoOptions = useMemo(() => {
     const matches = (branch, ignoreKey = '') => {
-      if (ignoreKey !== 'operation' && filters.operation !== 'All' && branch.operation !== filters.operation) return false
-      if (ignoreKey !== 'division' && filters.division !== 'All' && branch.division !== filters.division) return false
-      if (ignoreKey !== 'region' && filters.region !== 'All' && branch.region !== filters.region) return false
-      if (ignoreKey !== 'area' && filters.area !== 'All' && branch.area !== filters.area) return false
-      if (ignoreKey !== 'branch' && filters.branch !== 'All' && String(branch.code || '') !== filters.branch) return false
+      if (ignoreKey !== 'operation' && filters.operation !== 'All' && !geoMatches(branch.operation, filters.operation)) return false
+      if (ignoreKey !== 'division' && filters.division !== 'All' && !geoMatches(branch.division, filters.division)) return false
+      if (ignoreKey !== 'region' && filters.region !== 'All' && !geoMatches(branch.region, filters.region)) return false
+      if (ignoreKey !== 'area' && filters.area !== 'All' && !geoMatches(branch.area, filters.area)) return false
+      if (ignoreKey !== 'branch' && filters.branch !== 'All' && !branchCodesMatch(branch.code, filters.branch)) return false
       return true
     }
 
@@ -342,7 +355,7 @@ export default function PublicTracker() {
 
     setFilters(prev => {
       if (key === 'branch') {
-        const branch = branches.find(item => String(item.code || '') === nextValue)
+        const branch = branches.find(item => branchCodesMatch(item.code, nextValue))
         if (!branch || nextValue === 'All') return { ...prev, branch: 'All' }
 
         return {
@@ -359,7 +372,7 @@ export default function PublicTracker() {
       const geoKeys = ['operation', 'division', 'region', 'area']
 
       const getCompatibleBranches = (filtersToCheck) => branches.filter(branch => (
-        geoKeys.every(item => filtersToCheck[item] === 'All' || branch[item] === filtersToCheck[item])
+        geoKeys.every(item => filtersToCheck[item] === 'All' || geoMatches(branch[item], filtersToCheck[item]))
       ))
 
       let compatibleBranches = getCompatibleBranches(next)
@@ -367,7 +380,7 @@ export default function PublicTracker() {
       geoKeys.forEach(item => {
         if (next[item] === 'All') return
 
-        const stillValid = compatibleBranches.some(branch => branch[item] === next[item])
+        const stillValid = compatibleBranches.some(branch => geoMatches(branch[item], next[item]))
         if (!stillValid) {
           next[item] = 'All'
           compatibleBranches = getCompatibleBranches(next)
@@ -396,11 +409,11 @@ export default function PublicTracker() {
 
       if (needle && !haystack.includes(needle)) return false
       if (filters.module !== 'All' && record.module !== filters.module) return false
-      if (filters.operation !== 'All' && record.operation !== filters.operation) return false
-      if (filters.division !== 'All' && record.division !== filters.division) return false
-      if (filters.region !== 'All' && record.region !== filters.region) return false
-      if (filters.area !== 'All' && record.area !== filters.area) return false
-      if (filters.branch !== 'All' && String(record.branch_code || '') !== filters.branch) return false
+      if (filters.operation !== 'All' && !geoMatches(record.operation, filters.operation)) return false
+      if (filters.division !== 'All' && !geoMatches(record.division, filters.division)) return false
+      if (filters.region !== 'All' && !geoMatches(record.region, filters.region)) return false
+      if (filters.area !== 'All' && !geoMatches(record.area, filters.area)) return false
+      if (filters.branch !== 'All' && !branchCodesMatch(record.branch_code, filters.branch)) return false
       if (from && (!date || date < from)) return false
       if (to && (!date || date > to)) return false
       return true
@@ -447,33 +460,91 @@ export default function PublicTracker() {
     branch: 'All',
   })
 
+  const sendAllToGoogleSheet = async () => {
+    if (!records.length) return Swal.fire('Nothing to send', 'The tracker has no records.', 'info')
+
+    const rows = [
+      ['Reference', 'Module', 'Date', 'Type', 'Title', 'Beneficiary / Branch', 'Description', 'Amount', 'Tracker Status', 'Encoded By', 'Remarks', 'Attachment Link'],
+      ...sortByLatest(records).map(record => [
+        record.id || '',
+        record.module || '',
+        record.date || record.created_at || '',
+        record.type || '',
+        record.title || '',
+        record.party || '',
+        record.description || '',
+        Number(record.amount || 0),
+        stageLabel(record.status),
+        TRACKER_ENCODER_NAME,
+        record.remarks || '',
+        getDriveViewUrl(record.file_id) || '',
+      ]),
+    ]
+
+    try {
+      setIsSyncingSheet(true)
+      Swal.fire({
+        title: 'Sending to Google Sheet...',
+        text: `Preparing ${records.length} tracker record(s).`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      })
+      const result = await syncRequestTrackerToGoogleSheet(rows)
+      await Swal.fire({
+        title: 'Google Sheet updated',
+        text: `${result.rowCount} tracker record(s) were sent successfully.`,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Open Google Sheet',
+        cancelButtonText: 'Close',
+      }).then(({ isConfirmed }) => {
+        if (isConfirmed) window.open(result.spreadsheetUrl, '_blank', 'noopener,noreferrer')
+      })
+    } catch (err) {
+      Swal.fire('Send failed', err.message || 'Unable to update the Google Sheet.', 'error')
+    } finally {
+      setIsSyncingSheet(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f6f7f9] text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="min-h-screen overflow-x-hidden bg-slate-100 text-slate-900">
+      <header className="relative overflow-hidden border-b border-slate-800 bg-slate-950 text-white shadow-lg">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.22),transparent_35%),radial-gradient(circle_at_left,rgba(14,165,233,0.15),transparent_30%)]" />
+        <div className="relative mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:py-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-xl text-white shadow-lg shadow-emerald-950/30 ring-1 ring-white/20">
                   <i className="fas fa-route" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase text-emerald-700">Operations Finance</p>
-                  <h1 className="text-2xl font-bold text-slate-950 sm:text-3xl">Request Letter Tracker</h1>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Operations Finance</p>
+                  <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Request Letter Tracker</h1>
+                  <p className="mt-1 text-sm text-slate-400">Central monitoring for requests, recommendations, and releases</p>
                 </div>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={loading || isSyncingSheet}
+                onClick={sendAllToGoogleSheet}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <i className={`fas ${isSyncingSheet ? 'fa-spinner fa-spin' : 'fa-table'}`} />
+                {isSyncingSheet ? 'Sending...' : 'Send to Google Sheet'}
+              </button>
               <Link
                 to="/"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15"
               >
                 <i className="fas fa-home text-xs" />
                 Home
               </Link>
               <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15"
                 onClick={resetFilters}
               >
                 <i className="fas fa-rotate-left text-xs" />
@@ -484,9 +555,9 @@ export default function PublicTracker() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6">
-        <section className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <main className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6">
+        <section className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-900/[0.02]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-bold uppercase text-slate-500">Records</div>
@@ -497,7 +568,7 @@ export default function PublicTracker() {
               </span>
             </div>
           </div>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
+          <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-bold uppercase text-amber-700">Pending Ops Fin</div>
@@ -508,7 +579,7 @@ export default function PublicTracker() {
               </span>
             </div>
           </div>
-          <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 shadow-sm">
+          <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-bold uppercase text-sky-700">Sent To Group Head</div>
@@ -519,7 +590,7 @@ export default function PublicTracker() {
               </span>
             </div>
           </div>
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 shadow-sm">
+          <div className="rounded-xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-bold uppercase text-red-700">Rejected</div>
@@ -530,7 +601,7 @@ export default function PublicTracker() {
               </span>
             </div>
           </div>
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 shadow-sm sm:col-span-2 xl:col-span-1">
+          <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm sm:col-span-2 xl:col-span-1">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-xs font-bold uppercase text-emerald-700">Total Amount</div>
@@ -543,8 +614,8 @@ export default function PublicTracker() {
           </div>
         </section>
 
-        <section className="mb-5 overflow-visible rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-4 py-3">
+        <section className="mb-5 overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/[0.02]">
+          <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-3">
             <div className="flex items-center gap-2">
               <i className="fas fa-filter text-slate-500" />
               <h2 className="text-sm font-bold text-slate-900">Filters</h2>
@@ -607,7 +678,7 @@ export default function PublicTracker() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/[0.02]">
           <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h2 className="font-bold text-slate-950">Tracker Registry</h2>
@@ -639,12 +710,13 @@ export default function PublicTracker() {
           </div>
 
           <div className="hidden max-h-[68vh] overflow-auto md:block">
-            <table className="w-full min-w-[1180px] table-fixed">
-              <thead className="sticky top-0 z-10 bg-slate-50">
+            <table className="w-full min-w-[1420px] table-fixed">
+              <thead className="sticky top-0 z-10 bg-slate-900 text-white shadow-sm">
                 <tr>
                   <th className="table-th w-32">Date</th>
                   <th className="table-th w-56">Type / Title</th>
                   <th className="table-th w-64">Beneficiary / Branch</th>
+                  <th className="table-th w-72">Description / Remarks</th>
                   <th className="table-th w-32">Amount</th>
                   <th className="table-th w-52">Tracker Status</th>
                   <th className="table-th w-48">Encoded By</th>
@@ -654,11 +726,11 @@ export default function PublicTracker() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td className="table-td text-center text-slate-400" colSpan={7}>Loading tracker...</td>
+                    <td className="table-td text-center text-slate-400" colSpan={8}>Loading tracker...</td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td className="table-td text-center text-slate-400" colSpan={7}>No records found.</td>
+                    <td className="table-td text-center text-slate-400" colSpan={8}>No records found.</td>
                   </tr>
                 ) : paged.map((record, index) => (
                   <tr
@@ -671,6 +743,11 @@ export default function PublicTracker() {
                       <div className="text-xs text-slate-400 truncate" title={record.type}>{record.type}</div>
                     </td>
                     <td className="table-td truncate" title={record.party}>{record.party}</td>
+                    <td className="table-td">
+                      <div className="line-clamp-3 whitespace-pre-wrap text-sm text-slate-700" title={[record.description, record.remarks].filter(Boolean).join(' — ')}>
+                        {[record.description, record.remarks].filter(Boolean).join(' — ') || '-'}
+                      </div>
+                    </td>
                     <td className="table-td font-semibold whitespace-nowrap">{formatCurrency(record.amount)}</td>
                     <td className="table-td">
                       <div className={`inline-flex max-w-full rounded-full border px-3 py-1 text-center text-xs font-bold leading-tight ${stageTone(record.status)}`}>
