@@ -10,6 +10,7 @@ export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const login = useLogin()
   const setUser = useAuthStore((s) => s.setUser)
   const initDarkMode = useUIStore((s) => s.initDarkMode)
@@ -39,7 +40,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0b1420] to-[#111d2e] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#071426] flex items-center justify-center p-4 sm:p-8 relative overflow-hidden">
       {/* Decorative gradient blobs */}
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl animate-pulse pointer-events-none" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000 pointer-events-none" />
@@ -51,31 +52,38 @@ export default function Login() {
       <div className="absolute bottom-0 left-0 w-48 h-48 border-l-4 border-b-4 border-blue-400/20 rounded-bl-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-48 h-48 border-r-4 border-b-4 border-blue-400/20 rounded-br-3xl pointer-events-none" />
 
-      <div className="w-full max-w-sm relative">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-5xl relative grid overflow-hidden rounded-3xl border border-white/10 bg-white shadow-2xl lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="relative hidden min-h-[610px] flex-col justify-between overflow-hidden bg-[#0b1e38] p-12 text-white lg:flex">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.22),transparent_40%)]" />
+          <div className="relative"><p className="text-xs font-extrabold uppercase tracking-[0.2em] text-sky-300">ASA Philippines Foundation</p><h2 className="mt-5 max-w-md text-4xl font-extrabold leading-tight tracking-tight">Finance operations, clearly connected.</h2><p className="mt-4 max-w-md text-base leading-7 text-slate-300">Manage requests, monitor budgets, and keep operational decisions moving from one secure workspace.</p></div>
+          <div className="relative grid grid-cols-3 gap-3">{['Secure access', 'Unified records', 'Clear approvals'].map((item, index) => <div key={item} className="rounded-2xl border border-white/10 bg-white/5 p-4"><i className={`fas ${['fa-shield-halved', 'fa-layer-group', 'fa-circle-check'][index]} mb-3 text-sky-300`} /><div className="text-xs font-bold text-slate-200">{item}</div></div>)}</div>
+        </section>
+        <div className="flex items-center bg-white">
+        <div className="w-full px-7 py-10 sm:px-12">
           {/* Header with logo */}
-          <div className="px-8 pt-10 pb-6 text-center border-b border-white/10">
-            <div className="flex justify-center mb-5">
+          <div className="pb-7 text-left">
+            <div className="mb-7 flex h-14 items-center">
               <img
                 src="https://asaphil.org/wp-content/themes/Philippines/asa-assets/images/Primary_logo.png"
                 alt="ASA Logo"
-                className="h-20 object-contain brightness-0 invert"
+                className="h-14 max-w-[190px] object-contain"
               />
             </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Sign In</h1>
-            <p className="text-blue-200/60 text-sm mt-1 font-medium">Finance Operations Portal</p>
+            <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-600">Finance Operations Portal</p>
+            <h1 className="text-3xl font-extrabold text-slate-950 tracking-tight">Welcome back</h1>
+            <p className="text-slate-500 text-sm mt-2 font-medium">Sign in with your authorized account.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="px-8 pb-8 pt-6 space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-blue-200/70 uppercase tracking-widest">Username</label>
+              <label className="label">Username</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-300/40 group-focus-within:text-blue-300 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600">
                   <i className="fas fa-user text-sm" />
                 </div>
                 <input
                   type="text"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-blue-200/30 focus:outline-none focus:bg-white/10 focus:border-blue-400/50 transition-all"
+                  className="input pl-10"
                   placeholder="Enter username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -85,18 +93,19 @@ export default function Login() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-blue-200/70 uppercase tracking-widest">Password</label>
+              <label className="label">Password</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-300/40 group-focus-within:text-blue-300 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600">
                   <i className="fas fa-lock text-sm" />
                 </div>
                 <input
-                  type="password"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-blue-200/30 focus:outline-none focus:bg-white/10 focus:border-blue-400/50 transition-all"
+                  type={showPassword ? 'text' : 'password'}
+                  className="input pl-10 pr-11"
                   placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button type="button" onClick={() => setShowPassword(value => !value)} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 hover:text-slate-700" aria-label={showPassword ? 'Hide password' : 'Show password'}><i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} /></button>
               </div>
             </div>
 
@@ -121,7 +130,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={login.isPending || !isSupabaseConfigured}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2.5 rounded-xl text-sm tracking-wide transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30"
+              className="btn-primary w-full min-h-12 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {login.isPending ? (
                 <>
@@ -135,12 +144,12 @@ export default function Login() {
               )}
             </button>
 
-            <p className="text-center text-[11px] text-blue-300/30 flex items-center justify-center gap-1.5 pt-1">
-              <i className="fas fa-shield-alt text-blue-400/30" />
+            <p className="text-center text-xs text-slate-400 flex items-center justify-center gap-1.5 pt-1">
+              <i className="fas fa-shield-alt text-slate-400" />
               Authorized Personnel Only
             </p>
           </form>
-        </div>
+        </div></div>
       </div>
     </div>
   )

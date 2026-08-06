@@ -19,6 +19,7 @@ function doPost(e) {
       case 'DELETE_FILE':      return handleDeleteFile(data);
       case 'GET_FILE_URL':     return handleGetFileUrl(data);
       case 'GET_FILE_CONTENT': return handleGetFileContent(data);
+      case 'TEST_CONNECTION': return handleTestConnection();
       case 'SYNC_REQUEST_TRACKER': return handleSyncRequestTracker(data);
       default:                 return err('Unknown action: ' + data.action);
     }
@@ -36,9 +37,11 @@ function handleSyncRequestTracker(data) {
   }
 
   const spreadsheet = SpreadsheetApp.openById(REQUEST_TRACKER_SPREADSHEET_ID);
-  // Write to the first/default worksheet so the synced data is immediately
-  // visible when the destination spreadsheet is opened.
-  const sheet = spreadsheet.getSheets()[0];
+  const syncId = String(data.syncId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!syncId) throw new Error('A sync ID is required.');
+  const stagingName = '_sync_' + syncId.slice(0, 40);
+  let staging = spreadsheet.getSheetByName(stagingName);
+  let sheet = staging;
 
   const width = data.rows[0].length;
   const rows = data.rows.map(function(row) {
@@ -50,17 +53,35 @@ function handleSyncRequestTracker(data) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    if (data.replace) sheet.clearContents();
-    const startRow = Number(data.startRow) || (data.replace ? 1 : Math.max(sheet.getLastRow() + 1, 1));
-    sheet.getRange(startRow, 1, rows.length, width).setValues(rows);
+    if (data.initialize) {
+      if (staging) spreadsheet.deleteSheet(staging);
+      staging = spreadsheet.insertSheet(stagingName);
+      staging.hideSheet();
+    }
+    if (!staging) throw new Error('The staged sync expired or was not initialized. Please run the sync again.');
+    const startRow = Number(data.startRow) || Math.max(staging.getLastRow() + 1, 1);
+    staging.getRange(startRow, 1, rows.length, width).setValues(rows);
 
-    if (data.replace) {
-      sheet.setFrozenRows(1);
-      sheet.getRange(1, 1, 1, width)
+    if (data.initialize) {
+      staging.setFrozenRows(1);
+      staging.getRange(1, 1, 1, width)
         .setFontWeight('bold')
         .setBackground('#1e3a5f')
         .setFontColor('#ffffff');
-      sheet.autoResizeColumns(1, width);
+    }
+
+    sheet = staging;
+    if (data.finalize) {
+      const target = spreadsheet.getSheetByName(REQUEST_TRACKER_SHEET_NAME) || spreadsheet.insertSheet(REQUEST_TRACKER_SHEET_NAME);
+      const stagedRows = staging.getLastRow();
+      const stagedColumns = staging.getLastColumn();
+      if (!stagedRows || !stagedColumns) throw new Error('The staged worksheet is empty. The live worksheet was not changed.');
+      target.clearContents();
+      staging.getRange(1, 1, stagedRows, stagedColumns).copyTo(target.getRange(1, 1, stagedRows, stagedColumns), { contentsOnly: false });
+      target.setFrozenRows(1);
+      target.autoResizeColumns(1, stagedColumns);
+      spreadsheet.deleteSheet(staging);
+      sheet = target;
     }
     SpreadsheetApp.flush();
   } finally {
@@ -68,9 +89,20 @@ function handleSyncRequestTracker(data) {
   }
 
   return ok({
-    rowCount: Math.max(rows.length - 1, 0),
+    rowCount: Math.max(sheet.getLastRow() - 1, 0),
     sheetName: sheet.getName(),
     spreadsheetUrl: spreadsheet.getUrl() + '#gid=' + sheet.getSheetId()
+  });
+}
+
+function handleTestConnection() {
+  const spreadsheet = SpreadsheetApp.openById(REQUEST_TRACKER_SPREADSHEET_ID);
+  const sheet = spreadsheet.getSheetByName(REQUEST_TRACKER_SHEET_NAME);
+  return ok({
+    status: 'connected',
+    sheetName: sheet ? sheet.getName() : REQUEST_TRACKER_SHEET_NAME,
+    spreadsheetUrl: spreadsheet.getUrl(),
+    checkedAt: new Date().toISOString()
   });
 }
 
@@ -83,7 +115,8 @@ function doGet(e) {
 // can open and write to the configured Request Letter Tracker spreadsheet.
 function testRequestTrackerSheet() {
   const spreadsheet = SpreadsheetApp.openById(REQUEST_TRACKER_SPREADSHEET_ID);
-  const sheet = spreadsheet.getSheets()[0];
+  const sheet = spreadsheet.getSheetByName(REQUEST_TRACKER_SHEET_NAME) ||
+    spreadsheet.insertSheet(REQUEST_TRACKER_SHEET_NAME);
   sheet.getRange(1, 1, 2, 3).setValues([
     ['Connection Test', 'Status', 'Timestamp'],
     ['Request Letter Tracker', 'Connected', new Date()]

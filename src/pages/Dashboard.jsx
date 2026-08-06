@@ -10,6 +10,7 @@ import Insights from '../components/dashboard/Insights'
 import ActivityFeed from '../components/dashboard/ActivityFeed'
 import { PageLoader } from '../components/shared/Loader'
 import SegmentedSearchSelect from '../components/shared/SegmentedSearchSelect'
+import PageHeader from '../components/shared/PageHeader'
 
 const EMPTY_FILTERS = { operation: '', division: '', region: '', area: '', branchCode: '', category: '', dateStart: '', dateEnd: '' }
 
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const branchOptions = useBranchOptions()
   const branchMap = useBranchMap()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const activeFilters = Object.entries(filters).filter(([, value]) => value)
 
   const set = (key, val) => {
     setFilters(prev => {
@@ -163,18 +165,13 @@ export default function Dashboard() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-end justify-between mb-4 flex-wrap gap-2">
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Overview</p>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">
-            Good day, <span className="text-blue-600">{user?.full_name?.split(',')[0]}</span>
-          </h1>
-        </div>
-        <span className="text-sm text-gray-400 flex items-center gap-2">
-          <i className="far fa-calendar-alt text-blue-500" /> {today}
-        </span>
-      </div>
+      <PageHeader
+        eyebrow="Operations overview"
+        title={`Good day, ${user?.full_name?.split(',')[0] || 'Team'}`}
+        subtitle="Monitor requests, approvals, and operational activity in one place."
+        icon="fa-chart-line"
+        actions={<span className="text-sm font-semibold text-slate-500 dark:text-slate-400"><i className="far fa-calendar-alt mr-2 text-blue-500" />{today}</span>}
+      />
 
       {/* Task alert */}
       {(statsData.pending > 0) && (
@@ -191,7 +188,11 @@ export default function Dashboard() {
 
       {/* Dashboard Filters */}
       <div className="card relative z-30 overflow-visible p-4 mb-5">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-9 gap-2 items-end">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Filter overview</h2><p className="text-xs text-slate-500 dark:text-slate-400">Refine the dashboard without losing context.</p></div>
+          {activeFilters.length > 0 && <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-sky-300">Clear all</button>}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
           <div>
             <label className="label">Date Start</label>
             <input type="date" className="input text-sm py-1.5" value={filters.dateStart} onChange={e => set('dateStart', e.target.value)} />
@@ -211,17 +212,18 @@ export default function Dashboard() {
               <option value="comms">Comms</option>
             </select>
           </div>
-          <SegmentedSearchSelect label="Operation" value={filters.operation} options={selectOptions(geoOptions.operations)} onChange={value => set('operation', value)} />
-          <SegmentedSearchSelect label="Division" value={filters.division} options={selectOptions(geoOptions.divisions)} onChange={value => set('division', value)} />
-          <SegmentedSearchSelect label="Region" value={filters.region} options={selectOptions(geoOptions.regions)} onChange={value => set('region', value)} />
-          <SegmentedSearchSelect label="Area" value={filters.area} options={selectOptions(geoOptions.areas)} onChange={value => set('area', value)} />
           <SegmentedSearchSelect label="Branch" value={filters.branchCode} options={geoOptions.branches} onChange={value => set('branchCode', value)} className="w-[260px]" />
-          <div className="flex items-end">
-            <button onClick={() => setFilters(EMPTY_FILTERS)} className="btn-secondary w-full py-1.5 text-sm">
-              <i className="fas fa-sync-alt mr-1" /> Reset
-            </button>
-          </div>
         </div>
+        <details className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <summary className="cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-300">Advanced geographic filters <i className="fas fa-chevron-down ml-1 text-[9px]" /></summary>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <SegmentedSearchSelect label="Operation" value={filters.operation} options={selectOptions(geoOptions.operations)} onChange={value => set('operation', value)} />
+            <SegmentedSearchSelect label="Division" value={filters.division} options={selectOptions(geoOptions.divisions)} onChange={value => set('division', value)} />
+            <SegmentedSearchSelect label="Region" value={filters.region} options={selectOptions(geoOptions.regions)} onChange={value => set('region', value)} />
+            <SegmentedSearchSelect label="Area" value={filters.area} options={selectOptions(geoOptions.areas)} onChange={value => set('area', value)} />
+          </div>
+        </details>
+        {activeFilters.length > 0 && <div className="mt-3 flex flex-wrap gap-2" aria-label="Active filters">{activeFilters.map(([key, value]) => <button key={key} onClick={() => set(key, '')} className="filter-chip"><span className="capitalize">{key.replace('branchCode', 'branch')}</span>: {value}<i className="fas fa-times" /></button>)}</div>}
       </div>
 
       {/* Stat Cards */}

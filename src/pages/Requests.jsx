@@ -29,6 +29,7 @@ import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate, validateRequired } from '../lib/validation'
 import { downloadCSV } from '../lib/csv'
 import { exportAllRecordsCSV } from '../lib/exportAllRecords'
+import { logAudit } from '../lib/audit'
 import StatusBadge from '../components/shared/StatusBadge'
 import { OpsModal } from '../components/shared/ProcessModal'
 import FilePreviewModal from '../components/shared/FilePreviewModal'
@@ -126,7 +127,7 @@ function StaffBeneficiaryInput({ value, options, onChange }) {
 }
 
 export default function Requests() {
-  const { canCheck, canUpload, isAdmin, isSuperAdmin, canForceDelete } = useAuthStore()
+  const { user, canCheck, canUpload, isAdmin, isSuperAdmin, canForceDelete } = useAuthStore()
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -488,6 +489,16 @@ export default function Requests() {
   const sendToGoogleSheet = async () => {
     if (!allRequests.length) return Swal.fire('Nothing to send', 'The Request Letter Tracker has no records.', 'info')
 
+    const confirmation = await Swal.fire({
+      title: 'Replace Google Sheet data?',
+      html: `<div style="text-align:left;font-size:14px"><p><b>Destination:</b> Request Letter Tracker</p><p><b>Records:</b> ${allRequests.length}</p><p style="color:#b45309;margin-top:12px">The existing tracker rows will be replaced only after the complete upload succeeds.</p></div>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Replace and sync',
+      cancelButtonText: 'Cancel',
+    })
+    if (!confirmation.isConfirmed) return
+
     try {
       setIsSyncingSheet(true)
       Swal.fire({
@@ -496,7 +507,10 @@ export default function Requests() {
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading(),
       })
-      const result = await syncRequestTrackerToGoogleSheet(buildRequestCSVRows(sortByLatest(allRequests)))
+      const result = await syncRequestTrackerToGoogleSheet(buildRequestCSVRows(sortByLatest(allRequests)), {
+        onProgress: ({ batch, totalBatches, sent, total }) => Swal.update({ text: `Batch ${batch} of ${totalBatches} — ${Math.min(sent - 1, allRequests.length)} of ${Math.max(total - 1, 0)} records` }),
+      })
+      await logAudit({ user, action: 'GOOGLE_SHEET_SYNC_SUCCESS', module: 'requests', details: `${result.rowCount} records synced to ${result.sheetName}` })
       await Swal.fire({
         title: 'Google Sheet updated',
         text: `${result.rowCount} request letter record(s) were sent successfully.`,
@@ -508,6 +522,7 @@ export default function Requests() {
         if (isConfirmed) window.open(result.spreadsheetUrl, '_blank', 'noopener,noreferrer')
       })
     } catch (err) {
+      await logAudit({ user, action: 'GOOGLE_SHEET_SYNC_FAILED', module: 'requests', details: err.message || 'Unknown sync error' })
       Swal.fire('Send failed', err.message || 'Unable to update the Google Sheet.', 'error')
     } finally {
       setIsSyncingSheet(false)

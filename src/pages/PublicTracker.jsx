@@ -7,6 +7,7 @@ import FilePreviewModal from '../components/shared/FilePreviewModal'
 import { branchCodesMatch, cleanGeoValue, fetchAllBranches, getBranchCodeAliases } from '../hooks/useBranches'
 import { getDriveViewUrl, sortByLatest } from '../lib/utils'
 import { syncRequestTrackerToGoogleSheet } from '../lib/gas'
+import { logAudit } from '../lib/audit'
 import Swal from 'sweetalert2'
 
 const TRACKER_ROWS_PER_PAGE = 100
@@ -481,6 +482,13 @@ export default function PublicTracker() {
       ]),
     ]
 
+    const confirmation = await Swal.fire({
+      title: 'Replace Google Sheet data?',
+      html: `<div style="text-align:left;font-size:14px"><p><b>Destination:</b> Request Letter Tracker</p><p><b>Records:</b> ${records.length}</p><p style="color:#b45309;margin-top:12px">The live sheet changes only after every batch is uploaded successfully.</p></div>`,
+      icon: 'warning', showCancelButton: true, confirmButtonText: 'Replace and sync', cancelButtonText: 'Cancel',
+    })
+    if (!confirmation.isConfirmed) return
+
     try {
       setIsSyncingSheet(true)
       Swal.fire({
@@ -489,7 +497,10 @@ export default function PublicTracker() {
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading(),
       })
-      const result = await syncRequestTrackerToGoogleSheet(rows)
+      const result = await syncRequestTrackerToGoogleSheet(rows, {
+        onProgress: ({ batch, totalBatches, sent, total }) => Swal.update({ text: `Batch ${batch} of ${totalBatches} — ${Math.min(sent - 1, records.length)} of ${Math.max(total - 1, 0)} records` }),
+      })
+      await logAudit({ user: { full_name: TRACKER_ENCODER_NAME }, action: 'GOOGLE_SHEET_SYNC_SUCCESS', module: 'public_tracker', details: `${result.rowCount} records synced to ${result.sheetName}` })
       await Swal.fire({
         title: 'Google Sheet updated',
         text: `${result.rowCount} tracker record(s) were sent successfully.`,
@@ -501,6 +512,7 @@ export default function PublicTracker() {
         if (isConfirmed) window.open(result.spreadsheetUrl, '_blank', 'noopener,noreferrer')
       })
     } catch (err) {
+      await logAudit({ user: { full_name: TRACKER_ENCODER_NAME }, action: 'GOOGLE_SHEET_SYNC_FAILED', module: 'public_tracker', details: err.message || 'Unknown sync error' })
       Swal.fire('Send failed', err.message || 'Unable to update the Google Sheet.', 'error')
     } finally {
       setIsSyncingSheet(false)

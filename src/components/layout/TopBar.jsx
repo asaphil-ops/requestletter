@@ -119,6 +119,7 @@ export default function TopBar() {
       {/* Left: hamburger */}
       <button
         onClick={toggleSidebar}
+        aria-label="Toggle navigation menu"
         className="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
       >
         <i className="fas fa-bars text-sm" />
@@ -180,6 +181,7 @@ export default function TopBar() {
         {/* Dark Mode Toggle */}
         <button
           onClick={toggleDarkMode}
+          aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           className="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
           title={darkMode ? 'Light Mode' : 'Dark Mode'}
         >
@@ -190,6 +192,7 @@ export default function TopBar() {
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setShowNotif(!showNotif)}
+            aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
             className="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all relative flex-shrink-0"
           >
             <i className="fas fa-bell text-sm" />

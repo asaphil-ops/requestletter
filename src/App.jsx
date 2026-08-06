@@ -15,7 +15,7 @@ import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
 import usePresence from './hooks/usePresence'
 import Swal from 'sweetalert2'
-import { lazy, Suspense } from 'react'
+import { lazy } from 'react'
 import { useSettings } from './hooks/useAccounts'
 
 const LazyDashboard = lazy(() => import('./pages/Dashboard'))
@@ -75,7 +75,6 @@ function AppRoutes() {
   usePresence()
 
   return (
-    <Suspense fallback={<RouteLoader />}>
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/tracker" element={guarded('/tracker', <PublicTracker />)} />
@@ -111,7 +110,6 @@ function AppRoutes() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-    </Suspense>
   )
 }
 

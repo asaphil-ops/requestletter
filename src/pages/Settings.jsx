@@ -4,6 +4,7 @@ import Swal from 'sweetalert2'
 import PageHeader from '../components/shared/PageHeader'
 import { DEFAULT_MODULE_BUDGETS } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
+import { testGASConnection } from '../lib/gas'
 
 const BUDGET_MODULES = [
   { key: 'it', label: 'IT Equipment', icon: 'fa-print', tone: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' },
@@ -61,6 +62,20 @@ export default function Settings() {
   const [budgets, setBudgets] = useState(() => mergeBudgets())
   const [hiddenModules, setHiddenModules] = useState([])
   const [savedSnapshot, setSavedSnapshot] = useState('')
+  const [testingSheets, setTestingSheets] = useState(false)
+  const [sheetsStatus, setSheetsStatus] = useState(null)
+
+  const testSheets = async () => {
+    setTestingSheets(true)
+    try {
+      const result = await testGASConnection()
+      setSheetsStatus({ ok: true, message: `Connected to ${result.sheetName}` })
+    } catch (error) {
+      setSheetsStatus({ ok: false, message: error.message })
+    } finally {
+      setTestingSheets(false)
+    }
+  }
 
   const snapshot = JSON.stringify({ maintenance, titles, budgets, hiddenModules })
   const hasUnsavedChanges = Boolean(savedSnapshot && savedSnapshot !== snapshot)
@@ -309,6 +324,10 @@ export default function Settings() {
               </div>
 
               <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50/60 p-5 dark:border-slate-700 dark:bg-slate-800/30">
+                  <div><h4 className="text-sm font-bold text-slate-900 dark:text-white"><i className="fas fa-table mr-2 text-emerald-600" />Google Sheets connection</h4><p className={`mt-1 text-xs ${sheetsStatus?.ok === false ? 'text-red-600' : sheetsStatus?.ok ? 'text-emerald-600' : 'text-slate-500 dark:text-slate-400'}`}>{sheetsStatus?.message || 'Test the deployed Apps Script and tracker access.'}</p></div>
+                  <button type="button" onClick={testSheets} disabled={testingSheets} className="btn-secondary inline-flex items-center gap-2 disabled:opacity-60"><i className={`fas ${testingSheets ? 'fa-spinner fa-spin' : 'fa-plug'}`} />{testingSheets ? 'Testing...' : 'Test connection'}</button>
+                </div>
                 {/* Maintenance Mode Card */}
                 <div className={`border rounded-xl p-5 transition-all ${
                   maintenance

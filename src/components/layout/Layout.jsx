@@ -1,11 +1,12 @@
 import { Outlet } from 'react-router-dom'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import Breadcrumbs from '../shared/Breadcrumbs'
 import { useUIStore } from '../../store/uiStore'
 import Toasts from '../shared/Toasts'
 import SendEmailModal from '../SendEmailModal'
+import { PageLoader } from '../shared/Loader'
 
 export default function Layout() {
   const { sidebarOpen, initDarkMode, sendEmailDraft, closeSendEmailModal } = useUIStore()
@@ -23,7 +24,9 @@ export default function Layout() {
         <TopBar />
         <main className="app-main flex-1">
           <Breadcrumbs />
-          <Outlet />
+          <Suspense fallback={<PageLoader text="Loading module..." />}>
+            <Outlet />
+          </Suspense>
         </main>
         <Toasts />
       </div>

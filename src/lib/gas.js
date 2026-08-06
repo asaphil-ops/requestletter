@@ -2,20 +2,38 @@ import { formatBytes, escapeHtml } from './utils'
 
 const GAS_URL = import.meta.env.VITE_GAS_URL
 
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
 async function callGAS(payload) {
-  try {
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
-    if (!res.ok) throw new Error(`Server responded with ${res.status}: ${res.statusText}`)
-    const json = await res.json()
-    if (!json.success) throw new Error(json.error || 'GAS error')
-    return json.data
-  } catch (err) {
-    console.error('GAS Call Failed:', err)
-    throw err
+  if (!GAS_URL) throw new Error('Google Apps Script URL is not configured.')
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) })
+      if (res.status === 404) throw new Error('Google Apps Script deployment was not found (404). Create a Web App deployment and update VITE_GAS_URL with its /exec URL.')
+      if (!res.ok) {
+        const error = new Error(`Google Apps Script responded with ${res.status}: ${res.statusText || 'Request failed'}`)
+        error.retryable = res.status === 408 || res.status === 429 || res.status >= 500
+        throw error
+      }
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error || 'Google Apps Script returned an error.')
+      return json.data
+    } catch (err) {
+      const networkError = err instanceof TypeError
+      if (attempt < 2 && (networkError || err.retryable)) {
+        await wait(700 * (attempt + 1))
+        continue
+      }
+      console.error('GAS Call Failed:', err)
+      throw err
+    }
   }
+}
+
+export async function testGASConnection() {
+  if (!GAS_URL) throw new Error('Google Apps Script URL is not configured.')
+  const result = await callGAS({ action: 'TEST_CONNECTION' })
+  return { ...result, configured: true }
 }
 
 export async function sendEmail({ to, cc, subject, htmlBody, senderName, senderEmail, attachments = [], fileId, fileName }) {
@@ -45,70 +63,33 @@ export async function getFileContent(fileId) {
   return callGAS({ action: 'GET_FILE_CONTENT', fileId })
 }
 
-export async function syncRequestTrackerToGoogleSheet(rows) {
+export async function syncRequestTrackerToGoogleSheet(rows, { onProgress } = {}) {
   if (!GAS_URL) throw new Error('Google Apps Script URL is not configured.')
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error('There are no rows to send to Google Sheets.')
 
-  const chunkSize = 200
+  const chunkSize = 150
+  const totalBatches = Math.ceil(rows.length / chunkSize)
+  const syncId = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  let result = null
   for (let offset = 0; offset < rows.length; offset += chunkSize) {
     const chunk = rows.slice(offset, offset + chunkSize)
-    await postToGASHiddenForm({
-        action: 'SYNC_REQUEST_TRACKER',
-        rows: chunk,
-        replace: offset === 0,
-        startRow: offset + 1,
+    const batch = Math.floor(offset / chunkSize) + 1
+    onProgress?.({ batch, totalBatches, sent: Math.min(offset + chunk.length, rows.length), total: rows.length })
+    result = await callGAS({
+      action: 'SYNC_REQUEST_TRACKER',
+      rows: chunk,
+      syncId,
+      initialize: offset === 0,
+      finalize: batch === totalBatches,
+      startRow: offset + 1,
     })
   }
 
   return {
     rowCount: Math.max(rows.length - 1, 0),
-    sheetName: 'Request Letter Tracker',
-    spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/12DNNTUggWl6Ff_-3a0qYuDbs1_nt9RBsTNwiNuGxHZ8/edit',
+    sheetName: result?.sheetName || 'Request Letter Tracker',
+    spreadsheetUrl: result?.spreadsheetUrl || 'https://docs.google.com/spreadsheets/d/12DNNTUggWl6Ff_-3a0qYuDbs1_nt9RBsTNwiNuGxHZ8/edit',
   }
-}
-
-function postToGASHiddenForm(payload) {
-  return new Promise((resolve, reject) => {
-    const frameName = `gas_sync_${Date.now()}_${Math.random().toString(36).slice(2)}`
-    const iframe = document.createElement('iframe')
-    const form = document.createElement('form')
-    const field = document.createElement('input')
-    let submitted = false
-    let timeoutId
-
-    iframe.name = frameName
-    iframe.hidden = true
-    form.hidden = true
-    form.method = 'POST'
-    form.action = GAS_URL
-    form.target = frameName
-    field.type = 'hidden'
-    field.name = 'payload'
-    field.value = JSON.stringify(payload)
-    form.appendChild(field)
-
-    const cleanup = () => {
-      clearTimeout(timeoutId)
-      form.remove()
-      iframe.remove()
-    }
-
-    document.body.appendChild(form)
-    iframe.onload = () => {
-      if (!submitted) {
-        submitted = true
-        form.submit()
-        return
-      }
-      cleanup()
-      resolve()
-    }
-    iframe.src = 'about:blank'
-    document.body.appendChild(iframe)
-    timeoutId = setTimeout(() => {
-      cleanup()
-      reject(new Error('Google Apps Script did not respond. Check the deployment execution history.'))
-    }, 30000)
-  })
 }
 
 function fileToBase64(file) {

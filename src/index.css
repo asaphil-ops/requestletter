@@ -29,6 +29,11 @@ body {
 
 .app-content { margin-left: 0; min-width: 0; }
 .app-main { width: 100%; padding: 1.5rem; }
+.app-shell,
+.app-content,
+.app-main {
+  background-color: var(--canvas);
+}
 .app-main > * {
   width: 100%;
   min-width: 0;
@@ -108,6 +113,11 @@ body {
     linear-gradient(135deg, var(--navy-950) 0%, #08172a 45%, #0d2138 100%);
   @apply text-slate-100;
 }
+.dark .app-shell,
+.dark .app-content,
+.dark .app-main {
+  background-color: transparent;
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -123,8 +133,13 @@ body {
 html {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
-* {
-  transition: border-color 0.3s ease, background-color 0.3s ease, color 0.15s ease;
+button, a, input, select, textarea, summary, .card {
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
 }
 
 /* Shimmer animation */
@@ -155,10 +170,10 @@ html {
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-sm;
+    @apply min-h-10 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl text-sm shadow-sm;
   }
   .btn-secondary {
-    @apply bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm transition-all hover:bg-slate-50 shadow-sm;
+    @apply min-h-10 bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm hover:bg-slate-50 shadow-sm;
   }
   .btn-danger {
     @apply bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all;
@@ -173,10 +188,10 @@ html {
     @apply bg-white border border-slate-200 rounded-2xl shadow-sm;
   }
   .input {
-    @apply w-full border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+    @apply min-h-10 w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500;
   }
   .label {
-    @apply block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1;
+    @apply block text-xs font-bold text-slate-600 mb-1.5;
   }
   .badge {
     @apply inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide;
@@ -195,6 +210,8 @@ html {
   .table-tr {
     @apply hover:bg-blue-50/40 transition-colors;
   }
+  .data-table-shell { @apply w-full min-w-0; }
+  .filter-chip { @apply inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200; }
   .table-tr:has(.action-menu-open) {
     @apply bg-blue-50 ring-1 ring-inset ring-blue-100;
   }
@@ -305,6 +322,10 @@ html {
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
     animation: skeleton-shimmer 1.35s infinite;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 
 @keyframes skeleton-shimmer {

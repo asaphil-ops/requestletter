@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { TableLoader, EmptyRow } from './Loader'
 
-export default function DataTable({ columns, data, loading, keyField = 'id', onRowSelect, selectedIds = [], showCheckbox = false }) {
+export default function DataTable({ columns, data, loading, keyField = 'id', onRowSelect, selectedIds = [], showCheckbox = false, onRowClick }) {
   const [sortKey, setSortKey] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
 
@@ -43,18 +43,20 @@ export default function DataTable({ columns, data, loading, keyField = 'id', onR
   }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="flex items-center justify-end gap-2 mb-3">
+    <div className="data-table-shell">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{sorted.length} {sorted.length === 1 ? 'record' : 'records'}</span>
         <button
           onClick={handleExport}
           disabled={!sorted.length}
+          aria-label="Export visible records as CSV"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
         >
           <i className="fas fa-download text-[10px]" />
           Export CSV
         </button>
       </div>
-      <table className="w-full min-w-[800px]">
+      <div className="overflow-x-auto"><table className="w-full min-w-[800px]">
         <thead>
           <tr>
             {showCheckbox && (
@@ -72,6 +74,7 @@ export default function DataTable({ columns, data, loading, keyField = 'id', onR
                 key={col.key}
                 className={`table-th ${col.sortable !== false ? 'hover:text-gray-700 dark:hover:text-gray-200' : ''} ${col.className || ''}`}
                 onClick={() => col.sortable !== false && handleSort(col.key)}
+                aria-sort={sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
               >
                 <span className="flex items-center gap-1">
                   {col.label}
@@ -92,7 +95,7 @@ export default function DataTable({ columns, data, loading, keyField = 'id', onR
           ) : sorted.length === 0 ? (
             <EmptyRow cols={columns.length + (showCheckbox ? 1 : 0)} />
           ) : sorted.map((row, idx) => (
-            <tr key={row[keyField] || idx} className="table-tr">
+            <tr key={row[keyField] || idx} className={`table-tr ${onRowClick ? 'cursor-pointer' : ''}`} onClick={() => onRowClick?.(row)} tabIndex={onRowClick ? 0 : undefined} onKeyDown={e => { if (onRowClick && (e.key === 'Enter' || e.key === ' ')) onRowClick(row) }}>
               {showCheckbox && (
                 <td className="table-td">
                   <input
@@ -116,7 +119,7 @@ export default function DataTable({ columns, data, loading, keyField = 'id', onR
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </div>
   )
 }
