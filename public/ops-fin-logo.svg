@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 914 262" role="img" aria-labelledby="title">
+  <title id="title">OPS-FIN — Operations Finance</title>
+  <defs>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#ff8a00"/>
+      <stop offset="1" stop-color="#f5770b"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#86c519"/>
+      <stop offset="1" stop-color="#61aa10"/>
+    </linearGradient>
+    <clipPath id="circle">
+      <circle cx="149" cy="135" r="112"/>
+    </clipPath>
+  </defs>
+  <circle cx="149" cy="135" r="120" fill="none" stroke="#69ac14" stroke-width="11"/>
+  <g clip-path="url(#circle)">
+    <rect x="52" y="131" width="39" height="121" fill="url(#orange)"/>
+    <rect x="98" y="99" width="40" height="153" fill="url(#orange)"/>
+    <rect x="145" y="68" width="41" height="184" fill="url(#green)"/>
+    <rect x="193" y="28" width="43" height="224" fill="url(#green)"/>
+  </g>
+  <text x="293" y="152" font-family="Arial, Helvetica, sans-serif" font-size="132" font-weight="900" letter-spacing="-7" fill="url(#orange)">OPS-</text>
+  <text x="642" y="152" font-family="Arial, Helvetica, sans-serif" font-size="132" font-weight="900" letter-spacing="-7" fill="url(#green)">FIN</text>
+  <path d="M294 214h42M834 214h40" stroke="#f48b17" stroke-width="5" stroke-linecap="round"/>
+  <text x="341" y="229" font-family="Arial, Helvetica, sans-serif" font-size="51" font-weight="700" letter-spacing="-2" fill="#f48b17">Operations Finance</text>
+</svg>

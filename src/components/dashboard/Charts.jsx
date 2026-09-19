@@ -3,9 +3,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 
-const COLORS = { req: '#2563eb', sbar: '#7c3aed', it: '#f59e0b', at: '#10b981', generator: '#f59f00', comms: '#ef4444' }
+const COLORS = { req: '#64748b', sbar: '#7c3aed', it: '#f59e0b', at: '#10b981', generator: '#f59f00', comms: '#ef4444' }
 const CAT_LABELS = { req: 'Request Letter', sbar: 'SBAR', it: 'IT Expenses', at: 'Aircon & Toilet', generator: 'Generator', comms: 'Comms' }
-const STATUS_COLORS = { Pending: '#f59e0b', Approved: '#10b981', Rejected: '#ef4444', Checked: '#2563eb' }
+const STATUS_COLORS = { Pending: '#f59e0b', Approved: '#10b981', Rejected: '#ef4444', Checked: '#059669' }
 
 function buildMonthly(data) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -43,11 +43,11 @@ function buildCategory(data) {
 export function TrendChart({ data = [] }) {
   const monthly = buildMonthly(data)
   return (
-    <div className="card p-5 h-full">
+    <div className="card p-6 h-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-800 dark:text-gray-100">Submission Trend (Monthly)</h3>
         <div className="flex gap-4 text-xs text-gray-500">
-          <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-blue-600 inline-block" /> Submitted</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-slate-600 inline-block" /> Submitted</span>
           <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-emerald-500 inline-block border-dashed border-t" /> Approved</span>
         </div>
       </div>
@@ -56,8 +56,8 @@ export function TrendChart({ data = [] }) {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} />
           <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
-          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }} />
-          <Line type="monotone" dataKey="submitted" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} name="Submitted" />
+          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)' }} />
+          <Line type="monotone" dataKey="submitted" stroke="#475569" strokeWidth={2} dot={{ r: 4 }} name="Submitted" />
           <Line type="monotone" dataKey="approved" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} strokeDasharray="5 4" name="Approved" />
         </LineChart>
       </ResponsiveContainer>
@@ -69,7 +69,7 @@ export function CategoryChart({ data = [] }) {
   const cats = buildCategory(data)
   const total = cats.reduce((s, c) => s + c.value, 0) || 1
   return (
-    <div className="card p-5 h-full">
+    <div className="card p-6 h-full">
       <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">By Category</h3>
       <div className="space-y-2 mb-4">
         {cats.map((c) => (
@@ -87,7 +87,7 @@ export function CategoryChart({ data = [] }) {
           <Pie data={cats} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={65}>
             {cats.map((c) => <Cell key={c.key} fill={COLORS[c.key]} />)}
           </Pie>
-          <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+          <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>
@@ -97,7 +97,7 @@ export function CategoryChart({ data = [] }) {
 export function StackedWeekChart({ data = [] }) {
   const weekly = buildWeekly(data)
   return (
-    <div className="card p-5">
+    <div className="card p-6">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="font-semibold text-gray-800 dark:text-gray-100">Status by Week</h3>
         <div className="flex flex-wrap gap-3 text-xs text-gray-500">
@@ -113,7 +113,7 @@ export function StackedWeekChart({ data = [] }) {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#9ca3af' }} />
           <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
-          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }} />
+          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)' }} />
           {Object.entries(STATUS_COLORS).map(([s, c]) => (
             <Bar key={s} dataKey={s} stackId="a" fill={c} />
           ))}

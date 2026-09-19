@@ -15,7 +15,7 @@ import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
 import usePresence from './hooks/usePresence'
 import Swal from 'sweetalert2'
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 import { useSettings } from './hooks/useAccounts'
 
 const LazyDashboard = lazy(() => import('./pages/Dashboard'))
@@ -34,6 +34,7 @@ const LazyReports = lazy(() => import('./pages/Reports'))
 const LazyCFOOBudget = lazy(() => import('./pages/CFOOBudget'))
 const LazyComplianceCertificates = lazy(() => import('./pages/ComplianceCertificates'))
 const LazyOnlineStaffList = lazy(() => import('./pages/OnlineStaffList'))
+const LazyBranches = lazy(() => import('./pages/Branches'))
 
 function RouteLoader() {
   return <div className="flex min-h-[45vh] items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" /></div>
@@ -75,6 +76,7 @@ function AppRoutes() {
   usePresence()
 
   return (
+    <Suspense fallback={<RouteLoader />}>
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/tracker" element={guarded('/tracker', <PublicTracker />)} />
@@ -103,6 +105,7 @@ function AppRoutes() {
         <Route path="users" element={<ProtectedRoute superAdminOnly><Users /></ProtectedRoute>} />
         <Route path="audit-logs" element={<ProtectedRoute superAdminOnly><AuditLogs /></ProtectedRoute>} />
         <Route path="settings" element={<ProtectedRoute adminOnly><Settings /></ProtectedRoute>} />
+        <Route path="branches" element={<ProtectedRoute superAdminOnly><LazyBranches /></ProtectedRoute>} />
         <Route path="circular" element={guarded('/circular', <EmbeddedPage type="circular" />)} />
         <Route path="lantaw" element={guarded('/lantaw', <EmbeddedPage type="lantaw" />)} />
         <Route path="cashflow" element={guarded('/cashflow', <EmbeddedPage type="cashflow" />)} />
@@ -110,6 +113,7 @@ function AppRoutes() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }
 

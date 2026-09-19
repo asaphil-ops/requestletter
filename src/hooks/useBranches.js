@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useMemo } from 'react'
 
@@ -54,6 +54,48 @@ export function useBranches() {
     queryKey: ['branches'],
     queryFn: fetchAllBranches,
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCreateBranch() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (branch) => {
+      const { code, name, ...details } = branch
+      const { error } = await supabase.from('branches').insert({
+        branch_code: code,
+        branch_name: name,
+        ...details,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['branches'] }),
+  })
+}
+
+export function useUpdateBranch() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ code, updates }) => {
+      const { name, ...details } = updates
+      const { error } = await supabase.from('branches').update({
+        branch_name: name,
+        ...details,
+      }).eq('branch_code', code)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['branches'] }),
+  })
+}
+
+export function useDeleteBranch() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (code) => {
+      const { error } = await supabase.from('branches').delete().eq('branch_code', code)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['branches'] }),
   })
 }
 

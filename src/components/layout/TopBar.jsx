@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useUIStore } from '../../store/uiStore'
-import { useSettings, useUpdateAccount } from '../../hooks/useAccounts'
+import { useUpdateAccount } from '../../hooks/useAccounts'
 import { uploadToDrive } from '../../lib/gas'
 import { getDriveThumbnailUrl, getImageDisplayUrl } from '../../lib/utils'
 import Swal from 'sweetalert2'
@@ -10,38 +9,18 @@ import Swal from 'sweetalert2'
 export default function TopBar() {
   const { user, updatePhoto } = useAuthStore()
   const { toggleSidebar, darkMode, toggleDarkMode, notifications, clearNotifications } = useUIStore()
-  const navigate = useNavigate()
-  const location = useLocation()
   const updateAccount = useUpdateAccount()
-  const { data: settings } = useSettings()
   const [showProfile, setShowProfile] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
   const [newPass, setNewPass] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSearch, setShowSearch] = useState(false)
   const profileRef = useRef()
   const notifRef = useRef()
-  const searchRef = useRef()
-
-  // Keyboard shortcut: Ctrl+K to search
-  useEffect(() => {
-    const fn = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault()
-        setShowSearch(prev => !prev)
-      }
-      if (e.key === 'Escape') setShowSearch(false)
-    }
-    document.addEventListener('keydown', fn)
-    return () => document.removeEventListener('keydown', fn)
-  }, [])
 
   // Close profile/notif on outside click
   useEffect(() => {
     const fn = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false)
       if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false)
-      if (searchRef.current && !searchRef.current.contains(e.target)) setShowSearch(false)
     }
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
@@ -76,113 +55,24 @@ export default function TopBar() {
   const unreadCount = notifications.length
   const initial = user?.full_name?.charAt(0).toUpperCase() || 'U'
 
-  // Quick-search destinations
-  const searchDestinations = useMemo(() => [
-    { label: 'Dashboard', path: '/', icon: 'fa-th-large' },
-    { label: 'Requests', path: '/requests', icon: 'fa-file-alt' },
-    { label: 'SBAR', path: '/sbar', icon: 'fa-exchange-alt' },
-    { label: 'IT Expenses', path: '/it-expenses', icon: 'fa-laptop' },
-    { label: 'Aircon/Toilet Expenses', path: '/at-expenses', icon: 'fa-fan' },
-    { label: 'Comms Expenses', path: '/comms-expenses', icon: 'fa-phone' },
-    { label: 'CFOO Budget', path: '/cfoo-budget', icon: 'fa-chart-pie' },
-    { label: 'Initiatives Expenses', path: '/cost-center/initiatives', icon: 'fa-lightbulb' },
-    { label: 'CFOO Expenses', path: '/cost-center/cfoo', icon: 'fa-users' },
-    { label: 'Other Cost Center', path: '/cost-center/other', icon: 'fa-building' },
-    { label: 'Data Management', path: '/data-management', icon: 'fa-database' },
-    { label: 'Employee List', path: '/employee-list', icon: 'fa-id-card' },
-    { label: 'Send Email', path: '/send-email', icon: 'fa-paper-plane' },
-    { label: 'Reports', path: '/reports', icon: 'fa-chart-bar' },
-    { label: 'Directory', path: '/directory', icon: 'fa-address-book' },
-    { label: 'Bulk Upload', path: '/bulk-upload', icon: 'fa-upload' },
-    { label: 'Audit Logs', path: '/audit-logs', icon: 'fa-history' },
-    { label: 'Settings', path: '/settings', icon: 'fa-cog' },
-  ], [])
-
-  const filteredSearch = useMemo(() => {
-    const visibleDestinations = searchDestinations.filter(
-      destination => !(settings?.hiddenModules || []).includes(destination.path),
-    )
-    if (!searchQuery.trim()) return visibleDestinations.slice(0, 6)
-    return visibleDestinations.filter(d =>
-      d.label.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 8)
-  }, [searchQuery, searchDestinations, settings?.hiddenModules])
-
-  const handleSearchSelect = (path) => {
-    navigate(path)
-    setShowSearch(false)
-    setSearchQuery('')
-  }
-
   return (
-    <header className="h-16 bg-gray-50/90 dark:bg-[#071427]/90 backdrop-blur border-b border-gray-200 dark:border-slate-800/80 flex items-center justify-between px-3 sm:px-6 sticky top-0 z-[1200]">
+    <header className="app-topbar h-16 backdrop-blur border-b flex items-center justify-between px-3 sm:px-6 sticky top-0 z-[1200]">
       {/* Left: hamburger */}
       <button
         onClick={toggleSidebar}
         aria-label="Toggle navigation menu"
-        className="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
+        className="topbar-action w-9 h-9 rounded-lg border flex items-center justify-center transition-all flex-shrink-0"
       >
         <i className="fas fa-bars text-sm" />
       </button>
 
-      {/* Center: Global Search (desktop) */}
-      <div className="hidden md:flex flex-1 max-w-md mx-4" ref={searchRef}>
-        {showSearch && (
-          <div className="w-full relative">
-            <div className="flex items-center bg-white dark:bg-slate-900 border border-blue-300 dark:border-sky-500 rounded-lg shadow-lg px-3 py-2 gap-2">
-              <i className="fas fa-search text-gray-400 text-xs" />
-              <input
-                autoFocus
-                type="text"
-                placeholder="Search pages... (Ctrl+K)"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && filteredSearch.length > 0) handleSearchSelect(filteredSearch[0].path)
-                }}
-                className="flex-1 outline-none text-sm bg-transparent text-gray-800 dark:text-white placeholder-gray-400"
-              />
-              <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-700">ESC</kbd>
-            </div>
-            {filteredSearch.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl dark:shadow-black/30 z-[1300] max-h-80 overflow-y-auto">
-                {filteredSearch.map(d => {
-                  const active = location.pathname === d.path
-                  return (
-                    <button
-                      key={d.path}
-                      onClick={() => handleSearchSelect(d.path)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${active ? 'bg-blue-50 dark:bg-sky-950/40 text-blue-700 dark:text-sky-300' : 'text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
-                    >
-                      <i className={`fas ${d.icon} w-5 text-center ${active ? 'text-blue-500 dark:text-sky-400' : 'text-gray-400'}`} />
-                      <span className="truncate">{d.label}</span>
-                      {active && <span className="ml-auto text-[9px] font-bold bg-blue-100 dark:bg-sky-900/50 text-blue-600 dark:text-sky-300 px-1.5 py-0.5 rounded">NOW</span>}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
-        {!showSearch && (
-          <button
-            onClick={() => setShowSearch(true)}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-400 text-sm hover:border-gray-300 dark:hover:border-slate-600 transition-colors"
-          >
-            <i className="fas fa-search text-xs" />
-            <span>Search...</span>
-            <kbd className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-700">Ctrl+K</kbd>
-          </button>
-        )}
-      </div>
-
       {/* Right */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="topbar-controls flex items-center gap-1.5 sm:gap-2">
         {/* Dark Mode Toggle */}
         <button
           onClick={toggleDarkMode}
           aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
+          className="topbar-action w-9 h-9 rounded-lg border flex items-center justify-center transition-all flex-shrink-0"
           title={darkMode ? 'Light Mode' : 'Dark Mode'}
         >
           <i className={`fas ${darkMode ? 'fa-sun' : 'fa-moon'} text-sm`} />
@@ -193,7 +83,7 @@ export default function TopBar() {
           <button
             onClick={() => setShowNotif(!showNotif)}
             aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
-            className="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 flex items-center justify-center text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all relative flex-shrink-0"
+            className="topbar-action w-9 h-9 rounded-lg border flex items-center justify-center transition-all relative flex-shrink-0"
           >
             <i className="fas fa-bell text-sm" />
             {unreadCount > 0 && (
@@ -229,13 +119,15 @@ export default function TopBar() {
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setShowProfile(!showProfile)}
+            aria-label="Open account settings"
+            aria-expanded={showProfile}
             className="flex items-center gap-2 cursor-pointer flex-shrink-0"
           >
-            <div className="text-right hidden sm:block min-w-0">
-              <div className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">{user?.full_name}</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400 truncate">{user?.role}</div>
+            <div className="topbar-profile-text hidden min-w-0 text-right sm:block">
+              <div className="max-w-40 truncate text-sm font-semibold text-gray-800 dark:text-slate-100">{user?.full_name || user?.username}</div>
+              <div className="truncate text-xs text-gray-500 dark:text-slate-400">{user?.role}</div>
             </div>
-            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200 dark:border-sky-300/30 bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center flex-shrink-0 relative">
+            <div className="app-avatar w-9 h-9 rounded-full overflow-hidden border-2 flex items-center justify-center flex-shrink-0 relative">
               {user?.photo_url ? (
                 <img src={getImageDisplayUrl(user.photo_url)} alt="avatar" className="w-full h-full object-cover" />
               ) : (
@@ -249,7 +141,7 @@ export default function TopBar() {
               {/* Profile header */}
               <div className="p-4 text-center border-b border-gray-100 dark:border-slate-800 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-900 dark:to-sky-950/60 rounded-t-xl">
                 <div className="relative w-16 h-16 mx-auto mb-2">
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 dark:border-sky-300/30 bg-gradient-to-br from-blue-600 to-cyan-700 flex items-center justify-center">
+                  <div className="app-avatar w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center">
                     {user?.photo_url ? (
                       <img src={getImageDisplayUrl(user.photo_url)} alt="avatar" className="w-full h-full object-cover" />
                     ) : (

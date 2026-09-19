@@ -44,7 +44,7 @@ export default function DataTable({ columns, data, loading, keyField = 'id', onR
 
   return (
     <div className="data-table-shell">
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="data-table-toolbar flex items-center justify-between gap-2 mb-3">
         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{sorted.length} {sorted.length === 1 ? 'record' : 'records'}</span>
         <button
           onClick={handleExport}
@@ -56,7 +56,7 @@ export default function DataTable({ columns, data, loading, keyField = 'id', onR
           Export CSV
         </button>
       </div>
-      <div className="overflow-x-auto"><table className="w-full min-w-[800px]">
+      <div className="data-table-frame overflow-x-auto"><table className="w-full min-w-[800px]">
         <thead>
           <tr>
             {showCheckbox && (

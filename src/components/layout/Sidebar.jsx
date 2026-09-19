@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useUIStore } from '../../store/uiStore'
 import { permissionsForRole } from '../../lib/permissions'
@@ -25,16 +25,10 @@ const SECTIONS = [
     ],
   },
   {
-    key: 'cost',
-    label: 'Cost Center',
-    icon: 'fa-folder-tree',
-    badge: 'otherCostCenter',
+    key: 'employees',
+    label: 'Employee Management',
+    icon: 'fa-users-gear',
     items: [
-      { label: 'CFOO Budget', icon: 'fa-chart-pie', to: '/cfoo-budget' },
-      { label: 'Initiatives Monthly', icon: 'fa-lightbulb', to: '/cost-center/initiatives', badge: 'initiatives' },
-      { label: 'CFOO Per Staff', icon: 'fa-user-tie', to: '/cost-center/cfoo', badge: 'cfoo' },
-      { label: 'Other Cost Center', icon: 'fa-building-columns', to: '/cost-center/other' },
-      { label: 'Data Management', icon: 'fa-database', to: '/data-management' },
       { label: 'Employee List', icon: 'fa-id-card', to: '/employee-list' },
     ],
   },
@@ -77,40 +71,37 @@ const SECTIONS = [
       icon: 'fa-user-secret',
       superAdminSection: true,
       items: [
+        { label: 'Branches', icon: 'fa-code-branch', to: '/branches' },
         { label: 'Data Management', icon: 'fa-database', to: '/data-management', permission: 'canManageData' },
       ],
-    },
-  ]
+    }
+]
 
 function Badge({ value }) {
   if (!value) return null
   return (
-    <span className="ml-auto rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-black leading-none text-white">
+    <span className="sidebar-count ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-black leading-none">
       {value > 99 ? '99+' : value}
     </span>
   )
 }
 
-function MainLink({ to, icon, label }) {
+function MainLink({ to, icon, label, compact = false }) {
   return (
     <NavLink
       to={to}
       end={to === '/'}
-      className={({ isActive }) =>
-        `group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
-          isActive
-            ? 'bg-sky-500 text-white shadow-lg shadow-sky-950/30'
-            : 'text-slate-300 hover:bg-white/8 hover:text-white'
-        }`
-      }
+      title={compact ? label : undefined}
+      aria-label={compact ? label : undefined}
+      className={({ isActive }) => `sidebar-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${isActive ? 'sidebar-link-active text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
     >
       {({ isActive }) => (
         <>
-          {isActive && <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-white" />}
+          {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full" />}
           <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${isActive ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-400 group-hover:text-white'}`}>
             <i className={`fas ${icon} text-xs`} />
           </span>
-          <span className="truncate">{label}</span>
+          {!compact && <span className="truncate">{label}</span>}
         </>
       )}
     </NavLink>
@@ -121,12 +112,36 @@ export default function Sidebar() {
   const auth = useAuthStore()
   const { user, isAdmin, isSuperAdmin, logout } = auth
   const rolePermissions = permissionsForRole(user?.role)
-  const { sidebarOpen } = useUIStore()
+  const { sidebarOpen, sidebarCompact } = useUIStore()
   const { data: pendingByBadge = {} } = usePendingCounts()
   const { data: settings } = useSettings()
   const hiddenModules = new Set(settings?.hiddenModules || [])
   const navigate = useNavigate()
+  const location = useLocation()
   const [collapsed, setCollapsed] = useState({})
+  const [search, setSearch] = useState('')
+  const [flyout, setFlyout] = useState(null)
+  const query = search.trim().toLowerCase()
+  const compact = sidebarCompact && window.innerWidth >= 1024
+
+  useEffect(() => {
+    if (window.innerWidth < 1024) useUIStore.getState().setSidebar(false)
+    setFlyout(null)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (compact) setSearch('')
+    setFlyout(null)
+  }, [compact])
+
+  useEffect(() => {
+    if (!flyout) return
+    const closeFlyout = (event) => {
+      if (!event.target.closest('.sidebar-flyout, .sidebar-section-heading')) setFlyout(null)
+    }
+    document.addEventListener('mousedown', closeFlyout)
+    return () => document.removeEventListener('mousedown', closeFlyout)
+  }, [flyout])
 
   const countFor = (badge) => badge ? Number(pendingByBadge[badge] || 0) : 0
   const sectionCount = (section) =>
@@ -153,57 +168,67 @@ export default function Sidebar() {
     <>
       <div className="fixed inset-0 z-[1250] bg-black/50 lg:hidden" onClick={() => useUIStore.getState().setSidebar(false)} />
 
-      <aside className="fixed left-0 top-0 z-[1300] flex h-screen w-[276px] flex-col border-r border-white/10 bg-[#081321] text-white shadow-2xl shadow-black/40">
-        <div className="border-b border-white/10 px-4 py-4">
-          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3">
-            <img
-              src="https://asaphil.org/wp-content/themes/Philippines/asa-assets/images/Primary_logo.png"
-              alt="ASA Philippines"
-              className="h-10 w-auto shrink-0 object-contain"
-            />
-            <div className="min-w-0">
-              <div className="truncate text-[15px] font-black leading-tight text-white">OPs Finance</div>
-              <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Monitoring System</div>
-            </div>
+      <aside className={`sidebar-panel ${compact ? 'sidebar-panel--compact' : ''} fixed left-0 top-0 z-[1300] flex h-screen flex-col`}>
+        <div className="sidebar-header px-4 py-4">
+          <img src="/ops-fin-logo.svg" alt="OPS-FIN — Operations Finance" className="block w-full h-auto" />
+        </div>
+
+        <div className="sidebar-search-area px-4 pt-4">
+          <label htmlFor="sidebar-search" className="sr-only">Search modules</label>
+          <div className="sidebar-search-wrap relative">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400" aria-hidden="true" />
+            <input id="sidebar-search" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search modules..." className="sidebar-search w-full rounded-xl py-2.5 pl-9 pr-3 text-sm outline-none" />
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+        <nav aria-label="Main navigation" className="sidebar-nav flex-1 overflow-y-auto px-3 py-4">
           <div className="space-y-1">
-            <MainLink to="/" icon="fa-th-large" label="Dashboard" />
-            <MainLink to="/send-email" icon="fa-envelope" label="Send to Email" />
+            {'dashboard'.includes(query) && <MainLink to="/" icon="fa-th-large" label="Dashboard" compact={compact} />}
+            {'send to email'.includes(query) && <MainLink to="/send-email" icon="fa-envelope" label="Send to Email" compact={compact} />}
           </div>
 
-          <div className="my-4 h-px bg-white/10" />
+          {!query && <div className="my-4 h-px bg-white/10" />}
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {SECTIONS.map(section => {
               if (section.adminSection && !isAdmin) return null
               if (section.superAdminSection && !isSuperAdmin) return null
-              const visibleItems = section.items.filter(item => {
+              const permittedItems = section.items.filter(item => {
                 if (item.permission && !(auth[item.permission] || rolePermissions[item.permission])) return false
                 if (hiddenModules.has(item.to)) return false
                 return true
               })
+              const visibleItems = query
+                ? permittedItems.filter(item => item.label.toLowerCase().includes(query) || section.label.toLowerCase().includes(query))
+                : permittedItems
               if (!visibleItems.length) return null
 
-              const isCollapsed = collapsed[section.key]
+              const hasActiveItem = permittedItems.some(item => item.to === location.pathname)
+              const isCollapsed = !query && Boolean(collapsed[section.key])
               const total = sectionCount(section)
 
               return (
-                <section key={section.key}>
+                <section key={section.key} className={hasActiveItem ? 'sidebar-section-current' : ''}>
                   <button
                     type="button"
-                    onClick={() => setCollapsed(prev => ({ ...prev, [section.key]: !prev[section.key] }))}
-                    className="mb-1 flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-black uppercase tracking-wide text-slate-500 transition hover:text-slate-300"
+                    onClick={(event) => {
+                      if (compact) {
+                        const top = Math.min(event.currentTarget.getBoundingClientRect().top, window.innerHeight - 330)
+                        setFlyout(prev => prev?.key === section.key ? null : { key: section.key, top: Math.max(90, top) })
+                      } else setCollapsed(prev => ({ ...prev, [section.key]: !prev[section.key] }))
+                    }}
+                    aria-expanded={compact ? flyout?.key === section.key : !isCollapsed}
+                    aria-label={compact ? section.label : undefined}
+                    title={compact ? section.label : undefined}
+                    className="sidebar-section-heading mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-black uppercase tracking-wide text-slate-400 transition hover:bg-white/5 hover:text-white"
                   >
                     <i className={`fas ${section.icon} w-4 text-center text-[11px]`} />
-                    <span className="min-w-0 flex-1 truncate">{section.label}</span>
-                    <Badge value={total} />
-                    <i className="fas fa-chevron-down text-[10px] transition-transform" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }} />
+                    {!compact && <span className="min-w-0 flex-1 truncate">{section.label}</span>}
+                    {!compact && <Badge value={total} />}
+                    {!compact && <i className="fas fa-chevron-down text-[10px] transition-transform" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }} />}
                   </button>
 
-                  {!isCollapsed && (
+                  {!compact && !isCollapsed && (
                     <div className="space-y-0.5">
                       {visibleItems.map(item => {
                         const count = countFor(item.badge)
@@ -213,17 +238,16 @@ export default function Sidebar() {
                             to={item.to}
                             end={item.to === '/'}
                             className={({ isActive }) =>
-                              `group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                              `sidebar-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                                 isActive
-                                  ? 'bg-white/12 text-white'
-                                  : 'text-slate-400 hover:bg-white/7 hover:text-white'
-                              }`
-                            }
+                                  ? 'sidebar-link-active text-white'
+                                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                              }`}
                           >
                             {({ isActive }) => (
                               <>
-                                {isActive && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-sky-400" />}
-                                <i className={`fas ${item.icon} w-5 text-center text-xs ${isActive ? 'text-sky-300' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                                {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full" />}
+                                <i className={`fas ${item.icon} w-5 text-center text-xs ${isActive ? 'text-sky-200' : 'text-slate-400 group-hover:text-slate-200'}`} />
                                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                                 <Badge value={count} />
                               </>
@@ -237,21 +261,49 @@ export default function Sidebar() {
               )
             })}
           </div>
+          {!compact && query && !SECTIONS.some(section =>
+            (!section.adminSection || isAdmin) &&
+            (!section.superAdminSection || isSuperAdmin) &&
+            section.items.some(item =>
+              (!item.permission || auth[item.permission] || rolePermissions[item.permission]) &&
+              !hiddenModules.has(item.to) &&
+              (item.label.toLowerCase().includes(query) || section.label.toLowerCase().includes(query))
+            )
+          ) && !'dashboard'.includes(query) && !'send to email'.includes(query) && (
+            <p className="px-3 py-6 text-center text-xs text-slate-400">No modules found.</p>
+          )}
         </nav>
 
-        <div className="border-t border-white/10 p-3">
+        {compact && flyout && (() => {
+          const section = SECTIONS.find(item => item.key === flyout.key)
+          if (!section) return null
+          const items = section.items.filter(item =>
+            (!item.permission || auth[item.permission] || rolePermissions[item.permission]) &&
+            !hiddenModules.has(item.to)
+          )
+          return (
+            <div className="sidebar-flyout fixed z-[1400] w-56 rounded-2xl p-2" style={{ left: 94, top: flyout.top }}>
+              <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">{section.label}</div>
+              {items.map(item => <NavLink key={item.to} to={item.to} className={({ isActive }) => `sidebar-flyout-link flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive ? 'sidebar-link-active' : ''}`}><i className={`fas ${item.icon} w-5 text-center text-xs`} />{item.label}<Badge value={countFor(item.badge)} /></NavLink>)}
+            </div>
+          )
+        })()}
+
+        <div className="sidebar-footer border-t p-3">
           <button
             type="button"
             onClick={handleLogout}
+            title={compact ? 'Sign Out' : undefined}
+            aria-label={compact ? 'Sign Out' : undefined}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-rose-300 transition hover:bg-rose-500/10 hover:text-rose-200"
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-rose-500/10">
               <i className="fas fa-sign-out-alt text-xs" />
             </span>
-            Sign Out
+            {!compact && 'Sign Out'}
           </button>
         </div>
       </aside>
     </>
-  )
+)
 }

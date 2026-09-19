@@ -9,7 +9,7 @@ import SendEmailModal from '../SendEmailModal'
 import { PageLoader } from '../shared/Loader'
 
 export default function Layout() {
-  const { sidebarOpen, initDarkMode, sendEmailDraft, closeSendEmailModal } = useUIStore()
+  const { sidebarOpen, sidebarCompact, initDarkMode, sendEmailDraft, closeSendEmailModal } = useUIStore()
 
   useEffect(() => {
     initDarkMode()
@@ -19,7 +19,7 @@ export default function Layout() {
     <div className="app-shell min-h-screen bg-gray-50 dark:bg-[#06111f]">
       <Sidebar />
       <div
-        className={`app-content transition-all duration-300 flex flex-col min-h-screen ${sidebarOpen ? 'app-content--sidebar' : ''}`}
+        className={`app-content transition-all duration-300 flex flex-col min-h-screen ${sidebarOpen ? (sidebarCompact ? 'app-content--compact' : 'app-content--sidebar') : ''}`}
       >
         <TopBar />
         <main className="app-main flex-1">

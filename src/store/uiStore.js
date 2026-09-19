@@ -5,6 +5,7 @@ export const useUIStore = create(
   persist(
     (set, get) => ({
       sidebarOpen: true,
+      sidebarCompact: false,
       darkMode: false,
       notifications: [],
 
@@ -13,7 +14,10 @@ export const useUIStore = create(
       openSendEmailModal: (draft) => set({ sendEmailDraft: draft }),
       closeSendEmailModal: () => set({ sendEmailDraft: null }),
 
-      toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+      toggleSidebar: () => {
+        if (window.innerWidth >= 1024) set((s) => ({ sidebarCompact: !s.sidebarCompact, sidebarOpen: true }))
+        else set((s) => ({ sidebarOpen: !s.sidebarOpen }))
+      },
       setSidebar: (val) => set({ sidebarOpen: val }),
 
       toggleDarkMode: () => {

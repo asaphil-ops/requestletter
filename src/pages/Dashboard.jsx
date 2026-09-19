@@ -164,18 +164,19 @@ export default function Dashboard() {
   if (isLoading) return <PageLoader />
 
   return (
-    <div>
+    <div className="dashboard-page">
       <PageHeader
+        className="dashboard-hero"
         eyebrow="Operations overview"
         title={`Good day, ${user?.full_name?.split(',')[0] || 'Team'}`}
         subtitle="Monitor requests, approvals, and operational activity in one place."
         icon="fa-chart-line"
-        actions={<span className="text-sm font-semibold text-slate-500 dark:text-slate-400"><i className="far fa-calendar-alt mr-2 text-blue-500" />{today}</span>}
+        actions={<span className="dashboard-date text-sm font-semibold"><i className="far fa-calendar-alt mr-2" />{today}</span>}
       />
 
       {/* Task alert */}
       {(statsData.pending > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3 flex items-center gap-3 mb-4">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 flex items-center gap-3 mb-5 shadow-sm">
           <div className="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
             <i className="fas fa-bell text-white text-sm" />
           </div>
@@ -187,7 +188,7 @@ export default function Dashboard() {
       )}
 
       {/* Dashboard Filters */}
-      <div className="card relative z-30 overflow-visible p-4 mb-5">
+      <div className="card dashboard-filter relative z-30 overflow-visible p-5 mb-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Filter overview</h2><p className="text-xs text-slate-500 dark:text-slate-400">Refine the dashboard without losing context.</p></div>
           {activeFilters.length > 0 && <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-sky-300">Clear all</button>}
