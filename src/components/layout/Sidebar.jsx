@@ -123,6 +123,10 @@ export default function Sidebar() {
   const [flyout, setFlyout] = useState(null)
   const query = search.trim().toLowerCase()
   const compact = sidebarCompact && window.innerWidth >= 1024
+  const initial = user?.full_name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || 'U'
+  const closeMobileSidebar = () => {
+    if (window.innerWidth < 1024) useUIStore.getState().setSidebar(false)
+  }
 
   useEffect(() => {
     if (window.innerWidth < 1024) useUIStore.getState().setSidebar(false)
@@ -169,8 +173,20 @@ export default function Sidebar() {
       <div className="fixed inset-0 z-[1250] bg-black/50 lg:hidden" onClick={() => useUIStore.getState().setSidebar(false)} />
 
       <aside className={`sidebar-panel ${compact ? 'sidebar-panel--compact' : ''} fixed left-0 top-0 z-[1300] flex h-screen flex-col`}>
-        <div className="sidebar-header px-4 py-4">
+        <div className="sidebar-header relative px-4 py-4">
           <img src="/ops-fin-logo.svg" alt="OPS-FIN — Operations Finance" className="block w-full h-auto" />
+          <button type="button" onClick={closeMobileSidebar} className="sidebar-close lg:hidden" aria-label="Close navigation">
+            <i className="fas fa-xmark" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="sidebar-user-card lg:hidden">
+          <div className="sidebar-user-avatar">{initial}</div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-white">{user?.full_name || user?.username || 'Account'}</p>
+            <p className="truncate text-xs text-slate-400">{user?.role || 'Staff'}</p>
+          </div>
+          <span className="sidebar-online-dot" title="Signed in" aria-label="Signed in" />
         </div>
 
         <div className="sidebar-search-area px-4 pt-4">
@@ -300,7 +316,8 @@ export default function Sidebar() {
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-rose-500/10">
               <i className="fas fa-sign-out-alt text-xs" />
             </span>
-            {!compact && 'Sign Out'}
+            {!compact && <span>Sign Out</span>}
+            {!compact && <i className="fas fa-chevron-right ml-auto text-[10px] opacity-60" aria-hidden="true" />}
           </button>
         </div>
       </aside>

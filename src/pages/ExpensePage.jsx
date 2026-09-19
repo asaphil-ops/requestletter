@@ -111,6 +111,7 @@ export default function ExpensePage({ type }) {
   const [sortKey, setSortKey] = useState('created_at')
   const [sortDir, setSortDir] = useState('desc')
   const [density, setDensity] = useState('comfortable')
+  const [filtersOpen, setFiltersOpen] = useState(() => window.innerWidth >= 768)
 
   const { data: allData = [], isLoading } = useExpenses(type)
   const { data: settings } = useSettings()
@@ -230,6 +231,12 @@ export default function ExpensePage({ type }) {
     })
     return stats
   }, [allData])
+
+  const budgetSummary = useMemo(() => {
+    const spent = Object.values(budgetStats).reduce((total, item) => total + item.spent, 0)
+    const budget = config.categories.reduce((total, item) => total + (Number(moduleBudgets?.[item]) || 0), 0)
+    return { budget, spent, remaining: Math.max(0, budget - spent) }
+  }, [budgetStats, config.categories, moduleBudgets])
 
   // Dynamically compute geo lists based on current selected values (cascading options)
   const geoLists = useMemo(() => {
@@ -576,7 +583,7 @@ export default function ExpensePage({ type }) {
     <div className="page-stack">
       {/* Header */}
       <PageHeader
-        title={config.title}
+        title={config.title || config.label}
         subtitle={config.subtitle}
         icon={config.icon}
         actions={<>
@@ -608,6 +615,19 @@ export default function ExpensePage({ type }) {
         </>}
       />
 
+      <section className="mobile-expense-summary lg:hidden" aria-label="Expense summary">
+        <div><span>Total budget</span><strong>{budgetSummary.budget ? fmtCurrency(budgetSummary.budget) : '—'}</strong></div>
+        <div><span>Spent</span><strong>{fmtCurrency(budgetSummary.spent)}</strong></div>
+        <div><span>Remaining</span><strong>{budgetSummary.budget ? fmtCurrency(budgetSummary.remaining) : '—'}</strong></div>
+      </section>
+
+      <div className="mobile-category-chips lg:hidden" aria-label="Filter by category">
+        <button type="button" className={category === 'All' ? 'is-active' : ''} onClick={() => { setCategory('All'); setPage(1) }}>All</button>
+        {config.categories.map((cat) => (
+          <button type="button" key={cat} className={category === cat ? 'is-active' : ''} onClick={() => { setCategory(cat); setPage(1) }}>{cat}</button>
+        ))}
+      </div>
+
       {/* Budget Cards */}
       <div
         className="budget-grid"
@@ -620,7 +640,7 @@ export default function ExpensePage({ type }) {
           return (
             <div key={cat} className={`budget-card bg-gradient-to-br ${config.budgetColors[cat]}`}>
               <div className="flex items-center justify-between gap-3 mb-1.5">
-                <span className="text-sm font-extrabold opacity-90 uppercase tracking-wide truncate">{cat}</span>
+                <span className="flex min-w-0 items-center gap-2 text-sm font-extrabold opacity-90 uppercase tracking-wide truncate"><i className={`fas ${cat === 'Printer' ? 'fa-print' : cat === 'CCTV' ? 'fa-video' : cat === 'Monitor' ? 'fa-desktop' : cat === 'Starlink' ? 'fa-satellite-dish' : cat === 'Aircon' ? 'fa-snowflake' : cat === 'Toilet' ? 'fa-faucet-drip' : cat === 'Fuel' ? 'fa-gas-pump' : 'fa-tools'} budget-card-icon`} aria-hidden="true" />{cat}</span>
                 <span className="budget-card-count">{stats.count} items</span>
               </div>
               {budget && <div className="text-sm opacity-85 mb-1.5">Budget: {fmtCurrency(budget)}</div>}
@@ -630,7 +650,7 @@ export default function ExpensePage({ type }) {
                   <div className="h-2 bg-white/25 rounded-full overflow-hidden mb-2">
                     <div className="h-full bg-white rounded-full transition-all" style={{ width: `${pct}%` }} />
                   </div>
-                  <div className="text-sm opacity-85">Remaining: {fmtCurrency(budget - stats.spent)}</div>
+                  <div className="text-sm opacity-85">{pct}% used · {fmtCurrency(budget - stats.spent)} left</div>
                 </>
               )}
               {!budget && <div className="text-sm opacity-85">Total Spent</div>}
@@ -640,7 +660,7 @@ export default function ExpensePage({ type }) {
       </div>
 
       {/* Filters */}
-      <details className="filter-collapsible mb-4" open>
+      <details className="filter-collapsible mb-4" open={filtersOpen} onToggle={(event) => setFiltersOpen(event.currentTarget.open)}>
         <summary>
           <i className="fas fa-filter text-blue-500" />
           Filters

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { Suspense, useEffect } from 'react'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import MobileBottomNav from './MobileBottomNav'
 import Breadcrumbs from '../shared/Breadcrumbs'
 import { useUIStore } from '../../store/uiStore'
 import Toasts from '../shared/Toasts'
@@ -29,6 +30,7 @@ export default function Layout() {
           </Suspense>
         </main>
         <Toasts />
+        <MobileBottomNav />
       </div>
 
       {/* Global Send Email Modal */}

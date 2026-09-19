@@ -5,9 +5,10 @@ import { useUpdateAccount } from '../../hooks/useAccounts'
 import { uploadToDrive } from '../../lib/gas'
 import { getDriveThumbnailUrl, getImageDisplayUrl } from '../../lib/utils'
 import Swal from 'sweetalert2'
+import { useNavigate } from 'react-router-dom'
 
 export default function TopBar() {
-  const { user, updatePhoto } = useAuthStore()
+  const { user, updatePhoto, logout } = useAuthStore()
   const { toggleSidebar, darkMode, toggleDarkMode, notifications, clearNotifications } = useUIStore()
   const updateAccount = useUpdateAccount()
   const [showProfile, setShowProfile] = useState(false)
@@ -15,6 +16,7 @@ export default function TopBar() {
   const [newPass, setNewPass] = useState('')
   const profileRef = useRef()
   const notifRef = useRef()
+  const navigate = useNavigate()
 
   // Close profile/notif on outside click
   useEffect(() => {
@@ -50,6 +52,24 @@ export default function TopBar() {
     } catch (err) {
       Swal.fire('Error', err.message, 'error')
     }
+  }
+
+  const handleLogout = () => {
+    setShowProfile(false)
+    Swal.fire({
+      title: 'Sign out of OPS-FIN?',
+      text: 'You will need to sign in again to continue.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sign out',
+      cancelButtonText: 'Stay signed in',
+      confirmButtonColor: '#e11d48',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout()
+        navigate('/login', { replace: true })
+      }
+    })
   }
 
   const unreadCount = notifications.length
@@ -169,6 +189,12 @@ export default function TopBar() {
                 />
                 <button onClick={handleChangePassword} className="btn-primary w-full">
                   Update Password
+                </button>
+              </div>
+              <div className="border-t border-gray-100 p-3 dark:border-slate-800">
+                <button onClick={handleLogout} className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10">
+                  <i className="fas fa-sign-out-alt text-xs" aria-hidden="true" />
+                  Sign out
                 </button>
               </div>
             </div>
