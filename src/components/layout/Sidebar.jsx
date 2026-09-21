@@ -14,14 +14,14 @@ const SECTIONS = [
     label: 'Field Operations',
     icon: 'fa-file-invoice',
     items: [
-      { label: 'Request Letter', icon: 'fa-file-contract', to: '/requests', badge: 'req' },
-      { label: 'SBAR / Transfer', icon: 'fa-exchange-alt', to: '/sbar', badge: 'sbar' },
-      { label: 'IT Expenses', icon: 'fa-print', to: '/it-expenses', badge: 'it' },
-      { label: 'Aircon & Toilet', icon: 'fa-tools', to: '/at-expenses', badge: 'at' },
-      { label: 'Generator', icon: 'fa-bolt', to: '/generator-expenses', badge: 'generator' },
-      { label: 'Comms Expenses', icon: 'fa-bullhorn', to: '/comms-expenses', badge: 'comms' },
-      { label: 'Request Letter Tracker', icon: 'fa-route', to: '/tracker' },
-      { label: 'Online List', icon: 'fa-address-card', to: '/online-list' },
+      { label: 'Request Letter', icon: 'fa-file-contract', to: '/requests', badge: 'req', iconTone: 'bg-blue-500/15 text-blue-300' },
+      { label: 'SBAR / Transfer', icon: 'fa-exchange-alt', to: '/sbar', badge: 'sbar', iconTone: 'bg-amber-500/15 text-amber-300' },
+      { label: 'IT Expenses', icon: 'fa-print', to: '/it-expenses', badge: 'it', iconTone: 'bg-cyan-500/15 text-cyan-300' },
+      { label: 'Aircon & Toilet', icon: 'fa-tools', to: '/at-expenses', badge: 'at', iconTone: 'bg-teal-500/15 text-teal-300' },
+      { label: 'Generator', icon: 'fa-bolt', to: '/generator-expenses', badge: 'generator', iconTone: 'bg-violet-500/15 text-violet-300' },
+      { label: 'Comms Expenses', icon: 'fa-bullhorn', to: '/comms-expenses', badge: 'comms', iconTone: 'bg-rose-500/15 text-rose-300' },
+      { label: 'Request Letter Tracker', icon: 'fa-route', to: '/tracker', iconTone: 'bg-indigo-500/15 text-indigo-300' },
+      { label: 'Online List', icon: 'fa-address-card', to: '/online-list', iconTone: 'bg-emerald-500/15 text-emerald-300' },
     ],
   },
   {
@@ -86,7 +86,7 @@ function Badge({ value }) {
   )
 }
 
-function MainLink({ to, icon, label, compact = false }) {
+function MainLink({ to, icon, label, compact = false, iconTone = 'bg-slate-400/15 text-slate-300' }) {
   return (
     <NavLink
       to={to}
@@ -98,7 +98,7 @@ function MainLink({ to, icon, label, compact = false }) {
       {({ isActive }) => (
         <>
           {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full" />}
-          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${isActive ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-400 group-hover:text-white'}`}>
+          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${isActive ? 'bg-white/15 text-white' : iconTone}`}>
             <i className={`fas ${icon} text-xs`} />
           </span>
           {!compact && <span className="truncate">{label}</span>}
@@ -199,8 +199,8 @@ export default function Sidebar() {
 
         <nav aria-label="Main navigation" className="sidebar-nav flex-1 overflow-y-auto px-3 py-4">
           <div className="space-y-1">
-            {'dashboard'.includes(query) && <MainLink to="/" icon="fa-th-large" label="Dashboard" compact={compact} />}
-            {'send to email'.includes(query) && <MainLink to="/send-email" icon="fa-envelope" label="Send to Email" compact={compact} />}
+            {'dashboard'.includes(query) && <MainLink to="/" icon="fa-th-large" label="Dashboard" compact={compact} iconTone="bg-sky-500/15 text-sky-300" />}
+            {'send to email'.includes(query) && <MainLink to="/send-email" icon="fa-envelope" label="Send to Email" compact={compact} iconTone="bg-orange-500/15 text-orange-300" />}
           </div>
 
           {!query && <div className="my-4 h-px bg-white/10" />}
@@ -263,7 +263,9 @@ export default function Sidebar() {
                             {({ isActive }) => (
                               <>
                                 {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full" />}
-                                <i className={`fas ${item.icon} w-5 text-center text-xs ${isActive ? 'text-sky-200' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isActive ? 'bg-white/15 text-white' : item.iconTone || 'bg-slate-500/15 text-slate-300'}`}>
+                                  <i className={`fas ${item.icon} text-xs`} />
+                                </span>
                                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                                 <Badge value={count} />
                               </>
@@ -300,7 +302,7 @@ export default function Sidebar() {
           return (
             <div className="sidebar-flyout fixed z-[1400] w-56 rounded-2xl p-2" style={{ left: 94, top: flyout.top }}>
               <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">{section.label}</div>
-              {items.map(item => <NavLink key={item.to} to={item.to} className={({ isActive }) => `sidebar-flyout-link flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive ? 'sidebar-link-active' : ''}`}><i className={`fas ${item.icon} w-5 text-center text-xs`} />{item.label}<Badge value={countFor(item.badge)} /></NavLink>)}
+              {items.map(item => <NavLink key={item.to} to={item.to} className={({ isActive }) => `sidebar-flyout-link flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive ? 'sidebar-link-active' : ''}`}><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${item.iconTone || 'bg-slate-500/15 text-slate-300'}`}><i className={`fas ${item.icon} text-xs`} /></span>{item.label}<Badge value={countFor(item.badge)} /></NavLink>)}
             </div>
           )
         })()}
