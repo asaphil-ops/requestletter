@@ -114,6 +114,11 @@ body {
   white-space: nowrap;
 }
 .dashboard-filter { box-shadow: 0 12px 30px -22px rgba(15, 23, 42, .42); }
+.dashboard-stat-card {
+  min-height: 140px;
+  box-shadow: 0 10px 24px -20px rgba(15, 23, 42, .45);
+}
+.dark .dashboard-stat-card { box-shadow: 0 12px 28px -22px rgba(0, 0, 0, .72); }
 .data-table-toolbar { padding: .2rem .1rem; }
 .data-table-frame {
   border: 1px solid #e2e8f0;

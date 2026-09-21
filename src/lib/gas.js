@@ -4,24 +4,41 @@ const GAS_URL = import.meta.env.VITE_GAS_URL
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-async function callGAS(payload) {
+async function callGAS(payload, { retries = 2 } = {}) {
   if (!GAS_URL) throw new Error('Google Apps Script URL is not configured.')
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) })
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 90_000)
+      let res
+      try {
+        // Do not set Content-Type here: a simple request avoids a CORS preflight
+        // that Apps Script web apps do not consistently handle.
+        res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload), signal: controller.signal })
+      } finally {
+        clearTimeout(timeout)
+      }
       if (res.status === 404) throw new Error('Google Apps Script deployment was not found (404). Create a Web App deployment and update VITE_GAS_URL with its /exec URL.')
       if (!res.ok) {
         const error = new Error(`Google Apps Script responded with ${res.status}: ${res.statusText || 'Request failed'}`)
         error.retryable = res.status === 408 || res.status === 429 || res.status >= 500
         throw error
       }
-      const json = await res.json()
+      const body = await res.text()
+      let json
+      try {
+        json = JSON.parse(body)
+      } catch {
+        const error = new Error('Google Apps Script returned an invalid response. Verify that the deployed web app is accessible to all authorized users.')
+        error.retryable = true
+        throw error
+      }
       if (!json.success) throw new Error(json.error || 'Google Apps Script returned an error.')
       return json.data
     } catch (err) {
-      const networkError = err instanceof TypeError
-      if (attempt < 2 && (networkError || err.retryable)) {
-        await wait(700 * (attempt + 1))
+      const networkError = err instanceof TypeError || err?.name === 'AbortError'
+      if (attempt < retries && (networkError || err.retryable)) {
+        await wait(800 * (attempt + 1))
         continue
       }
       console.error('GAS Call Failed:', err)
@@ -41,14 +58,23 @@ export async function sendEmail({ to, cc, subject, htmlBody, senderName, senderE
 }
 
 export async function uploadToDrive(file, options = {}) {
+  if (!(file instanceof Blob)) throw new Error('Choose a valid file to upload.')
+  // Apps Script receives base64 in JSON, which adds about 33% to the file size.
+  // Keeping the source below this limit prevents intermittent request-size failures.
+  const maxFileSize = 18 * 1024 * 1024
+  if (file.size > maxFileSize) {
+    throw new Error(`"${file.name || 'File'}" is too large. Upload files up to 18 MB.`)
+  }
   const base64 = await fileToBase64(file)
+  const uploadId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
   return callGAS({
     action: 'UPLOAD_DRIVE',
+    uploadId,
     base64,
     fileName: file.name,
     mimeType: file.type,
     convertToPdf: Boolean(options.convertToPdf),
-  })
+  }, { retries: 3 })
 }
 
 export async function deleteFromDrive(fileId) {
@@ -95,8 +121,14 @@ export async function syncRequestTrackerToGoogleSheet(rows, { onProgress } = {})
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = (e) => resolve(e.target.result.split(',')[1])
-    reader.onerror = reject
+    reader.onload = (e) => {
+      const value = e.target?.result
+      const base64 = typeof value === 'string' ? value.split(',')[1] : ''
+      if (!base64) reject(new Error('The selected file could not be read. Please choose it again.'))
+      else resolve(base64)
+    }
+    reader.onerror = () => reject(new Error('The selected file could not be read. Please choose it again.'))
+    reader.onabort = () => reject(new Error('Reading the selected file was cancelled.'))
     reader.readAsDataURL(file)
   })
 }

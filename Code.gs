@@ -169,19 +169,44 @@ function handleSendEmail(data) {
 // UPLOAD FILE TO DRIVE
 // ============================================================
 function handleUploadDrive(data) {
+  if (!data.base64 || !data.fileName) throw new Error('A file is required for upload.');
+  const uploadId = String(data.uploadId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  const cache = CacheService.getScriptCache();
+  const cacheKey = uploadId ? 'drive-upload-' + uploadId : '';
+  if (cacheKey) {
+    const cached = cache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  }
+
+  // A browser may retry after a network timeout. Serializing the check/create/cache
+  // sequence ensures that retry returns the original file instead of making a duplicate.
+  const lock = LockService.getScriptLock();
+  if (cacheKey) lock.waitLock(60000);
+  try {
+    if (cacheKey) {
+      const cached = cache.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    }
   const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
   const decoded = Utilities.base64Decode(data.base64);
+  if (!decoded || decoded.length === 0) throw new Error('The uploaded file is empty or could not be decoded.');
   const blob = Utilities.newBlob(decoded, data.mimeType || 'application/octet-stream', data.fileName);
 
   const file = data.convertToPdf ? createPdfFile(folder, blob, data.fileName, data.mimeType) : folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (sharingErr) {
+    // Some shared-drive/domain policies disallow this setting. The file was still
+    // created in its folder, so do not turn a successful upload into a false error.
+    Logger.log('Could not set link sharing for ' + file.getId() + ': ' + sharingErr);
+  }
   
   const fileId = file.getId();
   const viewUrl = 'https://drive.google.com/file/d/' + fileId + '/view';
   const downloadUrl = file.getDownloadUrl().replace('&export=download', '');
   const previewUrl = 'https://drive.google.com/file/d/' + fileId + '/preview';
   
-  return ok({
+  const result = ok({
     fileId: fileId,
     fileName: file.getName(),
     mimeType: file.getMimeType(),
@@ -189,6 +214,11 @@ function handleUploadDrive(data) {
     downloadUrl: downloadUrl,
     previewUrl: previewUrl
   });
+  if (cacheKey) cache.put(cacheKey, JSON.stringify(result), 21600);
+  return result;
+  } finally {
+    if (cacheKey) lock.releaseLock();
+  }
 }
 
 function createPdfFile(folder, blob, fileName, mimeType) {
