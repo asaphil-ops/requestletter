@@ -891,9 +891,9 @@ button, a, input, select, textarea, summary, .card {
 }
 .sidebar-panel .sidebar-link-active span[class*="bg-white"] { color: #fff; background: rgba(255, 255, 255, .11); }
 .sidebar-count {
-  color: #dce3ed;
-  background: rgba(255, 255, 255, .09);
-  box-shadow: none;
+  color: #fff1f2;
+  background: #dc2626;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, .32);
 }
 .sidebar-footer {
   border-color: rgba(255, 255, 255, .06) !important;
