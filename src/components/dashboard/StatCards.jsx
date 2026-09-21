@@ -1,12 +1,13 @@
 import { fmtNum } from '../../lib/utils'
+import { ArrowRight, CheckCircle2, Clock3, FileText, Send, Users, XCircle } from 'lucide-react'
 
 const CARDS = [
-  { key: 'totalStaff', label: 'Total Staff', icon: 'fa-users', tone: 'slate' },
-  { key: 'pending', label: 'Pending', icon: 'fa-clock', tone: 'amber' },
-  { key: 'checked', label: 'Checked', icon: 'fa-check-circle', tone: 'emerald' },
-  { key: 'rejected', label: 'Rejected', icon: 'fa-times-circle', tone: 'rose' },
-  { key: 'emailsSent', label: 'Emails Sent', icon: 'fa-paper-plane', tone: 'violet' },
-  { key: 'totalReqs', label: 'Total Requests', icon: 'fa-file-lines', tone: 'teal' },
+  { key: 'totalStaff', label: 'Total Staff', icon: Users, tone: 'slate' },
+  { key: 'pending', label: 'Pending', icon: Clock3, tone: 'amber', action: 'Review now' },
+  { key: 'checked', label: 'Checked', icon: CheckCircle2, tone: 'emerald' },
+  { key: 'rejected', label: 'Rejected', icon: XCircle, tone: 'rose' },
+  { key: 'emailsSent', label: 'Emails Sent', icon: Send, tone: 'violet' },
+  { key: 'totalReqs', label: 'Total Requests', icon: FileText, tone: 'teal' },
 ]
 
 const TONES = {
@@ -31,6 +32,9 @@ export default function StatCards({ data = {}, onCardClick }) {
   return (
     <div className="dashboard-stats grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6 mb-5">
       {CARDS.map((c) => (
+        (() => {
+          const Icon = c.icon
+          return (
         <button
           type="button"
           key={c.key}
@@ -44,15 +48,17 @@ export default function StatCards({ data = {}, onCardClick }) {
               <div className="mt-2 text-3xl font-extrabold leading-none tracking-tight text-slate-900 dark:text-white">{fmtNum(data[c.key] ?? 0)}</div>
             </div>
             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TONES[c.tone]}`}>
-              <i className={`fas ${c.icon} text-sm`} aria-hidden="true" />
+              <Icon size={18} strokeWidth={2.2} aria-hidden="true" />
             </div>
           </div>
           <div className="relative z-10 mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 transition-colors group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300">
-            <span>View details</span><i className="fas fa-arrow-right text-[9px]" aria-hidden="true" />
+            <span>{c.action || 'View details'}</span><ArrowRight size={13} strokeWidth={2.5} aria-hidden="true" />
           </div>
           <span className={`absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r ${ACCENTS[c.tone]}`} aria-hidden="true" />
           <span className={`absolute -right-7 -top-7 h-20 w-20 rounded-full bg-gradient-to-br ${ACCENTS[c.tone]} opacity-[0.08] transition-transform duration-300 group-hover:scale-125`} aria-hidden="true" />
         </button>
+          )
+        })()
       ))}
     </div>
   )

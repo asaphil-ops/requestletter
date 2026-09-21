@@ -12,7 +12,7 @@ export default function PageHeader({
       <div className="flex min-w-0 items-center gap-3.5">
         {icon && (
           <div className="page-header-icon" aria-hidden="true">
-            <i className={`fas ${icon}`} />
+            {typeof icon === 'string' ? <i className={`fas ${icon}`} /> : icon}
           </div>
         )}
         <div className="min-w-0">

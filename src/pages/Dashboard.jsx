@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { BarChart3, CalendarDays, ChevronDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useDashboard } from '../hooks/useDashboard'
@@ -170,41 +171,28 @@ export default function Dashboard() {
         eyebrow="Operations overview"
         title={`Good day, ${user?.full_name?.split(',')[0] || 'Team'}`}
         subtitle="Monitor requests, approvals, and operational activity in one place."
-        icon="fa-chart-line"
-        actions={<span className="dashboard-date text-sm font-semibold"><i className="far fa-calendar-alt mr-2" />{today}</span>}
+        icon={<BarChart3 size={21} strokeWidth={2.2} />}
+        actions={<span className="dashboard-date text-sm font-semibold"><CalendarDays size={15} />{today}</span>}
       />
 
-      {/* Task alert */}
-      {(statsData.pending > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 flex items-center gap-3 mb-5 shadow-sm">
-          <div className="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
-            <i className="fas fa-bell text-white text-sm" />
-          </div>
-          <div className="flex-1">
-            <div className="font-semibold text-sm text-amber-800 dark:text-amber-200">Action Required</div>
-            <div className="text-xs text-amber-600 dark:text-amber-400">You have {statsData.pending} request(s) awaiting your action.</div>
-          </div>
-        </div>
-      )}
-
       {/* Dashboard Filters */}
-      <div className="card dashboard-filter relative z-30 overflow-visible p-5 mb-5">
-        <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="card dashboard-filter relative z-30 overflow-visible p-4 mb-4">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <div><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Filter overview</h2><p className="text-xs text-slate-500 dark:text-slate-400">Refine the dashboard without losing context.</p></div>
           {activeFilters.length > 0 && <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-sky-300">Clear all</button>}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-end">
           <div>
-            <label className="label">Date Start</label>
-            <input type="date" className="input text-sm py-1.5" value={filters.dateStart} onChange={e => set('dateStart', e.target.value)} />
-          </div>
-          <div>
-            <label className="label">Date End</label>
-            <input type="date" className="input text-sm py-1.5" value={filters.dateEnd} onChange={e => set('dateEnd', e.target.value)} />
+            <label className="label">Date range</label>
+            <div className="dashboard-date-range">
+              <input type="date" aria-label="Date start" className="dashboard-filter-control" value={filters.dateStart} onChange={e => set('dateStart', e.target.value)} />
+              <span>to</span>
+              <input type="date" aria-label="Date end" className="dashboard-filter-control" value={filters.dateEnd} onChange={e => set('dateEnd', e.target.value)} />
+            </div>
           </div>
           <div>
             <label className="label">Category</label>
-            <select className="input text-sm py-1.5" value={filters.category} onChange={e => set('category', e.target.value)}>
+            <select className="dashboard-filter-control" value={filters.category} onChange={e => set('category', e.target.value)}>
               <option value="">All Categories</option>
               <option value="req">Request Letter</option>
               <option value="sbar">SBAR</option>
@@ -213,10 +201,10 @@ export default function Dashboard() {
               <option value="comms">Comms</option>
             </select>
           </div>
-          <SegmentedSearchSelect label="Branch" value={filters.branchCode} options={geoOptions.branches} onChange={value => set('branchCode', value)} className="w-[260px]" />
+          <div><label className="label">Branch</label><SegmentedSearchSelect label="" value={filters.branchCode} options={geoOptions.branches} onChange={value => set('branchCode', value)} className="w-full" /></div>
         </div>
         <details className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-          <summary className="cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-300">Advanced geographic filters <i className="fas fa-chevron-down ml-1 text-[9px]" /></summary>
+          <summary className="cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-300">Advanced geographic filters <ChevronDown className="ml-1 inline" size={13} /></summary>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <SegmentedSearchSelect label="Operation" value={filters.operation} options={selectOptions(geoOptions.operations)} onChange={value => set('operation', value)} />
             <SegmentedSearchSelect label="Division" value={filters.division} options={selectOptions(geoOptions.divisions)} onChange={value => set('division', value)} />
