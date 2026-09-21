@@ -4,6 +4,33 @@ const GAS_URL = import.meta.env.VITE_GAS_URL
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
+// Apps Script web apps can intermittently reject overlapping Drive uploads.
+// Keep one upload in flight across the whole portal and let Drive settle briefly
+// before starting the next request.
+const UPLOAD_COOLDOWN_MS = 1_500
+let uploadQueue = Promise.resolve()
+let lastUploadFinishedAt = 0
+
+function enqueueDriveUpload(task) {
+  const queuedTask = uploadQueue
+    .catch(() => undefined) // A failed upload must not block the next queued file.
+    .then(async () => {
+      const elapsed = Date.now() - lastUploadFinishedAt
+      if (lastUploadFinishedAt && elapsed < UPLOAD_COOLDOWN_MS) {
+        await wait(UPLOAD_COOLDOWN_MS - elapsed)
+      }
+      try {
+        return await task()
+      } finally {
+        lastUploadFinishedAt = Date.now()
+      }
+    })
+
+  // Preserve a failure for this caller while keeping the shared queue usable.
+  uploadQueue = queuedTask.catch(() => undefined)
+  return queuedTask
+}
+
 async function callGAS(payload, { retries = 2 } = {}) {
   if (!GAS_URL) throw new Error('Google Apps Script URL is not configured.')
   const isUpload = payload.action === 'UPLOAD_DRIVE'
@@ -83,14 +110,14 @@ export async function uploadToDrive(file, options = {}) {
   }
   const base64 = await fileToBase64(file)
   const uploadId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  return callGAS({
+  return enqueueDriveUpload(() => callGAS({
     action: 'UPLOAD_DRIVE',
     uploadId,
     base64,
     fileName: file.name,
     mimeType: file.type,
     convertToPdf: Boolean(options.convertToPdf),
-  }, { retries: 4 })
+  }, { retries: 4 }))
 }
 
 export async function deleteFromDrive(fileId) {
