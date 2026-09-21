@@ -6,6 +6,7 @@ const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 async function callGAS(payload, { retries = 2 } = {}) {
   if (!GAS_URL) throw new Error('Google Apps Script URL is not configured.')
+  const isUpload = payload.action === 'UPLOAD_DRIVE'
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const controller = new AbortController()
@@ -14,11 +15,19 @@ async function callGAS(payload, { retries = 2 } = {}) {
       try {
         // Do not set Content-Type here: a simple request avoids a CORS preflight
         // that Apps Script web apps do not consistently handle.
-        res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload), signal: controller.signal })
+        res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload), signal: controller.signal, cache: 'no-store' })
       } finally {
         clearTimeout(timeout)
       }
-      if (res.status === 404) throw new Error('Google Apps Script deployment was not found (404). Create a Web App deployment and update VITE_GAS_URL with its /exec URL.')
+      if (res.status === 404) {
+        const error = new Error('Google Apps Script temporarily returned 404.')
+        error.status = 404
+        // A configured deployment cannot be permanently missing if uploads in the
+        // same session have succeeded. Apps Script occasionally returns a transient
+        // 404 while routing a busy upload request, so retry that case safely.
+        error.retryable = isUpload
+        throw error
+      }
       if (!res.ok) {
         const error = new Error(`Google Apps Script responded with ${res.status}: ${res.statusText || 'Request failed'}`)
         error.retryable = res.status === 408 || res.status === 429 || res.status >= 500
@@ -38,10 +47,17 @@ async function callGAS(payload, { retries = 2 } = {}) {
     } catch (err) {
       const networkError = err instanceof TypeError || err?.name === 'AbortError'
       if (attempt < retries && (networkError || err.retryable)) {
-        await wait(800 * (attempt + 1))
+        const retryDelay = Math.min(12_000, 1_000 * (2 ** attempt)) + Math.round(Math.random() * 400)
+        await wait(retryDelay)
         continue
       }
       console.error('GAS Call Failed:', err)
+      if (isUpload && err?.status === 404) {
+        throw new Error('The upload service is temporarily unavailable. Please wait a moment and try the file again.')
+      }
+      if (!isUpload && err?.status === 404) {
+        throw new Error('Google Apps Script deployment was not found (404). Create a Web App deployment and update VITE_GAS_URL with its /exec URL.')
+      }
       throw err
     }
   }
@@ -74,7 +90,7 @@ export async function uploadToDrive(file, options = {}) {
     fileName: file.name,
     mimeType: file.type,
     convertToPdf: Boolean(options.convertToPdf),
-  }, { retries: 3 })
+  }, { retries: 4 })
 }
 
 export async function deleteFromDrive(fileId) {
