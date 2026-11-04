@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { BarChart3, CalendarDays, ChevronDown } from 'lucide-react'
+import { BarChart3, CalendarDays, ChevronDown, FilePlus2, Mail, UploadCloud } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useDashboard } from '../hooks/useDashboard'
@@ -16,7 +16,7 @@ import PageHeader from '../components/shared/PageHeader'
 const EMPTY_FILTERS = { operation: '', division: '', region: '', area: '', branchCode: '', category: '', dateStart: '', dateEnd: '' }
 
 export default function Dashboard() {
-  const { user } = useAuthStore()
+  const { user, canUpload, isAdmin } = useAuthStore()
   const navigate = useNavigate()
   const { data: dash, isLoading } = useDashboard()
   const { data: staff = [] } = useStaff()
@@ -174,6 +174,13 @@ export default function Dashboard() {
         icon={<BarChart3 size={21} strokeWidth={2.2} />}
         actions={<span className="dashboard-date text-sm font-semibold"><CalendarDays size={15} />{today}</span>}
       />
+
+      <section className="dashboard-shortcuts" aria-label="Quick actions">
+        <span className="dashboard-shortcuts-title">Quick actions</span>
+        {canUpload && <button type="button" className="dashboard-shortcut" onClick={() => navigate('/requests?quickAction=new')}><FilePlus2 size={16} />New Request</button>}
+        {isAdmin && <button type="button" className="dashboard-shortcut" onClick={() => navigate('/bulk-upload')}><UploadCloud size={16} />Upload File</button>}
+        <button type="button" className="dashboard-shortcut" onClick={() => navigate('/send-email')}><Mail size={16} />Send to Email</button>
+      </section>
 
       {/* Dashboard Filters */}
       <div className="card dashboard-filter relative z-30 overflow-visible p-4 mb-4">

@@ -8,6 +8,8 @@ export const useUIStore = create(
       sidebarCompact: false,
       darkMode: false,
       notifications: [],
+      favoriteModules: [],
+      recentModules: [],
 
       // Send Email Modal
       sendEmailDraft: null,
@@ -19,6 +21,14 @@ export const useUIStore = create(
         else set((s) => ({ sidebarOpen: !s.sidebarOpen }))
       },
       setSidebar: (val) => set({ sidebarOpen: val }),
+      toggleFavoriteModule: (path) => set((state) => ({
+        favoriteModules: state.favoriteModules.includes(path)
+          ? state.favoriteModules.filter(item => item !== path)
+          : [...state.favoriteModules, path],
+      })),
+      trackRecentModule: (module) => set((state) => ({
+        recentModules: [module, ...state.recentModules.filter(item => item.to !== module.to)].slice(0, 5),
+      })),
 
       toggleDarkMode: () => {
         const next = !get().darkMode
@@ -48,6 +58,6 @@ export const useUIStore = create(
         set((s) => ({ toasts: [{ ...n, id: Date.now() + Math.random() }, ...s.toasts].slice(0, 5) })),
       removeToast: (id) => set((s) => ({ toasts: s.toasts.filter(t => t.id !== id) })),
     }),
-    { name: 'ops-finance-ui', partialize: (s) => ({ darkMode: s.darkMode }) }
+    { name: 'ops-finance-ui', partialize: (s) => ({ darkMode: s.darkMode, favoriteModules: s.favoriteModules, recentModules: s.recentModules }) }
   )
 )

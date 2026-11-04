@@ -18,8 +18,10 @@ export default function Login() {
   const [challenge, setChallenge] = useState(newChallenge)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberLogin, setRememberLogin] = useState(false)
   const login = useLogin()
   const setUser = useAuthStore((s) => s.setUser)
+  const setRememberMe = useAuthStore((s) => s.setRememberMe)
   const initDarkMode = useUIStore((s) => s.initDarkMode)
   const { data: settings } = useSettings()
   const navigate = useNavigate()
@@ -48,6 +50,7 @@ export default function Login() {
         refreshChallenge()
         return
       }
+      setRememberMe(rememberLogin)
       setUser(user)
       initDarkMode()
       navigate('/')
@@ -63,6 +66,7 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-[440px]">
         <section className="login-card rounded-[24px] px-6 py-8 sm:px-9 sm:py-9">
           <div className="login-heading mb-8">
+            <img className="login-logo mb-6" src="/ops-fin-logo.svg" alt="OPS-FIN Operations Finance" />
             <div className="login-badge mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wide">
               <span className="h-1.5 w-1.5 rounded-full bg-[#1877f2]" />STAFF ACCESS
             </div>
@@ -87,6 +91,10 @@ export default function Login() {
                 </button>
               </div>
             </div>
+            <label className="login-remember" htmlFor="login-remember">
+              <input id="login-remember" type="checkbox" checked={rememberLogin} onChange={(event) => setRememberLogin(event.target.checked)} />
+              <span>Stay logged in</span>
+            </label>
             <div className="login-captcha rounded-2xl p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <label htmlFor="login-captcha" className="text-sm font-semibold text-slate-700">Security check</label>

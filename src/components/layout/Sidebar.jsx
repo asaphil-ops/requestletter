@@ -5,7 +5,6 @@ import { useUIStore } from '../../store/uiStore'
 import { permissionsForRole } from '../../lib/permissions'
 import { usePendingCounts } from '../../hooks/useDashboard'
 import { useSettings } from '../../hooks/useAccounts'
-import { ADMIN_ROLES, SUPER_ADMIN_ROLES } from '../../lib/utils'
 import Swal from 'sweetalert2'
 
 const SECTIONS = [
@@ -86,25 +85,40 @@ function Badge({ value }) {
   )
 }
 
-function MainLink({ to, icon, label, compact = false, iconTone = 'bg-slate-400/15 text-slate-300' }) {
+function SidebarModuleLink({ item, compact = false, count = 0, favorite = false, onToggleFavorite, tabIndex }) {
   return (
-    <NavLink
-      to={to}
-      end={to === '/'}
-      title={compact ? label : undefined}
-      aria-label={compact ? label : undefined}
-      className={({ isActive }) => `sidebar-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${isActive ? 'sidebar-link-active text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
-    >
-      {({ isActive }) => (
-        <>
-          {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full" />}
-          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${isActive ? 'bg-white/15 text-white' : iconTone}`}>
-            <i className={`fas ${icon} text-xs`} />
-          </span>
-          {!compact && <span className="truncate">{label}</span>}
-        </>
+    <div className="sidebar-module-row flex min-w-0 items-center gap-1">
+      <NavLink
+        to={item.to}
+        end={item.to === '/'}
+        tabIndex={tabIndex}
+        title={item.label}
+        className={({ isActive }) => `sidebar-link group relative flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${isActive ? 'sidebar-link-active text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+      >
+        {({ isActive }) => (
+          <>
+            {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full" />}
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isActive ? 'bg-white/15 text-white' : item.iconTone || 'bg-slate-500/15 text-slate-300'}`}>
+              <i className={`fas ${item.icon} text-xs`} aria-hidden="true" />
+            </span>
+            {!compact && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+            <Badge value={count} />
+          </>
+        )}
+      </NavLink>
+      {!compact && onToggleFavorite && (
+        <button
+          type="button"
+          tabIndex={tabIndex}
+          className={`sidebar-favorite-toggle ${favorite ? 'is-favorite' : ''}`}
+          onClick={() => onToggleFavorite(item.to)}
+          aria-label={`${favorite ? 'Remove from' : 'Add to'} favorites: ${item.label}`}
+          title={`${favorite ? 'Remove from' : 'Add to'} favorites`}
+        >
+          <i className={`fas fa-star`} aria-hidden="true" />
+        </button>
       )}
-    </NavLink>
+    </div>
   )
 }
 
@@ -112,20 +126,32 @@ export default function Sidebar() {
   const auth = useAuthStore()
   const { user, isAdmin, isSuperAdmin, logout } = auth
   const rolePermissions = permissionsForRole(user?.role)
-  const { sidebarOpen, sidebarCompact } = useUIStore()
+  const { sidebarOpen, sidebarCompact, favoriteModules, recentModules, toggleFavoriteModule, trackRecentModule } = useUIStore()
   const { data: pendingByBadge = {} } = usePendingCounts()
   const { data: settings } = useSettings()
   const hiddenModules = new Set(settings?.hiddenModules || [])
   const navigate = useNavigate()
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState(() => Object.fromEntries(SECTIONS.map(section => [section.key, true])))
+  const [collapsed, setCollapsed] = useState(() => Object.fromEntries(SECTIONS.map(section => [section.key, !section.items.some(item => item.to === window.location.pathname)])))
   const [search, setSearch] = useState('')
   const [flyout, setFlyout] = useState(null)
   const query = search.trim().toLowerCase()
   const compact = sidebarCompact && window.innerWidth >= 1024
-  const initial = user?.full_name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || 'U'
+  const moduleCatalog = [
+    { label: 'Dashboard', icon: 'fa-th-large', to: '/', iconTone: 'bg-sky-500/15 text-sky-300' },
+    ...SECTIONS.flatMap(section => section.items
+      .filter(item => (!item.permission || auth[item.permission] || rolePermissions[item.permission]) && !hiddenModules.has(item.to))
+      .map(item => ({ ...item, section: section.label }))),
+  ]
+  const moduleMap = new Map(moduleCatalog.map(item => [item.to, item]))
+  const visibleFavorites = favoriteModules.map(path => moduleMap.get(path)).filter(Boolean)
+  const visibleRecents = recentModules.map(item => moduleMap.get(item.to)).filter(Boolean).slice(0, 4)
+  const quickLinks = moduleCatalog.slice(0, 1).filter(item => !query || item.label.toLowerCase().includes(query))
+  const sendEmailAction = !query || 'send email'.includes(query) || 'send to email'.includes(query)
+    ? { label: 'Send Email', icon: 'fa-envelope', to: '/send-email', iconTone: 'bg-orange-500/15 text-orange-300' }
+    : null
   const searchMatchCount = query
-    ? Number('dashboard'.includes(query)) + Number('send to email'.includes(query)) + SECTIONS.reduce((total, section) => {
+    ? Number('dashboard'.includes(query)) + Number('send email'.includes(query) || 'send to email'.includes(query)) + SECTIONS.reduce((total, section) => {
       if (section.adminSection && !isAdmin) return total
       if (section.superAdminSection && !isSuperAdmin) return total
       const availableItems = section.items.filter(item =>
@@ -143,14 +169,17 @@ export default function Sidebar() {
   useEffect(() => {
     if (window.innerWidth < 1024) useUIStore.getState().setSidebar(false)
     setFlyout(null)
+    setCollapsed(Object.fromEntries(SECTIONS.map(section => [section.key, !section.items.some(item => item.to === location.pathname)])))
+    const currentModule = moduleMap.get(location.pathname)
+    if (currentModule) trackRecentModule({ to: currentModule.to, label: currentModule.label, icon: currentModule.icon })
   }, [location.pathname])
 
   useEffect(() => {
     if (sidebarOpen) {
-      setCollapsed(Object.fromEntries(SECTIONS.map(section => [section.key, true])))
+      setCollapsed(Object.fromEntries(SECTIONS.map(section => [section.key, !section.items.some(item => item.to === location.pathname)])))
       setFlyout(null)
     }
-  }, [sidebarOpen])
+  }, [sidebarOpen, location.pathname])
 
   useEffect(() => {
     if (compact) setSearch('')
@@ -210,11 +239,35 @@ export default function Sidebar() {
         </div>
 
         <nav aria-label="Main navigation" className="sidebar-nav flex-1 overflow-y-auto px-3 py-4">
-          {!compact && (!query || 'dashboard'.includes(query) || 'send to email'.includes(query)) && <p className="sidebar-quick-heading">Quick access</p>}
-          <div className="space-y-1">
-            {'dashboard'.includes(query) && <MainLink to="/" icon="fa-th-large" label="Dashboard" compact={compact} iconTone="bg-sky-500/15 text-sky-300" />}
-            {'send to email'.includes(query) && <MainLink to="/send-email" icon="fa-envelope" label="Send to Email" compact={compact} iconTone="bg-orange-500/15 text-orange-300" />}
+          {!compact && !query && visibleFavorites.length > 0 && (
+            <div className="sidebar-saved-group">
+              <p className="sidebar-quick-heading"><i className="fas fa-star" aria-hidden="true" /> Favorites</p>
+              <div className="space-y-0.5">
+                {visibleFavorites.map(item => <SidebarModuleLink key={item.to} item={item} count={countFor(item.badge)} favorite onToggleFavorite={toggleFavoriteModule} />)}
+              </div>
+            </div>
+          )}
+
+          {!compact && !query && visibleRecents.length > 0 && (
+            <div className="sidebar-saved-group">
+              <p className="sidebar-quick-heading"><i className="fas fa-clock" aria-hidden="true" /> Recent</p>
+              <div className="space-y-0.5">
+                {visibleRecents.map(item => <SidebarModuleLink key={item.to} item={item} count={countFor(item.badge)} favorite={favoriteModules.includes(item.to)} onToggleFavorite={toggleFavoriteModule} />)}
+              </div>
+            </div>
+          )}
+
+          {!compact && quickLinks.length > 0 && <p className="sidebar-quick-heading">Quick access</p>}
+          <div className="space-y-0.5">
+            {quickLinks.map(item => <SidebarModuleLink key={item.to} item={item} compact={compact} favorite={favoriteModules.includes(item.to)} onToggleFavorite={toggleFavoriteModule} />)}
           </div>
+
+          {sendEmailAction && (
+            <div className="sidebar-action-group">
+              {!compact && <p className="sidebar-quick-heading">Actions</p>}
+              <SidebarModuleLink item={sendEmailAction} compact={compact} />
+            </div>
+          )}
 
           {!query && <div className="my-4 h-px bg-white/10" />}
 
@@ -254,7 +307,7 @@ export default function Sidebar() {
                     <i className={`fas ${section.icon} w-4 text-center text-[11px]`} />
                     {!compact && <span className="min-w-0 flex-1 truncate">{section.label}</span>}
                     {!compact && <Badge value={total} />}
-                    {!compact && <i className="fas fa-chevron-down text-[10px] transition-transform" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }} />}
+                    {!compact && <i className="fas fa-chevron-down text-[10px] transition-transform" aria-hidden="true" />}
                   </button>
 
                   {!compact && (
@@ -263,29 +316,9 @@ export default function Sidebar() {
                         {visibleItems.map(item => {
                           const count = countFor(item.badge)
                           return (
-                            <NavLink
-                              key={item.to}
-                              to={item.to}
-                              end={item.to === '/'}
-                              tabIndex={isCollapsed ? -1 : 0}
-                              className={({ isActive }) =>
-                                `sidebar-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                                  isActive
-                                    ? 'sidebar-link-active text-white'
-                                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
-                              {({ isActive }) => (
-                                <>
-                                  {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full" />}
-                                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isActive ? 'bg-white/15 text-white' : item.iconTone || 'bg-slate-500/15 text-slate-300'}`}>
-                                    <i className={`fas ${item.icon} text-xs`} />
-                                  </span>
-                                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                                  <Badge value={count} />
-                                </>
-                              )}
-                            </NavLink>
+                            <div key={item.to} className={isCollapsed ? 'pointer-events-none' : ''}>
+                              <SidebarModuleLink item={item} count={count} tabIndex={isCollapsed ? -1 : 0} favorite={favoriteModules.includes(item.to)} onToggleFavorite={toggleFavoriteModule} />
+                            </div>
                           )
                         })}
                       </div>

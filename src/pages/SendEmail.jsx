@@ -401,7 +401,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   return (
     <div className={embedded ? 'bg-white p-5 text-gray-900' : ''}>
       {!embedded && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+        <div className="send-email-page-header flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[11px] font-bold uppercase tracking-wider mb-2">
               <i className="fas fa-paper-plane" />
@@ -430,7 +430,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         </div>
       )}
 
-      <div className={embedded ? 'send-email-compose' : 'grid grid-cols-1 gap-5 max-w-3xl mx-auto'}>
+      <div className={embedded ? 'send-email-compose' : 'send-email-page-layout'}>
         <div>
           <div className="send-email-card card overflow-hidden">
             <div className="send-email-compose-banner relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 px-6 py-5">
@@ -490,7 +490,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
             </section>
 
             <div className="send-email-fields p-5 space-y-4">
-              <div className="relative group">
+              <div className="send-email-recipient-field relative group">
                 <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-gray-200 dark:border-gray-700">
                   <i className="fas fa-user text-[9px] text-gray-400" />
                   To <span className="text-red-500">*</span>
@@ -542,7 +542,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                 )}
               </div>
 
-              <div className="relative">
+              <div className="send-email-recipient-field relative">
                 <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-gray-200 dark:border-gray-700">
                   <i className="fas fa-copy text-[9px] text-gray-400" />
                   CC

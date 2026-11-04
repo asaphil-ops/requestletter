@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/uiStore'
 import {
   Archive,
@@ -135,6 +135,7 @@ function StaffBeneficiaryInput({ value, options, onChange }) {
 export default function Requests() {
   const { user, canCheck, canUpload, isAdmin, isSuperAdmin, canForceDelete } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState(initialStatus)
@@ -291,6 +292,14 @@ export default function Requests() {
     )
     setShowModal(true)
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('quickAction') !== 'new') return
+    if (canUpload) openModal()
+    params.delete('quickAction')
+    navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true })
+  }, [location.pathname, location.search, canUpload, navigate])
 
   const handleSave = async () => {
     const requiredError = validateRequired(form, [
@@ -803,7 +812,7 @@ export default function Requests() {
           </div>
         </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
-          <table className="w-full min-w-[1440px] table-fixed">
+          <table className="w-full min-w-[1600px] table-fixed">
             <thead className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow-sm">
               <tr>
                 <th className="table-th w-10"><input type="checkbox" className="rounded" checked={paged.length > 0 && paged.every(r => selected.includes(r.req_id))} onChange={e => setSelected(e.target.checked ? [...new Set([...selected, ...paged.map(r => r.req_id)])] : selected.filter(id => !paged.map(r => r.req_id).includes(id)))} /></th>
@@ -814,7 +823,7 @@ export default function Requests() {
                     k === 'type' ? 'w-36' :
                     k === 'title' ? 'w-64' :
                     k === 'description' ? 'w-48' :
-                    k === 'status' ? 'w-60' :
+                    k === 'status' ? 'w-64' :
                     'w-32'
                   }`} onClick={() => { handleSort(k); setPage(1) }}>
                     {l}<SortIcon k={k} />
@@ -845,7 +854,7 @@ export default function Requests() {
                     </td>
                     <td className="table-td"><span className="badge badge-checked text-xs">{r.type}</span></td>
                     <td className="table-td min-w-0"><div className="font-semibold text-sm truncate" title={r.title}>{r.title}</div><div className="text-xs text-gray-400 truncate" title={r.beneficiary}>{r.beneficiary}</div></td>
-                    <td className="table-td"><div className="text-xs text-gray-500 max-w-[120px] truncate">{r.description || '-'}</div></td>
+                    <td className="table-td"><div className="text-xs text-gray-500 max-w-[120px] truncate" title={r.description || '-'}>{r.description || '-'}</div></td>
                     <td className="table-td font-semibold whitespace-nowrap">{fmtCurrency(r.amount)}</td>
                     <td className="table-td whitespace-nowrap"><StatusBadge status={displayStatus} remarks={r.remarks} emailSent={r.email_sent} emailSentAt={r.email_sent_at} fileId={r.file_id} /></td>
                     <td className="table-td text-xs" dangerouslySetInnerHTML={{ __html: sanitizeInfoHtml(r.uploader_info || r.uploader || '-') }} />
