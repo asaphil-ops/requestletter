@@ -170,7 +170,7 @@ export default function Dashboard() {
         className="dashboard-hero"
         eyebrow="Operations overview"
         title={`Good day, ${user?.full_name?.split(',')[0] || 'Team'}`}
-        subtitle="Monitor requests, approvals, and operational activity in one place."
+        subtitle="Monitor requests, checked entries, and operational activity in one place."
         icon={<BarChart3 size={21} strokeWidth={2.2} />}
         actions={<span className="dashboard-date text-sm font-semibold"><CalendarDays size={15} />{today}</span>}
       />

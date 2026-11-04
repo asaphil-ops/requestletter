@@ -24,6 +24,7 @@ import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useB
 import { useStaff } from '../hooks/useStaff'
 import { useEmployeeList } from '../hooks/useEmployeeList'
 import { syncRequestTrackerToGoogleSheet, uploadToDrive } from '../lib/gas'
+import { GENERAL_REQUEST_EMAIL_BODY } from '../lib/emailDefaults'
 import { fmtCurrency, getDriveViewUrl, getInfoTimestamp, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate, validateRequired } from '../lib/validation'
@@ -450,7 +451,7 @@ export default function Requests() {
     useUIStore.getState().openSendEmailModal({
       to: receiverEmail ? [receiverEmail] : [],
       subject: buildRequestEmailSubject(rec),
-      messageBody: `Good day ${rec.beneficiary || "Ma'am/Sir"},\n\nThis is an update about your request letter. Please see the request details and processing timeline below.`,
+      messageBody: GENERAL_REQUEST_EMAIL_BODY,
       refId: rec.req_id,
       refType: 'Request Letter',
       fileId: rec.file_id || '',

@@ -61,6 +61,12 @@ export function useDashboard() {
       const allCfoo = cfoo || []
       const allOtherCostCenter = otherCostCenter || []
 
+      const normalizeStatus = (record) => ({
+        ...record,
+        // Keep historical records in the current workflow's final status.
+        status: record.status === 'Approved' ? 'Checked' : record.status,
+      })
+
       const combined = [
         ...allReqs.map(r => ({ ...r, _type: 'req', date: r.date_req })),
         ...allSbar.map(r => ({ ...r, _type: 'sbar' })),
@@ -70,7 +76,7 @@ export function useDashboard() {
         ...allInitiatives.map(r => ({ ...r, _type: 'initiatives' })),
         ...allCfoo.map(r => ({ ...r, _type: 'cfoo' })),
         ...allOtherCostCenter.map(r => ({ ...r, _type: 'otherCostCenter' })),
-      ]
+      ].map(normalizeStatus)
 
       const statusCount = (arr, s) => arr.filter(r => r.status === s).length
 
@@ -79,7 +85,6 @@ export function useDashboard() {
         emailsSent:  emailLogs.count || 0,
         totalReqs:   combined.length,
         pending:  statusCount(combined, 'Pending'),
-        approved: statusCount(combined, 'Approved'),
         rejected: statusCount(combined, 'Rejected'),
         checked:  statusCount(combined, 'Checked'),
         combined,

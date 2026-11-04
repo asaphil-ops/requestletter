@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/ops-fin-logo.png", "destination": "/ops-fin-logo.png" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

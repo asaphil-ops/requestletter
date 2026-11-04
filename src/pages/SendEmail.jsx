@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { sendEmail, buildEmailHTML, getFileUrl } from '../lib/gas'
+import { GENERAL_REQUEST_EMAIL_BODY } from '../lib/emailDefaults'
 import { supabase } from '../lib/supabase'
 import { SUGGESTED_EMAILS, formatBytes, getFileIcon } from '../lib/utils'
 import { useBranchEmailMap } from '../hooks/useBranches'
@@ -89,11 +90,11 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const { data: employeeList = [] } = useEmployeeList()
   const SENDER_EMAIL = 'operation.budgetmanagement@asaphil.org'
   const initDraft = draft ?? location.state?.draft ?? {}
-  const isRequestLetter = /^Request Letter/i.test(initDraft.refType || '')
+  const isModuleEmail = Boolean(initDraft.refType)
   const emailTitle = 'Request Letter'
   const defaultNote = DEFAULT_NOTE
-  const defaultMessageBody = isRequestLetter
-    ? "Good day Ma'am/Sir,\n\nPlease see the attached Request Letter for your review and appropriate action."
+  const defaultMessageBody = isModuleEmail
+    ? GENERAL_REQUEST_EMAIL_BODY
     : "Good day Ma'am/Sir,\n\nKindly see the attached File/s"
 
   // Build employee lookup: email -> employee name

@@ -7,6 +7,7 @@ import { useAttachFileCostCenter, useCostCenter, useCreateCostCenter, useDeleteC
 import { useInitiativeMappings } from '../hooks/useInitiativeMappings'
 import { useEmployeeList } from '../hooks/useEmployeeList'
 import { uploadToDrive } from '../lib/gas'
+import { GENERAL_REQUEST_EMAIL_BODY } from '../lib/emailDefaults'
 import { fmtCurrency, fmtDate, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate } from '../lib/validation'
@@ -334,7 +335,7 @@ export default function CostCenterPage({ type }) {
     useUIStore.getState().openSendEmailModal({
       to: recipientEmail ? [recipientEmail] : [],
       subject,
-      messageBody: `Good day ${record.staff_name || "Ma'am/Sir"},\n\nThis is an update about your ${config.title.toLowerCase()}. Please see the details and processing timeline below.`,
+      messageBody: GENERAL_REQUEST_EMAIL_BODY,
       refId: record.uniq_id,
       refType: config.title,
       fileId: record.file_id || '',

@@ -7,6 +7,7 @@ import { useSettings } from '../hooks/useAccounts'
 import { useUIStore } from '../store/uiStore'
 
 import { uploadToDrive } from '../lib/gas'
+import { GENERAL_REQUEST_EMAIL_BODY } from '../lib/emailDefaults'
 import { supabase } from '../lib/supabase'
 import { fmtCurrency, getInfoTimestamp, getUploadedAt, IT_BUDGETS, COMMS_BUDGETS, AT_BUDGETS, DEFAULT_MODULE_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
@@ -159,7 +160,7 @@ export default function ExpensePage({ type }) {
     useUIStore.getState().openSendEmailModal({
       to: operationEmail ? [operationEmail] : [],
       subject: `${branchLabel} | -${requestText}`,
-      messageBody: `Good day ${rec.staff_name || branchName || "Ma'am/Sir"},\n\nThis is an update about your ${refType.toLowerCase()}. Please see the details and processing timeline below.`,
+      messageBody: GENERAL_REQUEST_EMAIL_BODY,
       refId: rec.uniq_id,
       refType: refType,
       fileId: rec.file_id || '',

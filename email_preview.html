@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Preview — Desktop vs Mobile</title>
+  <style>
+    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background: #d1d5db; }
+    .controls {
+      display: flex; gap: 12px; margin-bottom: 20px; align-items: center;
+      background: #1f2937; padding: 14px 20px; border-radius: 10px;
+    }
+    .controls h2 { color: white; margin: 0; font-size: 14px; flex: 1; }
+    .btn {
+      padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer;
+      font-size: 13px; font-weight: 600; transition: all 0.2s;
+    }
+    .btn.active { background: #3b82f6; color: white; }
+    .btn:not(.active) { background: #374151; color: #9ca3af; }
+    .preview-frame {
+      transition: width 0.3s ease;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .preview-frame.desktop { width: 100%; }
+    .preview-frame.mobile  { width: 390px; }
+    iframe {
+      width: 100%; border: none; border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      min-height: 700px;
+    }
+    .label {
+      text-align: center; color: #9ca3af; font-size: 12px;
+      margin-bottom: 8px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h2>📧 Email Template Preview</h2>
+    <button class="btn active" onclick="setMode('desktop')">🖥️ Desktop</button>
+    <button class="btn" onclick="setMode('mobile')">📱 Mobile (390px)</button>
+  </div>
+  <div class="label" id="mode-label">Desktop — Gmail reading pane fills full width</div>
+  <div class="preview-frame desktop" id="frame-wrapper">
+    <iframe id="preview" srcdoc="" title="Email Preview"></iframe>
+  </div>
+
+  <script>
+    const emailHTML = `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Request Letter</title>
+  <style type="text/css">
+    @media screen and (max-width:600px) {
+      .hdr-cell   { padding:20px 18px !important; }
+      .body-cell  { padding:24px 16px !important; }
+      .foot-cell  { padding:14px 16px !important; }
+      .hdr-badge  { display:none !important; }
+      .title-text { font-size:21px !important; }
+      .logo-image { width:280px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#eef0f3;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="width:100%;min-width:100%;background-color:#eef0f3;">
+  <tr>
+    <td align="center" valign="top" style="padding:28px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="width:100%;max-width:900px;margin:0 auto;background-color:#ffffff;
+                    border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.10);">
+
+        <!-- HEADER -->
+        <tr>
+          <td class="hdr-cell" valign="top"
+              style="background-color:#1e3a5f;padding:26px 36px;border-radius:12px 12px 0 0;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                 <td valign="middle" align="left" style="padding:0 0 18px 0;">
+                   <img class="logo-image" src="public/ops-fin-logo.png" width="340" alt="OPS-FIN Operations Finance"
+                        style="display:block;width:340px;max-width:100%;height:auto;padding:7px;background-color:#ffffff;border-radius:10px;box-sizing:border-box;border:0;">
+                 </td>
+               </tr>
+               <tr>
+                <td valign="middle">
+                  <div class="title-text"
+                       style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.4px;
+                              line-height:1.25;margin:0 0 5px 0;">
+                    Request Letter
+                  </div>
+                  <div style="color:rgba(255,255,255,0.58);font-size:12px;margin:0;">
+                    October 9, 2026
+                  </div>
+                </td>
+                <td class="hdr-badge" align="right" valign="middle"
+                    style="white-space:nowrap;padding-left:20px;">
+                  <div style="background:rgba(255,255,255,0.14);border-radius:8px;
+                              padding:8px 16px;display:inline-block;">
+                    <span style="color:rgba(255,255,255,0.90);font-size:11px;
+                                 font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                      OPs Finance
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td class="body-cell" style="background-color:#ffffff;padding:32px 36px;">
+            <p style="margin:0 0 22px 0;color:#1e293b;font-size:15px;line-height:1.75;
+                      font-family:'Segoe UI',Arial,sans-serif;">
+              Good day, Ma&apos;am/Sir,<br>&nbsp;<br>Kindly see the attached File/s
+            </p>
+
+            <!-- Sample attachment -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;">
+              <tr>
+                <td style="padding:12px 18px;font-family:'Segoe UI',Arial,sans-serif;">
+                  <div style="font-weight:600;font-size:13px;color:#1e3a5f;margin-bottom:2px;">&#128206; B1052 Bangui.pdf</div>
+                  <div style="font-size:11px;color:#64748b;">Attachment</div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- NOTE callout -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;margin-bottom:26px;">
+              <tr>
+                <td style="background-color:#eff6ff;border-left:5px solid #1e3a5f;
+                           padding:14px 18px;border-radius:0 8px 8px 0;">
+                  <span style="font-size:14px;color:#1e3a5f;font-weight:700;
+                               font-family:'Segoe UI',Arial,sans-serif;">
+                    NOTE: FOR VP/SVP APPROVAL
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Regards -->
+            <p style="margin:0 0 22px 0;color:#1e293b;font-size:14px;line-height:1.7;
+                      font-family:'Segoe UI',Arial,sans-serif;">
+              Thank you,<br><br>Regards,
+            </p>
+
+            <!-- Signature -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;border-top:1px solid #e2e8f0;padding-top:16px;">
+              <tr>
+                <td style="padding-top:16px;">
+                  <div style="font-weight:700;font-size:15px;color:#1e3a5f;margin-bottom:2px;
+                              font-family:'Segoe UI',Arial,sans-serif;">Juan Dela Cruz</div>
+                  <div style="font-size:12px;color:#64748b;margin-bottom:2px;
+                              font-family:'Segoe UI',Arial,sans-serif;">operation.budgetmanagement@asaphil.org</div>
+                  <div style="font-size:11px;color:#94a3b8;
+                              font-family:'Segoe UI',Arial,sans-serif;">
+                    Operations Finance &bull; ASA Philippines Foundation, Inc.
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td class="foot-cell"
+              style="background-color:#f8fafc;padding:16px 36px;text-align:center;
+                     border-top:1px solid #e8ecf0;border-radius:0 0 12px 12px;">
+            <p style="margin:0 0 3px 0;font-size:10px;color:#64748b;font-family:'Segoe UI',Arial,sans-serif;">
+              &copy; 2026 Operations Finance &bull; ASA Philippines Foundation, Inc.
+            </p>
+            <p style="margin:0 0 4px 0;font-size:10px;font-style:italic;color:#94a3b8;font-family:'Segoe UI',Arial,sans-serif;">
+              ***This is a system-generated email from OPs Finance System***
+            </p>
+            <p style="margin:0;font-size:10px;color:#94a3b8;font-family:'Segoe UI',Arial,sans-serif;">
+              <strong>CONFIDENTIALITY NOTICE:</strong>
+              This email is for the exclusive use of the intended recipient(s).
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+
+    document.getElementById('preview').srcdoc = emailHTML;
+
+    function setMode(mode) {
+      const wrapper = document.getElementById('frame-wrapper');
+      const label = document.getElementById('mode-label');
+      const btns = document.querySelectorAll('.btn');
+
+      wrapper.className = 'preview-frame ' + mode;
+      btns.forEach((b, i) => b.classList.toggle('active', (mode === 'desktop' ? 0 : 1) === i));
+
+      if (mode === 'desktop') {
+        label.textContent = 'Desktop — pumapalawak sa buong reading pane ng Gmail';
+      } else {
+        label.textContent = 'Mobile — 390px, compact na padding';
+      }
+    }
+  </script>
+</body>
+</html>

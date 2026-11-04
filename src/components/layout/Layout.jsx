@@ -17,7 +17,7 @@ export default function Layout() {
   }, [])
 
   return (
-    <div className="app-shell min-h-screen bg-gray-50 dark:bg-[#06111f]">
+    <div className="app-shell min-h-screen bg-gray-50 dark:bg-[#202633]">
       <Sidebar />
       <div
         className={`app-content transition-all duration-300 flex flex-col min-h-screen ${sidebarOpen ? (sidebarCompact ? 'app-content--compact' : 'app-content--sidebar') : ''}`}

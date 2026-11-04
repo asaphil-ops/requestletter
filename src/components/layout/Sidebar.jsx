@@ -124,6 +124,18 @@ export default function Sidebar() {
   const query = search.trim().toLowerCase()
   const compact = sidebarCompact && window.innerWidth >= 1024
   const initial = user?.full_name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || 'U'
+  const searchMatchCount = query
+    ? Number('dashboard'.includes(query)) + Number('send to email'.includes(query)) + SECTIONS.reduce((total, section) => {
+      if (section.adminSection && !isAdmin) return total
+      if (section.superAdminSection && !isSuperAdmin) return total
+      const availableItems = section.items.filter(item =>
+        (!item.permission || auth[item.permission] || rolePermissions[item.permission]) && !hiddenModules.has(item.to)
+      )
+      return total + availableItems.filter(item =>
+        item.label.toLowerCase().includes(query) || section.label.toLowerCase().includes(query)
+      ).length
+    }, 0)
+    : 0
   const closeMobileSidebar = () => {
     if (window.innerWidth < 1024) useUIStore.getState().setSidebar(false)
   }
@@ -187,24 +199,18 @@ export default function Sidebar() {
           </button>
         </div>
 
-        <div className="sidebar-user-card lg:hidden">
-          <div className="sidebar-user-avatar">{initial}</div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-white">{user?.full_name || user?.username || 'Account'}</p>
-            <p className="truncate text-xs text-slate-400">{user?.role || 'Staff'}</p>
-          </div>
-          <span className="sidebar-online-dot" title="Signed in" aria-label="Signed in" />
-        </div>
-
         <div className="sidebar-search-area px-4 pt-4">
           <label htmlFor="sidebar-search" className="sr-only">Search modules</label>
           <div className="sidebar-search-wrap relative">
             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400" aria-hidden="true" />
-            <input id="sidebar-search" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search modules..." className="sidebar-search w-full rounded-xl py-2.5 pl-9 pr-3 text-sm outline-none" />
+            <input id="sidebar-search" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search modules..." className="sidebar-search w-full rounded-xl py-2.5 pl-9 pr-9 text-sm outline-none" />
+            {search && <button type="button" className="sidebar-search-clear" onClick={() => setSearch('')} aria-label="Clear module search" title="Clear search"><i className="fas fa-times" /></button>}
           </div>
+          {query && <p className="sidebar-search-results" role="status">{searchMatchCount} {searchMatchCount === 1 ? 'result' : 'results'}</p>}
         </div>
 
         <nav aria-label="Main navigation" className="sidebar-nav flex-1 overflow-y-auto px-3 py-4">
+          {!compact && (!query || 'dashboard'.includes(query) || 'send to email'.includes(query)) && <p className="sidebar-quick-heading">Quick access</p>}
           <div className="space-y-1">
             {'dashboard'.includes(query) && <MainLink to="/" icon="fa-th-large" label="Dashboard" compact={compact} iconTone="bg-sky-500/15 text-sky-300" />}
             {'send to email'.includes(query) && <MainLink to="/send-email" icon="fa-envelope" label="Send to Email" compact={compact} iconTone="bg-orange-500/15 text-orange-300" />}
@@ -251,50 +257,45 @@ export default function Sidebar() {
                     {!compact && <i className="fas fa-chevron-down text-[10px] transition-transform" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }} />}
                   </button>
 
-                  {!compact && !isCollapsed && (
-                    <div className="space-y-0.5">
-                      {visibleItems.map(item => {
-                        const count = countFor(item.badge)
-                        return (
-                          <NavLink
-                            key={item.to}
-                            to={item.to}
-                            end={item.to === '/'}
-                            className={({ isActive }) =>
-                              `sidebar-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                                isActive
-                                  ? 'sidebar-link-active text-white'
-                                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                              }`}
-                          >
-                            {({ isActive }) => (
-                              <>
-                                {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full" />}
-                                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isActive ? 'bg-white/15 text-white' : item.iconTone || 'bg-slate-500/15 text-slate-300'}`}>
-                                  <i className={`fas ${item.icon} text-xs`} />
-                                </span>
-                                <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                                <Badge value={count} />
-                              </>
-                            )}
-                          </NavLink>
-                        )
-                      })}
+                  {!compact && (
+                    <div className={`sidebar-section-items ${!isCollapsed ? 'sidebar-section-items--open' : ''}`} aria-hidden={isCollapsed}>
+                      <div className="sidebar-section-items-inner space-y-0.5">
+                        {visibleItems.map(item => {
+                          const count = countFor(item.badge)
+                          return (
+                            <NavLink
+                              key={item.to}
+                              to={item.to}
+                              end={item.to === '/'}
+                              tabIndex={isCollapsed ? -1 : 0}
+                              className={({ isActive }) =>
+                                `sidebar-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                                  isActive
+                                    ? 'sidebar-link-active text-white'
+                                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                                }`}
+                            >
+                              {({ isActive }) => (
+                                <>
+                                  {isActive && <span className="sidebar-active-mark absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full" />}
+                                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isActive ? 'bg-white/15 text-white' : item.iconTone || 'bg-slate-500/15 text-slate-300'}`}>
+                                    <i className={`fas ${item.icon} text-xs`} />
+                                  </span>
+                                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                                  <Badge value={count} />
+                                </>
+                              )}
+                            </NavLink>
+                          )
+                        })}
+                      </div>
                     </div>
                   )}
                 </section>
               )
             })}
           </div>
-          {!compact && query && !SECTIONS.some(section =>
-            (!section.adminSection || isAdmin) &&
-            (!section.superAdminSection || isSuperAdmin) &&
-            section.items.some(item =>
-              (!item.permission || auth[item.permission] || rolePermissions[item.permission]) &&
-              !hiddenModules.has(item.to) &&
-              (item.label.toLowerCase().includes(query) || section.label.toLowerCase().includes(query))
-            )
-          ) && !'dashboard'.includes(query) && !'send to email'.includes(query) && (
+          {!compact && query && searchMatchCount === 0 && (
             <p className="px-3 py-6 text-center text-xs text-slate-400">No modules found.</p>
           )}
         </nav>
@@ -309,7 +310,7 @@ export default function Sidebar() {
           return (
             <div className="sidebar-flyout fixed z-[1400] w-56 rounded-2xl p-2" style={{ left: 94, top: flyout.top }}>
               <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">{section.label}</div>
-              {items.map(item => <NavLink key={item.to} to={item.to} className={({ isActive }) => `sidebar-flyout-link flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive ? 'sidebar-link-active' : ''}`}><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${item.iconTone || 'bg-slate-500/15 text-slate-300'}`}><i className={`fas ${item.icon} text-xs`} /></span>{item.label}<Badge value={countFor(item.badge)} /></NavLink>)}
+              {items.map(item => <NavLink key={item.to} to={item.to} title={item.label} className={({ isActive }) => `sidebar-flyout-link flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isActive ? 'sidebar-link-active' : ''}`}><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${item.iconTone || 'bg-slate-500/15 text-slate-300'}`}><i className={`fas ${item.icon} text-xs`} /></span>{item.label}<Badge value={countFor(item.badge)} /></NavLink>)}
             </div>
           )
         })()}

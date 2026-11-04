@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { fetchAllPages } from '../lib/supabasePagination';
 import { fmtCurrency } from '../lib/utils';
 import { useUIStore } from '../store/uiStore';
+import { GENERAL_REQUEST_EMAIL_BODY } from '../lib/emailDefaults';
 
 /**
  * CFOO Budget page – loads the same CSV used for the generic Budget page
@@ -173,11 +174,10 @@ export default function CFOOBudget() {
               <button 
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center transition-colors"
                 onClick={() => {
-                  const body = `Good day, Ma'am/Sir,\n\nPlease review the following CFOO budget record.\n\n${headers.map(h => `${h.replace(/_/g, ' ')}: ${selected[h] || ''}`).join('\n')}`;
                   useUIStore.getState().openSendEmailModal({
                     to: [],
                     subject: `CFOO Budget Approval Request - ${selected.branch_name || selected.branch_code || ''}`.trim(),
-                    messageBody: body,
+                    messageBody: GENERAL_REQUEST_EMAIL_BODY,
                     refType: 'CFOO Budget',
                     allowNoAttachment: true,
                     emailDetails: {

@@ -5,7 +5,7 @@ import {
 
 const COLORS = { req: '#64748b', sbar: '#7c3aed', it: '#f59e0b', at: '#10b981', generator: '#f59f00', comms: '#ef4444' }
 const CAT_LABELS = { req: 'Request Letter', sbar: 'SBAR', it: 'IT Expenses', at: 'Aircon & Toilet', generator: 'Generator', comms: 'Comms' }
-const STATUS_COLORS = { Pending: '#f59e0b', Approved: '#10b981', Rejected: '#ef4444', Checked: '#059669' }
+const STATUS_COLORS = { Pending: '#f59e0b', Checked: '#059669', Rejected: '#ef4444' }
 
 function buildMonthly(data) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -14,7 +14,7 @@ function buildMonthly(data) {
   const rows = months.slice(0, now.getMonth() + 1).map((m, i) => ({
     month: m,
     submitted: data.filter(r => { try { const d = new Date(r.date || r.date_req || r.created_at); return d.getFullYear() === year && d.getMonth() === i } catch { return false } }).length,
-    approved:  data.filter(r => { try { const d = new Date(r.date || r.date_req || r.created_at); return d.getFullYear() === year && d.getMonth() === i && r.status === 'Approved' } catch { return false } }).length,
+    checked:    data.filter(r => { try { const d = new Date(r.date || r.date_req || r.created_at); return d.getFullYear() === year && d.getMonth() === i && r.status === 'Checked' } catch { return false } }).length,
   }))
   return rows
 }
@@ -24,7 +24,7 @@ function buildWeekly(data) {
   const MS_WEEK = 7 * 24 * 3600 * 1000
   return labels.map((label, i) => {
     const idx = 6 - i
-    const row = { week: label, Pending: 0, Approved: 0, Rejected: 0, Checked: 0 }
+    const row = { week: label, Pending: 0, Checked: 0, Rejected: 0 }
     data.forEach(r => {
       try {
         const diff = Math.floor((Date.now() - new Date(r.date || r.date_req || r.created_at)) / MS_WEEK)
@@ -48,7 +48,7 @@ export function TrendChart({ data = [] }) {
         <h3 className="font-semibold text-gray-800 dark:text-gray-100">Submission Trend (Monthly)</h3>
         <div className="flex gap-4 text-xs text-gray-500">
           <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-slate-600 inline-block" /> Submitted</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-emerald-500 inline-block border-dashed border-t" /> Approved</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-emerald-600 inline-block border-dashed border-t" /> Checked</span>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={260}>
@@ -58,7 +58,7 @@ export function TrendChart({ data = [] }) {
           <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
           <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)' }} />
           <Line type="monotone" dataKey="submitted" stroke="#475569" strokeWidth={2} dot={{ r: 4 }} name="Submitted" />
-          <Line type="monotone" dataKey="approved" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} strokeDasharray="5 4" name="Approved" />
+          <Line type="monotone" dataKey="checked" stroke="#059669" strokeWidth={2} dot={{ r: 4 }} strokeDasharray="5 4" name="Checked" />
         </LineChart>
       </ResponsiveContainer>
     </div>

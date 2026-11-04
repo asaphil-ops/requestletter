@@ -18,7 +18,7 @@ export default function Insights({ data = {}, combined = [] }) {
   const trendColor = trendUp ? 'text-emerald-600' : 'text-red-500'
 
   const total = combined.length
-  const approvalRate = total > 0 ? Math.round((data.approved || 0) / total * 100) : 0
+  const checkedRate = total > 0 ? Math.round((data.checked || 0) / total * 100) : 0
   const rejectionRate = total > 0 ? Math.round((data.rejected || 0) / total * 100) : 0
 
   // Top category this week
@@ -52,19 +52,19 @@ export default function Insights({ data = {}, combined = [] }) {
     {
       icon: 'fa-clock', bg: 'bg-amber-50 dark:bg-amber-900/20', color: 'text-amber-600',
       content: (
-        <><strong>{data.pending || 0} request{data.pending !== 1 ? 's' : ''}</strong> {data.pending !== 1 ? 'are' : 'is'} still Pending. Average time in Pending status is <strong>{avgDays} day{avgDays != 1 ? 's' : ''}</strong>. Ops Finance has <strong className="text-amber-600">{data.pending || 0}</strong> item{data.pending !== 1 ? 's' : ''} waiting for check, Finance has <strong className="text-blue-600">{data.checked || 0}</strong> for approval.</>
+        <><strong>{data.pending || 0} request{data.pending !== 1 ? 's' : ''}</strong> {data.pending !== 1 ? 'are' : 'is'} still Pending. Average time in Pending status is <strong>{avgDays} day{avgDays != 1 ? 's' : ''}</strong>. There {data.pending !== 1 ? 'are' : 'is'} <strong className="text-amber-600">{data.pending || 0}</strong> item{data.pending !== 1 ? 's' : ''} waiting for checking, while <strong className="text-emerald-600">{data.checked || 0}</strong> {data.checked !== 1 ? 'are' : 'is'} already Checked.</>
       )
     },
     {
       icon: 'fa-check-circle', bg: 'bg-emerald-50 dark:bg-emerald-900/20', color: 'text-emerald-600',
       content: (
         <div>
-          <>Approval rate this period: <strong className="text-emerald-600">{approvalRate}%</strong>. Rejection rate is <strong className="text-red-500">{rejectionRate}%</strong> {rejectionRate <= 10 ? '— below the 10% threshold. System is performing well.' : '— above 10% threshold. Please review rejected items.'}</>
+          <>Checked rate this period: <strong className="text-emerald-600">{checkedRate}%</strong>. Rejection rate is <strong className="text-red-500">{rejectionRate}%</strong> {rejectionRate <= 10 ? '— below the 10% threshold. System is performing well.' : '— above 10% threshold. Please review rejected items.'}</>
           <div className="flex gap-3 mt-2">
             <div className="flex-1">
-              <div className="text-[10px] text-gray-400 mb-1">Approved {approvalRate}%</div>
+              <div className="text-[10px] text-gray-400 mb-1">Checked {checkedRate}%</div>
               <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${approvalRate}%` }} />
+                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${checkedRate}%` }} />
               </div>
             </div>
             <div className="flex-1">
@@ -115,7 +115,7 @@ export default function Insights({ data = {}, combined = [] }) {
         {[
           { label: 'This Week', value: thisWeek, color: 'text-blue-600' },
           { label: 'vs Last Wk', value: `${trend >= 0 ? '+' : ''}${trend}%`, color: trendColor },
-          { label: 'Approval Rate', value: `${approvalRate}%`, color: 'text-emerald-600' },
+          { label: 'Checked Rate', value: `${checkedRate}%`, color: 'text-emerald-600' },
           { label: 'Awaiting', value: data.pending || 0, color: 'text-amber-600' },
         ].map((s) => (
           <div key={s.label} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2.5 text-center border border-gray-100 dark:border-gray-700">
