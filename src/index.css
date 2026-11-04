@@ -388,6 +388,175 @@ button, a, input, select, textarea, summary, .card {
   .modal-panel-modern {
     @apply w-full rounded-2xl bg-white text-gray-900 shadow-2xl overflow-hidden transition-all border border-gray-200/50;
   }
+  .send-email-modal {
+    width: min(820px, calc(100vw - 2rem));
+    max-width: 820px;
+    box-shadow: 0 32px 90px -28px rgba(15, 23, 42, .48);
+  }
+  .send-email-modal .modal-header-modern-sticky {
+    box-shadow: 0 1px 0 rgba(15, 23, 42, .07);
+  }
+  .send-email-modal .email-modal-body-modern-scroll {
+    min-width: 0;
+    overflow-x: hidden;
+    background: #f4f7fb;
+  }
+  .send-email-compose {
+    width: 100%;
+    max-width: 760px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+  .send-email-card {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #dce4ee;
+    border-radius: 1.25rem;
+    background: #fff;
+    box-shadow: 0 18px 48px rgba(15, 35, 65, .09), 0 2px 8px rgba(15, 35, 65, .03);
+  }
+  .send-email-compose-banner {
+    padding: 1.6rem 2rem;
+    background-color: #10243b;
+    background-image: radial-gradient(ellipse at 92% 10%, rgba(90, 160, 230, .25), transparent 36%), linear-gradient(115deg, #10243b 0%, #183b61 58%, #24527e 100%);
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+  .send-email-sender {
+    min-width: 0;
+    padding: 1rem 2rem;
+    background: #f7f9fc;
+    border-bottom-color: #e8edf3;
+  }
+  .send-email-fields {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1.75rem 2rem 2rem;
+    display: grid;
+    gap: 1.25rem;
+  }
+  .send-email-modal .send-email-fields {
+    padding: 1.15rem 1.35rem 1.35rem;
+    gap: .9rem;
+  }
+  .send-email-fields > div > div.border-2.border-dashed {
+    padding: 1.35rem;
+  }
+  .send-email-fields > div,
+  .send-email-fields .relative {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .send-email-fields .input {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    min-height: 44px;
+    border-radius: .75rem;
+    border-color: #d7e0eb;
+    background: #fff;
+    padding: .7rem .9rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+  }
+  .send-email-fields textarea.input {
+    min-height: 118px;
+  }
+  .send-email-fields > div > div.flex.flex-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .send-email-fields input.flex-1 {
+    min-width: 120px;
+    max-width: 100%;
+  }
+  .send-email-fields > div > div.flex.flex-wrap > span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .send-email-fields label {
+    margin-bottom: .45rem;
+    letter-spacing: .045em;
+  }
+  .send-email-fields > div > label {
+    color: #34445a;
+    background: #f5f7fa;
+    border-color: #e4e9f0;
+  }
+  .send-email-fields > div:has(> label) {
+    padding: 1rem;
+    border: 1px solid #e8edf3;
+    border-radius: .9rem;
+    background: #fff;
+  }
+  .send-email-fields > div:has(> label) .input,
+  .send-email-fields > div:has(> label) > div.flex.flex-wrap {
+    margin-top: .15rem;
+  }
+  .send-email-fields > div:has(> label) > div.flex.flex-wrap {
+    border-color: #d7e0eb;
+    border-radius: .75rem;
+    padding: .55rem .65rem;
+    min-height: 48px;
+  }
+  .send-email-fields > div:has(> label):focus-within {
+    border-color: #c5d8ed;
+    box-shadow: 0 0 0 3px rgba(49, 107, 168, .07);
+  }
+  .send-email-fields > hr {
+    margin: .2rem 0;
+    border-color: #e8edf3;
+  }
+  .dark .send-email-sender {
+    background: #111a28;
+  }
+  .dark .send-email-fields .input {
+    border-color: #334155;
+    background: #0f1724;
+    color: #e2e8f0;
+  }
+  @media (max-width: 640px) {
+    .send-email-modal {
+      width: calc(100vw - 1rem);
+      max-width: none;
+    }
+    .send-email-modal {
+      max-height: 94vh;
+      border-radius: 1rem;
+    }
+    .send-email-modal > .modal-header-modern-sticky {
+      padding: 1rem 1.1rem;
+    }
+    .send-email-compose-banner,
+    .send-email-sender {
+      padding-left: 1.1rem;
+      padding-right: 1.1rem;
+    }
+    .send-email-fields {
+      padding: 1.1rem;
+    }
+    .send-email-modal .send-email-fields {
+      padding: .9rem;
+    }
+    .send-email-modal .send-email-timeline {
+      margin-left: .9rem;
+      margin-right: .9rem;
+      padding: .8rem;
+    }
+    .send-email-fields > div:has(> label) {
+      padding: .8rem;
+    }
+    .send-email-compose {
+      padding: .5rem;
+    }
+    .send-email-compose-banner {
+      padding: 1rem 1.1rem;
+    }
+  }
   .modal-header {
     background: #0b1728;
     @apply px-6 py-5 border-b border-slate-900/10;
@@ -955,52 +1124,45 @@ html:not(.dark) .app-shell [class~="text-blue-600"] { color: #475569; }
 html:not(.dark) .app-shell [class~="text-blue-700"] { color: #334155; }
 html:not(.dark) .app-shell [class~="border-blue-200"] { border-color: #d8e0dc; }
 
-/* Login — intentionally separate from the application shell */
+/* Login — light corporate entry screen */
 .login-page {
-  color: #e5edf5;
-  background:
-    radial-gradient(circle at 50% -18%, rgba(59, 130, 246, .20), transparent 34rem),
-    linear-gradient(145deg, #0f172a 0%, #111c31 52%, #0b1220 100%);
+  color: #1f2937;
+  background: linear-gradient(145deg, #f5f8fc 0%, #edf2f8 58%, #f8fafc 100%);
 }
 .login-page::before {
   content: '';
   position: absolute;
   inset: 0;
-  opacity: .32;
-  background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-  background-size: 42px 42px;
+  opacity: .45;
+  background-image: radial-gradient(rgba(24,119,242,.10) 1px, transparent 1px);
+  background-size: 26px 26px;
   pointer-events: none;
 }
-.login-glow { position: absolute; border-radius: 999px; filter: blur(20px); pointer-events: none; }
-.login-glow-one { top: -12rem; right: -8rem; width: 30rem; height: 30rem; background: rgba(59, 130, 246, .10); }
-.login-glow-two { bottom: -14rem; left: -9rem; width: 28rem; height: 28rem; background: rgba(30, 64, 175, .08); }
 .login-card {
-  border: 1px solid rgba(255, 255, 255, .12);
-  background: rgba(18, 31, 46, .91);
-  box-shadow: 0 28px 70px -28px rgba(0, 0, 0, .72);
-  backdrop-filter: blur(18px);
+  border: 1px solid #e1e7ec;
+  border-top: 4px solid #1877f2;
+  background: #fff;
+  box-shadow: 0 24px 60px -34px rgba(31, 49, 68, .24), 0 4px 14px rgba(31,49,68,.05);
 }
-.login-logo { display: block; width: 154px; height: auto; filter: brightness(0) invert(1); opacity: .96; }
-.login-badge { color: #fcd59c; background: rgba(245, 119, 11, .12); border: 1px solid rgba(245, 119, 11, .25); }
+.login-badge { color: #42536a; background: #f2f6fc; border: 1px solid #dce7f5; }
 .login-input {
   width: 100%;
   min-height: 48px;
-  color: #f8fafc;
-  border: 1px solid rgba(203, 213, 225, .22);
+  color: #1f2937;
+  border: 1px solid #d7dfe6;
   border-radius: .8rem;
-  background: rgba(255, 255, 255, .06);
+  background: #fff;
   outline: none;
   transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
 }
 .login-input::placeholder { color: #94a3b8; }
-.login-input:hover { border-color: rgba(203, 213, 225, .36); }
-.login-input:focus { border-color: #f59e0b; background: rgba(255, 255, 255, .085); box-shadow: 0 0 0 3px rgba(245, 158, 11, .16); }
-.login-captcha { border: 1px solid rgba(203, 213, 225, .13); background: rgba(2, 8, 23, .26); }
-.login-equation { color: #cce9e4; background: rgba(20, 184, 166, .12); border: 1px solid rgba(45, 212, 191, .22); }
-.login-submit { background: #e98014; box-shadow: 0 10px 22px -12px rgba(249, 115, 22, .85); }
-.login-submit:hover:not(:disabled) { background: #f59126; transform: translateY(-1px); }
-.login-submit:focus-visible { outline: 3px solid rgba(251, 191, 36, .45); outline-offset: 3px; }
+.login-input:hover { border-color: #b8c5d0; }
+.login-input:focus { border-color: #1877f2; background: #fff; box-shadow: 0 0 0 3px rgba(24, 119, 242, .13); }
+.login-captcha { border: 1px solid #e1e7ec; background: #f8fafb; }
+.login-equation { color: #23446d; background: #eef5ff; border: 1px solid #cfe0f7; }
+.login-submit { background: #1877f2; box-shadow: 0 10px 22px -12px rgba(24, 119, 242, .58); }
+.login-submit:hover:not(:disabled) { background: #166fe5; transform: translateY(-1px); }
+.login-submit:focus-visible { outline: 3px solid rgba(24, 119, 242, .25); outline-offset: 3px; }
 @media (max-width: 420px) {
   .login-card { border-radius: 1.25rem !important; }
-  .login-logo { width: 132px; }
 }

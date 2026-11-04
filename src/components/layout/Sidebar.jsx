@@ -118,7 +118,7 @@ export default function Sidebar() {
   const hiddenModules = new Set(settings?.hiddenModules || [])
   const navigate = useNavigate()
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState({})
+  const [collapsed, setCollapsed] = useState(() => Object.fromEntries(SECTIONS.map(section => [section.key, true])))
   const [search, setSearch] = useState('')
   const [flyout, setFlyout] = useState(null)
   const query = search.trim().toLowerCase()
@@ -132,6 +132,13 @@ export default function Sidebar() {
     if (window.innerWidth < 1024) useUIStore.getState().setSidebar(false)
     setFlyout(null)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      setCollapsed(Object.fromEntries(SECTIONS.map(section => [section.key, true])))
+      setFlyout(null)
+    }
+  }, [sidebarOpen])
 
   useEffect(() => {
     if (compact) setSearch('')

@@ -8,7 +8,7 @@ import { useUIStore } from '../store/uiStore'
 
 import { uploadToDrive } from '../lib/gas'
 import { supabase } from '../lib/supabase'
-import { fmtCurrency, getUploadedAt, IT_BUDGETS, COMMS_BUDGETS, AT_BUDGETS, DEFAULT_MODULE_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { fmtCurrency, getInfoTimestamp, getUploadedAt, IT_BUDGETS, COMMS_BUDGETS, AT_BUDGETS, DEFAULT_MODULE_BUDGETS, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate, validateRequired } from '../lib/validation'
 import StatusBadge from '../components/shared/StatusBadge'
@@ -146,6 +146,9 @@ export default function ExpensePage({ type }) {
     if (type === 'comms') refType = 'Comms Expense'
 
     const branchName = String(rec.branch_name || branch.name || rec.uniq_id || '').trim()
+    const branchLabel = branchCode && !branchName.toUpperCase().startsWith(`${branchCode}-`)
+      ? `${branchCode}-${branchName}`
+      : branchName
     const categoryText = String(rec.category || '').trim()
     const itemName = String(rec.item_name || rec.description || refType).trim()
     const itemDetail = categoryText
@@ -155,10 +158,28 @@ export default function ExpensePage({ type }) {
 
     useUIStore.getState().openSendEmailModal({
       to: operationEmail ? [operationEmail] : [],
-      subject: `${branchCode}-${branchName} -${requestText}`,
+      subject: `${branchLabel} | -${requestText}`,
+      messageBody: `Good day ${rec.staff_name || branchName || "Ma'am/Sir"},\n\nThis is an update about your ${refType.toLowerCase()}. Please see the details and processing timeline below.`,
       refId: rec.uniq_id,
       refType: refType,
       fileId: rec.file_id || '',
+      emailDetails: {
+        title: `${refType} details`,
+        reference: rec.uniq_id,
+        status: rec.status || 'Pending',
+        rows: [
+          ['Reference', rec.uniq_id], ['Status', rec.status || 'Pending'],
+          ['Beneficiary', rec.staff_name || rec.requested_by || ''], ['Branch', branchLabel],
+          ['Account Title', rec.account_title || rec.category || ''],
+          ['Description', rec.description || rec.item_name || ''],
+          ['Amount', rec.amount !== null && rec.amount !== undefined ? fmtCurrency(rec.amount) : ''],
+        ].filter(([, value]) => value !== null && value !== undefined && value !== ''),
+        timelineTitle: `${refType} timeline`,
+        timeline: [
+          rec.created_at && { label: 'Encoded by Operations Finance', at: rec.created_at, description: 'Request details were entered and submitted for checking.' },
+          rec.ops_info && { label: ['Checked', 'Forwarded to OPS Planning'].includes(rec.status) ? 'Checked by Operations Finance' : rec.status, at: getInfoTimestamp(rec.ops_info), description: 'The request was reviewed by Operations Finance.' },
+        ].filter(Boolean),
+      },
     })
   }
 
@@ -175,6 +196,7 @@ export default function ExpensePage({ type }) {
 
     let refType = 'IT Expense'
     if (type === 'at') refType = 'Aircon/Toilet Maintenance'
+    if (type === 'generator') refType = 'Generator Expense'
     if (type === 'comms') refType = 'Comms Expense'
 
     useUIStore.getState().openSendEmailModal({
@@ -182,6 +204,11 @@ export default function ExpensePage({ type }) {
       subject: `${refType} Batch (Checked - ${eligible.length} items)`,
       refId: eligible.map(r => r.uniq_id).join(','),
       refType: `${refType} Batch`,
+      allowNoAttachment: true,
+      emailDetails: {
+        title: `${refType} batch details`, reference: `${eligible.length} records`, status: 'Checked',
+        rows: eligible.map((record, index) => [`${index + 1}. ${record.branch_name || record.branch_code || 'Expense'}`, `${record.item_name || record.description || record.category || ''} — ${fmtCurrency(record.amount)}`]),
+      },
     })
   }
 

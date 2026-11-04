@@ -24,7 +24,7 @@ import { branchCodesMatch, getBranchCodeAliases, useBranches, useBranchMap, useB
 import { useStaff } from '../hooks/useStaff'
 import { useEmployeeList } from '../hooks/useEmployeeList'
 import { syncRequestTrackerToGoogleSheet, uploadToDrive } from '../lib/gas'
-import { fmtCurrency, getDriveViewUrl, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
+import { fmtCurrency, getDriveViewUrl, getInfoTimestamp, getUploadedAt, ROWS_PER_PAGE, sortByLatest } from '../lib/utils'
 import { sanitizeInfoHtml } from '../lib/security'
 import { validateAmount, validateDate, validateRequired } from '../lib/validation'
 import { downloadCSV } from '../lib/csv'
@@ -51,6 +51,11 @@ const toCSVText = (value) => {
   element.innerHTML = String(value)
   return (element.textContent || element.innerText || String(value)).replace(/\s+/g, ' ').trim()
 }
+
+const timelineActor = (value) => toCSVText(value)
+  .replace(/\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4},?\s+\d{1,2}:\d{2}\s*(?:AM|PM)\b/i, '')
+  .replace(/\s+/g, ' ')
+  .trim()
 
 const formatCSVDateTime = (date) => {
   if (!date) return ''
@@ -411,12 +416,66 @@ export default function Requests() {
 
   const handleSendEmail = (rec) => {
     const receiverEmail = resolveRequestEmail(rec)
+    const requestTimeline = [
+      {
+        label: 'Date Received',
+        by: rec.uploader || timelineActor(rec.uploader_info),
+        at: getInfoTimestamp(rec.uploader_info) || rec.created_at,
+        description: 'Request details were entered and submitted for checking.',
+      },
+      rec.created_at && {
+        label: 'Encoded in the Portal',
+        by: rec.uploader || timelineActor(rec.uploader_info),
+        at: rec.created_at,
+        description: 'This request was recorded in the portal.',
+      },
+      rec.ops_info && {
+        label: rec.status === 'Forwarded to OPS Planning'
+          ? 'Forwarded to OPS Planning'
+          : 'Checked and Recommended by OPs Finance',
+        by: timelineActor(rec.ops_info),
+        at: getInfoTimestamp(rec.ops_info),
+        description: rec.status === 'Forwarded to OPS Planning'
+          ? 'The request was forwarded to OPS Planning for processing.'
+          : 'The request was checked and recommended by OPs Finance.',
+      },
+      rec.fin_info && {
+        label: 'Checked by Corporate Finance',
+        by: timelineActor(rec.fin_info),
+        at: getInfoTimestamp(rec.fin_info),
+        description: 'The request was reviewed by Corporate Finance.',
+      },
+    ].filter(Boolean)
+
     useUIStore.getState().openSendEmailModal({
       to: receiverEmail ? [receiverEmail] : [],
       subject: buildRequestEmailSubject(rec),
+      messageBody: `Good day ${rec.beneficiary || "Ma'am/Sir"},\n\nThis is an update about your request letter. Please see the request details and processing timeline below.`,
       refId: rec.req_id,
       refType: 'Request Letter',
       fileId: rec.file_id || '',
+      requestDetails: {
+        reference: rec.req_id,
+        status: normalizeRequestStatus(rec.status),
+        type: rec.type,
+        beneficiary: rec.beneficiary,
+        dateReceived: (() => {
+          const receivedAt = getInfoTimestamp(rec.uploader_info) || (rec.created_at ? new Date(rec.created_at) : null)
+          return receivedAt && !Number.isNaN(receivedAt.getTime())
+            ? receivedAt.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+            : ''
+        })(),
+        dateEncoded: rec.created_at
+          ? new Date(rec.created_at).toLocaleString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : '',
+        date: rec.date_req
+          ? new Date(`${rec.date_req}T00:00:00`).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+          : '',
+        title: rec.title,
+        description: rec.description,
+        amount: rec.amount !== null && rec.amount !== undefined ? fmtCurrency(rec.amount) : '',
+        timeline: requestTimeline,
+      },
     })
   }
 
@@ -431,6 +490,14 @@ export default function Requests() {
       subject: `Checked Request Letters Batch (${eligible.length} items)`,
       refId: eligible.map(r => r.req_id).join(','),
       refType: 'Request Letter Batch',
+      allowNoAttachment: true,
+      emailDetails: {
+        title: 'Request Letter batch details', reference: `${eligible.length} records`, status: 'Checked',
+        rows: eligible.map((record, index) => [
+          `${index + 1}. ${record.req_id || record.beneficiary || 'Request'}`,
+          `${record.beneficiary || ''} · ${record.title || ''} · ${fmtCurrency(record.amount)}`,
+        ]),
+      },
     })
   }
 

@@ -72,6 +72,17 @@ export default function Sbar() {
       refId: rec.uniq_id,
       refType: 'SBAR',
       fileId: rec.file_id || '',
+      emailDetails: {
+        title: 'SBAR details', reference: rec.uniq_id, status: rec.status || 'Pending',
+        rows: [
+          ['Reference', rec.uniq_id], ['Status', rec.status || 'Pending'], ['Type', rec.type || 'SBAR'],
+          ['Giver', rec.giver || ''], ['Receiver', rec.receiver || ''], ['Date', rec.date || ''],
+          ['Description', rec.description || ''], ['Amount', rec.amount !== null && rec.amount !== undefined ? fmtCurrency(rec.amount) : ''],
+          ['Remarks', rec.remarks || ''],
+        ].filter(([, value]) => value !== null && value !== undefined && value !== ''),
+        timelineTitle: 'SBAR timeline',
+        timeline: [rec.created_at && { label: 'Encoded by Operations Finance', at: rec.created_at, description: 'SBAR details were entered and submitted for review.' }].filter(Boolean),
+      },
     })
   }
 
@@ -91,6 +102,11 @@ export default function Sbar() {
       subject: `Approved SBAR / Budget Transfer Batch (${eligible.length} items)`,
       refId: eligible.map(r => r.uniq_id).join(','),
       refType: 'SBAR Batch',
+      allowNoAttachment: true,
+      emailDetails: {
+        title: 'SBAR batch details', reference: `${eligible.length} records`, status: 'Approved',
+        rows: eligible.map((record, index) => [`${index + 1}. ${record.uniq_id || 'SBAR'}`, `${record.giver || ''} → ${record.receiver || ''} · ${fmtCurrency(record.amount)}`]),
+      },
     })
   }
 

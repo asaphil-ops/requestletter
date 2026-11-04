@@ -315,6 +315,14 @@ export default function CostCenterPage({ type }) {
       subject: `${config.title} - Batch Release`,
       refId: [...selectedIds].join(','),
       refType: config.title,
+      allowNoAttachment: true,
+      emailDetails: {
+        title: `${config.title} batch details`, reference: `${eligible.length} records`, status: 'Checked',
+        rows: eligible.map((record, index) => [
+          `${index + 1}. ${record.staff_name || record.cost_center || record.account_title || 'Cost center'}`,
+          `${record.account_title || record.particular || ''} · ${fmtCurrency(record.amount)}`,
+        ]),
+      },
     })
   }
 
@@ -326,9 +334,21 @@ export default function CostCenterPage({ type }) {
     useUIStore.getState().openSendEmailModal({
       to: recipientEmail ? [recipientEmail] : [],
       subject,
+      messageBody: `Good day ${record.staff_name || "Ma'am/Sir"},\n\nThis is an update about your ${config.title.toLowerCase()}. Please see the details and processing timeline below.`,
       refId: record.uniq_id,
       refType: config.title,
       fileId: record.file_id || '',
+      emailDetails: {
+        title: `${config.title} details`,
+        reference: record.uniq_id,
+        status: record.status || 'Pending',
+        rows: [
+          ['Reference', record.uniq_id], ['Status', record.status || 'Pending'],
+          ...config.columns.map(([key, label]) => [label, key === 'amount' ? fmtCurrency(record[key]) : record[key]]),
+        ].filter(([, value]) => value !== null && value !== undefined && value !== ''),
+        timelineTitle: `${config.title} timeline`,
+        timeline: [record.created_at && { label: 'Encoded by Operations Finance', at: record.created_at, description: 'Record details were entered in the portal.' }].filter(Boolean),
+      },
     })
   }
 

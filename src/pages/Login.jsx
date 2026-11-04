@@ -60,39 +60,37 @@ export default function Login() {
 
   return (
     <main className="login-page relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
-      <div aria-hidden="true" className="login-glow login-glow-one" />
-      <div aria-hidden="true" className="login-glow login-glow-two" />
       <div className="relative z-10 w-full max-w-[440px]">
-        <section className="login-card rounded-[28px] px-6 py-8 sm:px-9 sm:py-10">
+        <section className="login-card rounded-[24px] px-6 py-8 sm:px-9 sm:py-9">
           <div className="login-heading mb-8">
             <div className="login-badge mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wide">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />STAFF ACCESS
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1877f2]" />STAFF ACCESS
             </div>
-            <h1 className="text-[30px] font-bold leading-tight tracking-tight text-white">Welcome back</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-300">Enter your account details to continue.</p>
+            <h1 className="text-[30px] font-bold leading-tight tracking-tight text-slate-900">Welcome back</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Enter your account details to continue.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label htmlFor="login-username" className="mb-2 block text-sm font-semibold text-slate-200">Username or email</label>
+              <label htmlFor="login-username" className="mb-2 block text-sm font-semibold text-slate-700">Username or email</label>
               <div className="relative">
-                <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-300" aria-hidden="true" />
+                <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400" aria-hidden="true" />
                 <input id="login-username" type="text" autoComplete="username" className="login-input pl-11" placeholder="Enter username or email" value={username} onChange={(event) => setUsername(event.target.value)} autoFocus required />
               </div>
             </div>
             <div>
-              <label htmlFor="login-password" className="mb-2 block text-sm font-semibold text-slate-200">Password</label>
+              <label htmlFor="login-password" className="mb-2 block text-sm font-semibold text-slate-700">Password</label>
               <div className="relative">
-                <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-300" aria-hidden="true" />
+                <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400" aria-hidden="true" />
                 <input id="login-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" className="login-input pl-11 pr-12" placeholder="Enter your password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-                <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-300 hover:text-white" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 hover:text-slate-800" aria-label={showPassword ? 'Hide password' : 'Show password'}>
                   <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} aria-hidden="true" />
                 </button>
               </div>
             </div>
             <div className="login-captcha rounded-2xl p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <label htmlFor="login-captcha" className="text-sm font-semibold text-slate-100">Security check</label>
-                <button type="button" onClick={refreshChallenge} className="text-xs font-semibold text-orange-300 hover:text-white" aria-label="Get a new verification question">
+                <label htmlFor="login-captcha" className="text-sm font-semibold text-slate-700">Security check</label>
+                <button type="button" onClick={refreshChallenge} className="text-xs font-semibold text-orange-700 hover:text-orange-900" aria-label="Get a new verification question">
                   <i className="fas fa-rotate-right mr-1" aria-hidden="true" />New question
                 </button>
               </div>

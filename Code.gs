@@ -134,11 +134,24 @@ function handleSendEmail(data) {
     to: data.to,
     subject: data.subject || 'OPs Finance Notification',
     htmlBody: data.htmlBody || '',
-    name: data.senderName || 'OPs Finance Portal',
+    name: 'Operations Finance',
     replyTo: data.senderEmail || ''
   };
 
   if (data.cc && data.cc.trim()) opts.cc = data.cc.trim();
+
+  // Inline branding images travel with the message, so recipients do not
+  // depend on an externally hosted logo URL being available.
+  if (data.inlineImages && data.inlineImages.opsFinLogo) {
+    const logo = data.inlineImages.opsFinLogo;
+    opts.inlineImages = {
+      opsFinLogo: Utilities.newBlob(
+        Utilities.base64Decode(logo.base64),
+        logo.mimeType || 'image/png',
+        logo.fileName || 'ops-fin-logo.png'
+      )
+    };
+  }
 
   // Handle multiple file attachments (base64 array)
   if (data.attachments && data.attachments.length > 0) {

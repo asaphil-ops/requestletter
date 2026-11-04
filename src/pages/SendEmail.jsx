@@ -11,18 +11,26 @@ import Swal from 'sweetalert2'
 
 const DEFAULT_NOTE = 'NOTE: FOR VP/SVP APPROVAL'
 
+const standardizeGreeting = (body, fallback = '') => {
+  const content = String(body || fallback || '')
+    .replace(/^\s*Good day[^\r\n]*(?:\r?\n)?/i, '')
+    .trimStart()
+  return `Good day Ma'am/Sir,\n\n${content}`
+}
+
 const EMAIL_REF_TABLES = [
   { match: /^Request Letter/i, table: 'requests', key: 'req_id' },
   { match: /^SBAR/i, table: 'sbar', key: 'uniq_id' },
   { match: /^IT Expense/i, table: 'it_expenses', key: 'uniq_id' },
   { match: /^Aircon\/Toilet/i, table: 'at_expenses', key: 'uniq_id' },
+  { match: /^Generator Expense/i, table: 'generator_expenses', key: 'uniq_id' },
   { match: /^Comms Expense/i, table: 'comms_expenses', key: 'uniq_id' },
   { match: /^Initiatives Monthly Expenses/i, table: 'cost_center_initiatives', key: 'uniq_id' },
   { match: /^CFOO Per Staff Monthly Expense/i, table: 'cost_center_cfoo', key: 'uniq_id' },
   { match: /^Other Cost Center Monthly Expenses/i, table: 'cost_center_other', key: 'uniq_id' },
 ]
 
-const TagInput = React.memo(({ tags, input, setInput, setSuggQuery, setShowSugg, suggTimeoutRef, handleKeyDown, field, placeholder, onFocus, onBlur, onRemove, inputRef }) => (
+const TagInput = React.memo(({ tags, input, setInput, setSuggQuery, setShowSugg, handleKeyDown, field, placeholder, onFocus, onBlur, onRemove, inputRef }) => (
   <div
     className="flex flex-wrap gap-1.5 p-2 border border-gray-200 dark:border-gray-700 rounded-lg min-h-[42px] cursor-text bg-white dark:bg-gray-900"
     onClick={() => inputRef.current?.focus()}
@@ -44,10 +52,7 @@ const TagInput = React.memo(({ tags, input, setInput, setSuggQuery, setShowSugg,
         const val = e.target.value
         setInput(val)
         setSuggQuery(val)
-        if (suggTimeoutRef.current) clearTimeout(suggTimeoutRef.current)
-        suggTimeoutRef.current = setTimeout(() => {
-          setShowSugg(val ? field : null)
-        }, 80)
+        setShowSugg(val ? field : null)
       }}
       onKeyDown={e => handleKeyDown(e, field)}
       onFocus={onFocus}
@@ -84,7 +89,12 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const { data: employeeList = [] } = useEmployeeList()
   const SENDER_EMAIL = 'operation.budgetmanagement@asaphil.org'
   const initDraft = draft ?? location.state?.draft ?? {}
-  const defaultMessageBody = "Good day, Ma'am/Sir,\n\nKindly see the attached File/s"
+  const isRequestLetter = /^Request Letter/i.test(initDraft.refType || '')
+  const emailTitle = 'Request Letter'
+  const defaultNote = DEFAULT_NOTE
+  const defaultMessageBody = isRequestLetter
+    ? "Good day Ma'am/Sir,\n\nPlease see the attached Request Letter for your review and appropriate action."
+    : "Good day Ma'am/Sir,\n\nKindly see the attached File/s"
 
   // Build employee lookup: email -> employee name
   const employeeNameMap = useMemo(() => {
@@ -103,7 +113,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const [ccInput, setCcInput] = useState('')
   const [subject, setSubject] = useState('')
   const [messageBody, setMessageBody] = useState(defaultMessageBody)
-  const [note, setNote] = useState(DEFAULT_NOTE)
+  const [note, setNote] = useState(defaultNote)
   const [attachments, setAttachments] = useState([])
   const [driveAttachment, setDriveAttachment] = useState(null)
   const [previewFile, setPreviewFile] = useState(null)
@@ -116,7 +126,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const suggRef = useRef(null)
   const fileInputRef = useRef(null)
   const blurTimeoutRef = useRef(null)
-  const suggTimeoutRef = useRef(null)
   const toInputRef = useRef(null)
   const ccInputRef = useRef(null)
   const toContainerRef = useRef(null)
@@ -131,10 +140,18 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     return [...new Set(emails)]
   }, [branchEmailMap, employeeList])
 
-  const filteredSugg = useMemo(() => allEmails.filter(e =>
-    e.toLowerCase().includes(suggQuery.toLowerCase()) &&
-    !toTags.includes(e) && !ccTags.includes(e)
-  ).slice(0, 8), [allEmails, suggQuery, toTags, ccTags])
+  const filteredSugg = useMemo(() => {
+    const query = suggQuery.trim().toLowerCase()
+    const excluded = new Set([...toTags, ...ccTags])
+    const matches = []
+    for (const email of allEmails) {
+      if (!excluded.has(email) && email.toLowerCase().includes(query)) {
+        matches.push(email)
+        if (matches.length === 8) break
+      }
+    }
+    return matches
+  }, [allEmails, suggQuery, toTags, ccTags])
 
   useEffect(() => {
     const fn = (e) => {
@@ -157,8 +174,8 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setToInput('')
     setCcInput('')
     setSubject(d.subject || (d.fileName ? `Request Letter - ${d.fileName}` : ''))
-    setMessageBody(d.messageBody || defaultMessageBody)
-    setNote(d.note || DEFAULT_NOTE)
+    setMessageBody(standardizeGreeting(d.messageBody, defaultMessageBody))
+    setNote(d.note && d.note !== DEFAULT_NOTE ? d.note : defaultNote)
     setDriveAttachment(null)
 
     if (d.fileId) {
@@ -219,20 +236,33 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     if (e.key === 'Escape') setShowSugg(null)
   }, [toInput, ccInput, addTag])
 
-  const handleFiles = (files) => {
-    Array.from(files).forEach(file => {
+  const handleFiles = async (fileList) => {
+    const files = Array.from(fileList || [])
+    const seen = new Set(attachments.map(a => a.name))
+    const accepted = []
+    for (const file of files) {
       if (file.size > 20 * 1024 * 1024) {
         Swal.fire('Too large', `${file.name} exceeds 20MB`, 'warning')
-        return
+        continue
       }
-      if (attachments.find(a => a.name === file.name)) return
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setAttachments(prev => [...prev, { file, name: file.name, size: file.size, mimeType: file.type, base64: e.target.result.split(',')[1] }])
-      }
-      reader.readAsDataURL(file)
-    })
-    if (!subject && files[0]) setSubject(files[0].name.replace(/\.[^/.]+$/, ''))
+      if (seen.has(file.name)) continue
+      seen.add(file.name)
+      accepted.push(file)
+    }
+    if (!subject && accepted[0]) setSubject(accepted[0].name.replace(/\.[^/.]+$/, ''))
+    for (const file of accepted) {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result).split(',')[1])
+        reader.onerror = () => reject(new Error(`Could not read ${file.name}.`))
+        reader.onabort = () => reject(new Error(`Reading ${file.name} was cancelled.`))
+        reader.readAsDataURL(file)
+      }).catch(error => {
+        console.error(error)
+        return null
+      })
+      if (base64) setAttachments(prev => [...prev, { file, name: file.name, size: file.size, mimeType: file.type, base64 }])
+    }
   }
 
   const handleDrop = (e) => {
@@ -242,21 +272,50 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   }
 
   const handleSend = async () => {
-    if (toInput.trim()) addTag(toInput, 'to')
-    if (ccInput.trim()) addTag(ccInput, 'cc')
-    if (!toTags.length && !toInput.trim()) return Swal.fire('Error', 'Add at least one recipient', 'error')
+    const parseEmails = (values, pending) => [...new Set([...values, ...pending.split(/[;,\s]+/)].map(value => value.trim()).filter(Boolean))]
+    const recipients = parseEmails(toTags, toInput)
+    const ccRecipients = parseEmails(ccTags, ccInput)
+    if (!recipients.length) return Swal.fire('Error', 'Add at least one recipient', 'error')
+    if (recipients.some(email => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) || ccRecipients.some(email => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+      return Swal.fire('Invalid email', 'Check the To and CC email addresses and try again.', 'error')
+    }
     if (!subject.trim()) return Swal.fire('Error', 'Enter a subject', 'error')
-    if (!attachments.length && !driveAttachment?.fileId) return Swal.fire('Error', 'Attach at least one file', 'error')
+    if (initDraft.allowNoAttachment !== true && !attachments.length && !driveAttachment?.fileId) return Swal.fire('Error', 'Attach at least one file', 'error')
     const unread = attachments.filter(a => !a.base64)
     if (unread.length) return Swal.fire('Wait', 'Files still loading, please try again', 'info')
 
     setSending(true)
     let sentSuccessfully = false
     try {
-      const to = toTags.join(', ')
-      const cc = ccTags.join(', ')
+      const to = recipients.join(', ')
+      const cc = ccRecipients.join(', ')
       const emailAttachments = driveAttachment ? [driveAttachment, ...attachments] : attachments
-      const htmlBody = buildEmailHTML({ subject, senderName: user?.full_name, senderEmail: SENDER_EMAIL, note, messageBody, attachments: emailAttachments })
+      const originalTimeline = initDraft.emailDetails?.timeline || initDraft.requestDetails?.timeline || []
+      const receivedEvent = originalTimeline.find(event => /received|encoded|submitted/i.test(event.label || '')) || originalTimeline[0]
+      const reviewedEvent = originalTimeline.find(event => /checked|recommended|forwarded|approved/i.test(event.label || '')) || originalTimeline[1]
+      const sentAt = new Date()
+      const emailTimeline = [
+        {
+          label: 'Request received',
+          at: receivedEvent?.at || initDraft.requestDetails?.dateReceived || initDraft.requestDetails?.date || null,
+          description: 'The request was received and recorded for processing.',
+        },
+        {
+          label: 'Checked and Recommended',
+          at: reviewedEvent?.at || null,
+          description: 'The request was reviewed and recommended.',
+        },
+        {
+          label: 'Sent to VP/SVP for Approval',
+          at: sentAt,
+          description: 'The email and request attachment were sent for approval.',
+        },
+      ]
+      const timelineDraft = initDraft.emailDetails
+        ? { emailDetails: { ...initDraft.emailDetails, timeline: emailTimeline } }
+        : { requestDetails: { ...(initDraft.requestDetails || {}), timeline: emailTimeline } }
+      const emailBody = standardizeGreeting(messageBody, defaultMessageBody)
+      const htmlBody = buildEmailHTML({ subject, senderName: user?.full_name, senderEmail: SENDER_EMAIL, note, messageBody: emailBody, attachments: emailAttachments, requestDetails: timelineDraft.requestDetails || initDraft.requestDetails, emailDetails: timelineDraft.emailDetails || initDraft.emailDetails, emailTitle })
       const attData = attachments.map(a => ({ base64: a.base64, mimeType: a.mimeType, fileName: a.name }))
 
       await sendEmail({
@@ -264,7 +323,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         cc,
         subject,
         htmlBody,
-        senderName: user?.full_name,
+        senderName: 'Operations Finance',
         senderEmail: SENDER_EMAIL,
         attachments: attData,
         fileId: driveAttachment?.fileId,
@@ -291,7 +350,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
       setCcTags([])
       setSubject('')
       setMessageBody(defaultMessageBody)
-      setNote(DEFAULT_NOTE)
+      setNote(defaultNote)
       setAttachments([])
       setDriveAttachment(null)
       setPreviewFile(null)
@@ -312,7 +371,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
     setCcInput('')
     setSubject('')
     setMessageBody(defaultMessageBody)
-    setNote(DEFAULT_NOTE)
+    setNote(defaultNote)
     setAttachments([])
     setDriveAttachment(null)
     setPreviewFile(null)
@@ -321,6 +380,22 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
 
   const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
   const initial = user?.full_name?.charAt(0).toUpperCase() || 'U'
+  const sourceTimeline = initDraft.emailDetails?.timeline || initDraft.requestDetails?.timeline || []
+  const receivedEvent = sourceTimeline.find(event => /received|encoded|submitted/i.test(event.label || '')) || sourceTimeline[0]
+  const checkedEvent = sourceTimeline.find(event => /checked|recommended|forwarded|approved/i.test(event.label || '')) || sourceTimeline[1]
+  const formatTimelineDate = value => {
+    if (!value) return 'Date not recorded'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return String(value)
+    return date.toLocaleString('en-PH', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Manila',
+    })
+  }
+  const composeTimeline = [
+    { label: 'Request received', event: receivedEvent, fallback: initDraft.requestDetails?.dateReceived || initDraft.requestDetails?.date || null },
+        { label: 'Checked and Recommended', event: checkedEvent, fallback: null },
+    { label: 'Sent to VP/SVP for Approval', event: null, pending: true },
+  ]
 
   return (
     <div className={embedded ? 'bg-white p-5 text-gray-900' : ''}>
@@ -354,18 +429,21 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 max-w-3xl mx-auto">
+      <div className={embedded ? 'send-email-compose' : 'grid grid-cols-1 gap-5 max-w-3xl mx-auto'}>
         <div>
-          <div className="card overflow-hidden">
-            <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 px-6 py-5">
+          <div className="send-email-card card overflow-hidden">
+            <div className="send-email-compose-banner relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 px-6 py-5">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.15),_transparent_50%)]" />
               <div className="relative flex items-center justify-between">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 text-white/80 text-[11px] font-semibold uppercase tracking-wider mb-2.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    New Message
+                  <div className="mb-3 inline-flex items-center gap-3">
+                    <img src="/ops-fin-logo.svg" alt="OPS-FIN Operations Finance" className="h-9 w-auto rounded-md bg-white px-2 py-1" />
+                    <span className="rounded-md bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/75">
+                    {emailTitle}
+                    </span>
                   </div>
-                  <div className="text-white font-bold text-lg tracking-tight">Compose Email</div>
+                  <div className="text-white font-bold text-lg tracking-tight">{emailTitle}</div>
+                  <div className="mt-1 text-xs text-blue-100/75">{subject || 'Compose your message and review the details below'}</div>
                 </div>
                 <div className="hidden sm:flex items-center gap-2 text-white/40 text-xs">
                   <i className="fas fa-shield-alt" />
@@ -374,7 +452,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50">
+            <div className="send-email-sender flex items-center gap-3 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50">
               <div className="relative">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/30 flex-shrink-0">
                   {initial}
@@ -390,7 +468,27 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               </span>
             </div>
 
-            <div className="p-5 space-y-4">
+            <section className="send-email-timeline mx-5 mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4" aria-label="Email timeline preview">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="text-sm font-bold text-slate-800">Processing timeline</div>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">3 steps</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                {composeTimeline.map((step, index) => (
+                  <div key={step.label} className={`min-w-0 rounded-lg border bg-white px-3 py-2.5 ${step.pending ? 'border-dashed border-blue-200' : 'border-slate-200'}`}>
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${step.pending ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-700'}`}>{index + 1}</span>
+                      <span className="text-[11px] font-semibold leading-snug text-slate-800">{step.label}</span>
+                    </div>
+                    <div className={`pl-8 text-[11px] leading-snug ${step.pending ? 'font-medium text-blue-600' : 'text-[#d33155]'}`}>
+                      {step.pending ? 'Upon sending' : formatTimelineDate(step.event?.at || step.fallback)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <div className="send-email-fields p-5 space-y-4">
               <div className="relative group">
                 <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-gray-200 dark:border-gray-700">
                   <i className="fas fa-user text-[9px] text-gray-400" />
@@ -402,7 +500,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   setInput={setToInput}
                   setSuggQuery={setSuggQuery}
                   setShowSugg={setShowSugg}
-                  suggTimeoutRef={suggTimeoutRef}
                   handleKeyDown={handleKeyDown}
                   field="to"
                   placeholder="recipient@asaphil.org"
@@ -455,7 +552,6 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
                   setInput={setCcInput}
                   setSuggQuery={setSuggQuery}
                   setShowSugg={setShowSugg}
-                  suggTimeoutRef={suggTimeoutRef}
                   handleKeyDown={handleKeyDown}
                   field="cc"
                   placeholder="cc@asaphil.org (optional)"
@@ -510,7 +606,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
               <div>
                 <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-amber-200 dark:border-amber-700/50">
                   <i className="fas fa-sticky-note text-[9px]" />
-                  Note
+                  Remark
                 </label>
                 <textarea
                   className="input resize-none bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-700/50 focus:border-amber-500 focus:ring-amber-500/20 transition-colors"
