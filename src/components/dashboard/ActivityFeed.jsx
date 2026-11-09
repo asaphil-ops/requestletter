@@ -63,14 +63,14 @@ export default function ActivityFeed({ combined = [] }) {
                 <div className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-2">
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 font-semibold uppercase tracking-wide">{meta.label}</span>
                   {r.status && <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                    r.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                    r.status === 'Checked' || r.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
-                    r.status === 'Rejected' ? 'bg-red-100 text-red-700' :
-                    'bg-gray-100 text-gray-600'
+                    r.status === 'Pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300' :
+                    r.status === 'Checked' || r.status === 'Approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300' :
+                    r.status === 'Rejected' ? 'bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300' :
+                    'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300'
                   }`}>{r.status}</span>}
                 </div>
               </div>
-              <div className="text-[10px] text-gray-400 dark:text-slate-500 flex-shrink-0">{timeAgo(r.date)}</div>
+              <div className="text-[10px] font-medium text-gray-400 dark:text-slate-500 flex-shrink-0 tabular-nums">{timeAgo(r.date)}</div>
             </button>
           )
         })}

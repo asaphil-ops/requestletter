@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react'
-import { BarChart3, CalendarDays, ChevronDown, FilePlus2, Mail, UploadCloud } from 'lucide-react'
+import { BarChart3, CalendarDays, ChevronDown, FilePlus2, Mail, UploadCloud, Wallet, Clock, CheckCircle2, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useDashboard } from '../hooks/useDashboard'
 import { useStaff } from '../hooks/useStaff'
+import { useSettings } from '../hooks/useAccounts'
 import { branchCodesMatch, useBranchMap, useBranchOptions, useBranches } from '../hooks/useBranches'
+import { fmtCurrency } from '../lib/utils'
 import StatCards from '../components/dashboard/StatCards'
-import { TrendChart, CategoryChart, StackedWeekChart } from '../components/dashboard/Charts'
+import { TrendChart, CategoryChart, StackedWeekChart, PendingAgingCard, TopBranchesCard, BudgetSnapshotCard } from '../components/dashboard/Charts'
 import Insights from '../components/dashboard/Insights'
 import ActivityFeed from '../components/dashboard/ActivityFeed'
 import { PageLoader } from '../components/shared/Loader'
@@ -21,6 +23,7 @@ export default function Dashboard() {
   const { data: dash, isLoading } = useDashboard()
   const { data: staff = [] } = useStaff()
   const { data: branches = [] } = useBranches()
+  const { data: settings } = useSettings()
   const branchOptions = useBranchOptions()
   const branchMap = useBranchMap()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
@@ -84,7 +87,7 @@ export default function Dashboard() {
   }, [staff])
 
   const getRecordBranchCode = (record = {}) => {
-    if (['it','at','comms'].includes(record._type)) return String(record.branch_code || '').trim().toUpperCase()
+    if (['it', 'at', 'generator', 'comms'].includes(record._type)) return String(record.branch_code || '').trim().toUpperCase()
     if (record._type === 'req') {
       const beneficiary = String(record.beneficiary || '').trim()
       const branchCode = beneficiary.match(/^([A-Z0-9]+)\s*-/i)?.[1]
@@ -117,8 +120,8 @@ export default function Dashboard() {
       if (filters.dateStart && filters.dateEnd) {
         try {
           const d = new Date(r.date || r.date_req || r.created_at)
-          const s = new Date(filters.dateStart); s.setHours(0,0,0,0)
-          const e = new Date(filters.dateEnd);   e.setHours(23,59,59,999)
+          const s = new Date(filters.dateStart); s.setHours(0, 0, 0, 0)
+          const e = new Date(filters.dateEnd);   e.setHours(23, 59, 59, 999)
           if (d < s || d > e) return false
         } catch {}
       }
@@ -153,6 +156,19 @@ export default function Dashboard() {
     }
   }, [combined, filteredStaffCount, dash])
 
+  const financialStats = useMemo(() => {
+    const sumAmt = (arr) => arr.reduce((sum, r) => sum + Number(r.amount || 0), 0)
+    const checkedRows = combined.filter(r => r.status === 'Checked')
+    const pendingRows = combined.filter(r => r.status === 'Pending')
+    const totalAmt = sumAmt(combined)
+    const checkedAmt = sumAmt(checkedRows)
+    const pendingAmt = sumAmt(pendingRows)
+    const avgAmt = combined.length > 0 ? totalAmt / combined.length : 0
+    const completionRate = combined.length > 0 ? Math.round((checkedRows.length / combined.length) * 100) : 0
+
+    return { totalAmt, checkedAmt, pendingAmt, avgAmt, completionRate }
+  }, [combined])
+
   const today = new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   const selectOptions = (items) => items.map(item => ({ value: item, label: item }))
   const openDashboardReport = (key) => {
@@ -170,7 +186,7 @@ export default function Dashboard() {
         className="dashboard-hero"
         eyebrow="Operations overview"
         title={`Good day, ${user?.full_name?.split(',')[0] || 'Team'}`}
-        subtitle="Monitor requests, checked entries, and operational activity in one place."
+        subtitle="Monitor requests, financial volume, budget utilization, and operational activity in one place."
         icon={<BarChart3 size={21} strokeWidth={2.2} />}
         actions={<span className="dashboard-date text-sm font-semibold"><CalendarDays size={15} />{today}</span>}
       />
@@ -204,7 +220,8 @@ export default function Dashboard() {
               <option value="req">Request Letter</option>
               <option value="sbar">SBAR</option>
               <option value="it">IT Expenses</option>
-              <option value="at">Aircon & Toilet</option>
+              <option value="at">Aircon &amp; Toilet</option>
+              <option value="generator">Generator</option>
               <option value="comms">Comms</option>
             </select>
           </div>
@@ -225,23 +242,86 @@ export default function Dashboard() {
       {/* Stat Cards */}
       <StatCards data={statsData} onCardClick={openDashboardReport} />
 
-      {/* Charts Row 1 + Activity Feed */}
+      {/* Financial Volume Summary Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+        <div className="card p-4 flex items-center gap-3.5 border-l-4 border-l-emerald-500">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+            <CheckCircle2 size={20} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Checked Volume (₱)</div>
+            <div className="mt-0.5 text-xl font-extrabold text-slate-900 dark:text-white tabular-nums truncate">{fmtCurrency(financialStats.checkedAmt)}</div>
+            <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">{financialStats.completionRate}% completion rate</div>
+          </div>
+        </div>
+
+        <div className="card p-4 flex items-center gap-3.5 border-l-4 border-l-amber-500">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
+            <Clock size={20} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pending Review (₱)</div>
+            <div className="mt-0.5 text-xl font-extrabold text-slate-900 dark:text-white tabular-nums truncate">{fmtCurrency(financialStats.pendingAmt)}</div>
+            <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">{statsData.pending || 0} awaiting checking</div>
+          </div>
+        </div>
+
+        <div className="card p-4 flex items-center gap-3.5 border-l-4 border-l-blue-500">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+            <Wallet size={20} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Submitted (₱)</div>
+            <div className="mt-0.5 text-xl font-extrabold text-slate-900 dark:text-white tabular-nums truncate">{fmtCurrency(financialStats.totalAmt)}</div>
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Across {statsData.totalReqs || 0} total entries</div>
+          </div>
+        </div>
+
+        <div className="card p-4 flex items-center gap-3.5 border-l-4 border-l-violet-500">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
+            <TrendingUp size={20} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Average Request (₱)</div>
+            <div className="mt-0.5 text-xl font-extrabold text-slate-900 dark:text-white tabular-nums truncate">{fmtCurrency(Math.round(financialStats.avgAmt))}</div>
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Per submitted transaction</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Row 1: Trend Chart (Count/₱) + Category Donut (Count/₱) */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
         <div className="xl:col-span-2">
           <TrendChart data={combined} />
         </div>
-        <div className="xl:row-span-2">
-          <ActivityFeed combined={combined} />
+        <div>
+          <CategoryChart data={combined} />
         </div>
       </div>
 
-      {/* Charts Row 2 */}
+      {/* Analytics Row 2: Pending SLA Aging + Top Branches/Regions Leaderboard + Budget Utilization Snapshot */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        <div>
+          <PendingAgingCard data={combined} />
+        </div>
+        <div>
+          <TopBranchesCard data={combined} branchMap={branchMap} getRecordBranchCode={getRecordBranchCode} />
+        </div>
+        <div>
+          <BudgetSnapshotCard data={combined} customBudgets={settings?.budgets} />
+        </div>
+      </div>
+
+      {/* Analytics Row 3: Weekly Status Breakdown + Insights + Recent Activity */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2">
+        <div>
           <StackedWeekChart data={combined} />
         </div>
         <div>
           <Insights data={statsData} combined={combined} />
+        </div>
+        <div>
+          <ActivityFeed combined={combined} />
         </div>
       </div>
     </div>

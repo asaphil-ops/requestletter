@@ -28,7 +28,7 @@ const SECTIONS = [
     label: 'Employee Management',
     icon: 'fa-users-gear',
     items: [
-      { label: 'Employee List', icon: 'fa-id-card', to: '/employee-list' },
+      { label: 'Employee List', icon: 'fa-id-card', to: '/employee-list', iconTone: 'bg-sky-500/15 text-sky-300' },
     ],
   },
   {
@@ -36,11 +36,11 @@ const SECTIONS = [
     label: 'Monitoring',
     icon: 'fa-chart-line',
     items: [
-      { label: 'Circular & Admin Order', icon: 'fa-file-circle-check', to: '/circular' },
-      { label: 'Lantaw', icon: 'fa-chart-pie', to: '/lantaw' },
-      { label: 'Cash Flow', icon: 'fa-money-bill-wave', to: '/cashflow' },
-      { label: 'Budget Monitoring', icon: 'fa-chart-line', to: '/budget' },
-      { label: 'Reports', icon: 'fa-file-pdf', to: '/reports', permission: 'canViewReports' },
+      { label: 'Circular & Admin Order', icon: 'fa-file-circle-check', to: '/circular', iconTone: 'bg-blue-500/15 text-blue-300' },
+      { label: 'Lantaw', icon: 'fa-chart-pie', to: '/lantaw', iconTone: 'bg-violet-500/15 text-violet-300' },
+      { label: 'Cash Flow', icon: 'fa-money-bill-wave', to: '/cashflow', iconTone: 'bg-emerald-500/15 text-emerald-300' },
+      { label: 'Budget Monitoring', icon: 'fa-chart-line', to: '/budget', iconTone: 'bg-amber-500/15 text-amber-300' },
+      { label: 'Reports', icon: 'fa-file-pdf', to: '/reports', permission: 'canViewReports', iconTone: 'bg-rose-500/15 text-rose-300' },
     ],
   },
   {
@@ -48,38 +48,38 @@ const SECTIONS = [
     label: 'Compliance',
     icon: 'fa-clipboard-check',
     items: [
-      { label: 'COR and DOLE Certificate', icon: 'fa-certificate', to: '/compliance/cor-dole' },
+      { label: 'COR and DOLE Certificate', icon: 'fa-certificate', to: '/compliance/cor-dole', iconTone: 'bg-teal-500/15 text-teal-300' },
     ],
   },
-    {
-      key: 'admin',
-      label: 'Admin Settings',
-      icon: 'fa-shield-alt',
-      adminSection: true,
-      items: [
-        { label: 'Directory', icon: 'fa-address-book', to: '/directory' },
-        { label: 'Bulk Upload', icon: 'fa-file-upload', to: '/bulk-upload' },
-        { label: 'Accounts', icon: 'fa-user-cog', to: '/users' },
-        { label: 'Audit Logs', icon: 'fa-history', to: '/audit-logs' },
-        { label: 'Settings', icon: 'fa-sliders-h', to: '/settings' },
-      ],
-    },
-    {
-      key: 'superadmin',
-      label: 'Super Admin',
-      icon: 'fa-user-secret',
-      superAdminSection: true,
-      items: [
-        { label: 'Branches', icon: 'fa-code-branch', to: '/branches' },
-        { label: 'Data Management', icon: 'fa-database', to: '/data-management', permission: 'canManageData' },
-      ],
-    }
+  {
+    key: 'admin',
+    label: 'Admin Settings',
+    icon: 'fa-shield-alt',
+    adminSection: true,
+    items: [
+      { label: 'Directory', icon: 'fa-address-book', to: '/directory', iconTone: 'bg-cyan-500/15 text-cyan-300' },
+      { label: 'Bulk Upload', icon: 'fa-file-upload', to: '/bulk-upload', iconTone: 'bg-indigo-500/15 text-indigo-300' },
+      { label: 'Accounts', icon: 'fa-user-cog', to: '/users', iconTone: 'bg-amber-500/15 text-amber-300' },
+      { label: 'Audit Logs', icon: 'fa-history', to: '/audit-logs', iconTone: 'bg-rose-500/15 text-rose-300' },
+      { label: 'Settings', icon: 'fa-sliders-h', to: '/settings', iconTone: 'bg-slate-500/15 text-slate-300' },
+    ],
+  },
+  {
+    key: 'superadmin',
+    label: 'Super Admin',
+    icon: 'fa-user-secret',
+    superAdminSection: true,
+    items: [
+      { label: 'Branches', icon: 'fa-code-branch', to: '/branches', iconTone: 'bg-emerald-500/15 text-emerald-300' },
+      { label: 'Data Management', icon: 'fa-database', to: '/data-management', permission: 'canManageData', iconTone: 'bg-violet-500/15 text-violet-300' },
+    ],
+  },
 ]
 
 function Badge({ value }) {
   if (!value) return null
   return (
-    <span className="sidebar-count ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-black leading-none">
+    <span className="sidebar-count ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-black leading-none tabular-nums">
       {value > 99 ? '99+' : value}
     </span>
   )
@@ -115,7 +115,7 @@ function SidebarModuleLink({ item, compact = false, count = 0, favorite = false,
           aria-label={`${favorite ? 'Remove from' : 'Add to'} favorites: ${item.label}`}
           title={`${favorite ? 'Remove from' : 'Add to'} favorites`}
         >
-          <i className={`fas fa-star`} aria-hidden="true" />
+          <i className="fas fa-star" aria-hidden="true" />
         </button>
       )}
     </div>
@@ -132,7 +132,9 @@ export default function Sidebar() {
   const hiddenModules = new Set(settings?.hiddenModules || [])
   const navigate = useNavigate()
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState(() => Object.fromEntries(SECTIONS.map(section => [section.key, !section.items.some(item => item.to === window.location.pathname)])))
+  const [collapsed, setCollapsed] = useState(() =>
+    Object.fromEntries(SECTIONS.map(section => [section.key, !section.items.some(item => item.to === window.location.pathname)]))
+  )
   const [search, setSearch] = useState('')
   const [flyout, setFlyout] = useState(null)
   const query = search.trim().toLowerCase()
@@ -263,7 +265,7 @@ export default function Sidebar() {
           </div>
 
           {sendEmailAction && (
-            <div className="sidebar-action-group">
+            <div className="sidebar-action-group mt-2">
               {!compact && <p className="sidebar-quick-heading">Actions</p>}
               <SidebarModuleLink item={sendEmailAction} compact={compact} />
             </div>
@@ -307,7 +309,7 @@ export default function Sidebar() {
                     <i className={`fas ${section.icon} w-4 text-center text-[11px]`} />
                     {!compact && <span className="min-w-0 flex-1 truncate">{section.label}</span>}
                     {!compact && <Badge value={total} />}
-                    {!compact && <i className="fas fa-chevron-down text-[10px] transition-transform" aria-hidden="true" />}
+                    {!compact && <i className={`fas fa-chevron-down text-[10px] transition-transform duration-200 ${isCollapsed ? '-rotate-90 opacity-60' : 'rotate-0'}`} aria-hidden="true" />}
                   </button>
 
                   {!compact && (
@@ -365,5 +367,5 @@ export default function Sidebar() {
         </div>
       </aside>
     </>
-)
+  )
 }

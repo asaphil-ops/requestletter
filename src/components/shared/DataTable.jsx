@@ -45,14 +45,17 @@ export default function DataTable({ columns, data, loading, keyField = 'id', onR
   return (
     <div className="data-table-shell">
       <div className="data-table-toolbar flex items-center justify-between gap-2 mb-3">
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{sorted.length} {sorted.length === 1 ? 'record' : 'records'}</span>
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
+          <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+          {sorted.length} {sorted.length === 1 ? 'record' : 'records'}
+        </span>
         <button
           onClick={handleExport}
           disabled={!sorted.length}
           aria-label="Export visible records as CSV"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm transition-all disabled:opacity-50"
         >
-          <i className="fas fa-download text-[10px]" />
+          <i className="fas fa-download text-[10px] text-sky-600 dark:text-sky-400" />
           Export CSV
         </button>
       </div>

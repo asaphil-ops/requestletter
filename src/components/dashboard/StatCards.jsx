@@ -45,14 +45,14 @@ export default function StatCards({ data = {}, onCardClick }) {
           <div className="relative z-10 flex items-start justify-between gap-2">
             <div>
               <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">{c.label}</div>
-              <div className="mt-2 text-3xl font-extrabold leading-none tracking-tight text-slate-900 dark:text-white">{fmtNum(data[c.key] ?? 0)}</div>
+              <div className="mt-2 text-3xl font-extrabold leading-none tracking-tight text-slate-900 dark:text-white tabular-nums">{fmtNum(data[c.key] ?? 0)}</div>
             </div>
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TONES[c.tone]}`}>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${TONES[c.tone]}`}>
               <Icon size={18} strokeWidth={2.2} aria-hidden="true" />
             </div>
           </div>
-          <div className="relative z-10 mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 transition-colors group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300">
-            <span>{c.action || 'View details'}</span><ArrowRight size={13} strokeWidth={2.5} aria-hidden="true" />
+          <div className="relative z-10 mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 transition-colors group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300">
+            <span>{c.action || 'View details'}</span><ArrowRight size={13} strokeWidth={2.5} className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
           </div>
           <span className={`absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r ${ACCENTS[c.tone]}`} aria-hidden="true" />
           <span className={`absolute -right-7 -top-7 h-20 w-20 rounded-full bg-gradient-to-br ${ACCENTS[c.tone]} opacity-[0.08] transition-transform duration-300 group-hover:scale-125`} aria-hidden="true" />

@@ -7,6 +7,7 @@ export const PENDING_COUNT_TABLES = {
   sbar: 'sbar',
   it: 'it_expenses',
   at: 'at_expenses',
+  generator: 'generator_expenses',
   comms: 'comms_expenses',
   initiatives: 'cost_center_initiatives',
   cfoo: 'cost_center_cfoo',
@@ -39,12 +40,13 @@ export function useDashboard() {
   return useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      const [staff, requests, sbar, it, at, comms, initiatives, cfoo, otherCostCenter, emailLogs] = await Promise.all([
+      const [staff, requests, sbar, it, at, generator, comms, initiatives, cfoo, otherCostCenter, emailLogs] = await Promise.all([
         supabase.from('staff').select('id', { count: 'exact', head: true }),
         fetchAllPages(() => supabase.from('requests').select('id,status,amount,title,date_req,created_at,uploader,beneficiary')),
         fetchAllPages(() => supabase.from('sbar').select('id,status,amount,date,created_at,giver,receiver')),
         fetchAllPages(() => supabase.from('it_expenses').select('id,status,amount,category,date,branch_code,created_at')),
         fetchAllPages(() => supabase.from('at_expenses').select('id,status,amount,category,date,branch_code,created_at')),
+        fetchAllPages(() => supabase.from('generator_expenses').select('id,status,amount,category,date,branch_code,created_at')).catch(() => []),
         fetchAllPages(() => supabase.from('comms_expenses').select('id,status,amount,category,date,branch_code,created_at')),
         fetchAllPages(() => supabase.from('cost_center_initiatives').select('id,status,amount,date,created_at')),
         fetchAllPages(() => supabase.from('cost_center_cfoo').select('id,status,amount,date,created_at')),
@@ -56,6 +58,7 @@ export function useDashboard() {
       const allSbar = sbar || []
       const allIT   = it   || []
       const allAT   = at   || []
+      const allGen  = generator || []
       const allComms = comms || []
       const allInitiatives = initiatives || []
       const allCfoo = cfoo || []
@@ -72,6 +75,7 @@ export function useDashboard() {
         ...allSbar.map(r => ({ ...r, _type: 'sbar' })),
         ...allIT.map(r   => ({ ...r, _type: 'it'   })),
         ...allAT.map(r   => ({ ...r, _type: 'at'   })),
+        ...allGen.map(r  => ({ ...r, _type: 'generator' })),
         ...allComms.map(r => ({ ...r, _type: 'comms' })),
         ...allInitiatives.map(r => ({ ...r, _type: 'initiatives' })),
         ...allCfoo.map(r => ({ ...r, _type: 'cfoo' })),
