@@ -28,11 +28,16 @@ export default function TopBar() {
     { label: 'Aircon & Toilet', to: '/at-expenses', icon: 'fa-tools', group: 'Field Operations' },
     { label: 'Generator Expenses', to: '/generator-expenses', icon: 'fa-bolt', group: 'Field Operations' },
     { label: 'Comms Expenses', to: '/comms-expenses', icon: 'fa-bullhorn', group: 'Field Operations' },
-    { label: 'Request Letter Tracker', to: '/tracker', icon: 'fa-route', group: 'Field Operations' },
     { label: 'Online Staff List', to: '/online-list', icon: 'fa-address-card', group: 'Field Operations' },
     { label: 'Employee List', to: '/employee-list', icon: 'fa-id-card', group: 'Employee Management' },
     { label: 'Budget Monitoring', to: '/budget', icon: 'fa-chart-line', group: 'Monitoring' },
     { label: 'Reports & Export', to: '/reports', icon: 'fa-file-pdf', group: 'Monitoring' },
+    { label: 'Compliance Dashboard', to: '/compliance/dashboard', icon: 'fa-chart-pie', group: 'Compliance' },
+    { label: 'Transmittal', to: '/compliance/transmittal', icon: 'fa-truck-fast', group: 'Compliance' },
+    { label: 'COR Certification', to: '/compliance/cor', icon: 'fa-certificate', group: 'Compliance' },
+    { label: 'Satellite with No COR', to: '/compliance/satellite-no-cor', icon: 'fa-satellite-dish', group: 'Compliance' },
+    { label: 'Photocopy COR', to: '/compliance/photocopy-cor', icon: 'fa-copy', group: 'Compliance' },
+    { label: 'DOLE Certification', to: '/compliance/dole', icon: 'fa-building-shield', group: 'Compliance' },
     { label: 'Send Email', to: '/send-email', icon: 'fa-envelope', group: 'Actions' },
   ]
 

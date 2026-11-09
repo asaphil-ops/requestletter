@@ -91,7 +91,7 @@ export default function SendEmail({ draft, onClose, embedded = false }) {
   const SENDER_EMAIL = 'operation.budgetmanagement@asaphil.org'
   const initDraft = draft ?? location.state?.draft ?? {}
   const isModuleEmail = Boolean(initDraft.refType)
-  const emailTitle = 'Request Letter'
+  const emailTitle = initDraft.emailTitle || 'Request Letter'
   const defaultNote = DEFAULT_NOTE
   const defaultMessageBody = isModuleEmail
     ? GENERAL_REQUEST_EMAIL_BODY

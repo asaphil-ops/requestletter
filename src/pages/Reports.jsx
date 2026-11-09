@@ -248,36 +248,23 @@ export default function Reports() {
       </div>
 
       <div className="card mb-5 p-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-          <div>
-            <label className="label">Date Start</label>
-            <input type="date" className="input" value={filters.dateStart} onChange={event => setFilters(prev => ({ ...prev, dateStart: event.target.value }))} />
-          </div>
-          <div>
-            <label className="label">Date End</label>
-            <input type="date" className="input" value={filters.dateEnd} onChange={event => setFilters(prev => ({ ...prev, dateEnd: event.target.value }))} />
-          </div>
-          <div>
-            <label className="label">Module</label>
-            <select className="input" value={filters.module} onChange={event => setFilters(prev => ({ ...prev, module: event.target.value }))}>
-              <option value="">All Modules</option>
-              {MODULES.map(module => <option key={module.key} value={module.key}>{module.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="label">Status</label>
-            <select className="input" value={filters.status} onChange={event => setFilters(prev => ({ ...prev, status: event.target.value }))}>
-              <option value="">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Checked">Sent / Checked</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button className="btn-secondary w-full" onClick={() => setFilters({ dateStart: '', dateEnd: '', module: '', status: '' })}>
-              <i className="fas fa-sync-alt mr-2" /> Reset
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <input type="date" className="input h-10 w-[142px] py-1.5 text-xs font-semibold" title="Date Start" value={filters.dateStart} onChange={event => setFilters(prev => ({ ...prev, dateStart: event.target.value }))} />
+          <span className="text-xs font-semibold text-gray-400">to</span>
+          <input type="date" className="input h-10 w-[142px] py-1.5 text-xs font-semibold" title="Date End" value={filters.dateEnd} onChange={event => setFilters(prev => ({ ...prev, dateEnd: event.target.value }))} />
+          <select className="input h-10 w-auto min-w-[190px] flex-1 py-1.5 text-xs font-semibold" value={filters.module} onChange={event => setFilters(prev => ({ ...prev, module: event.target.value }))}>
+            <option value="">All Modules</option>
+            {MODULES.map(module => <option key={module.key} value={module.key}>{module.label}</option>)}
+          </select>
+          <select className="input h-10 w-auto min-w-[160px] py-1.5 text-xs font-semibold" value={filters.status} onChange={event => setFilters(prev => ({ ...prev, status: event.target.value }))}>
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Checked">Sent / Checked</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+          <button className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap" onClick={() => setFilters({ dateStart: '', dateEnd: '', module: '', status: '' })}>
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
+          </button>
         </div>
       </div>
 

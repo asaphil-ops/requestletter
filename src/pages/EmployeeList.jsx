@@ -256,24 +256,26 @@ export default function EmployeeList() {
         </div>
       </div>
 
-      <div className="card mb-4 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[180px]">
-            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-            <input className="input pl-9" placeholder="Search employee..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+      <div className="card relative z-30 mb-4 overflow-visible p-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
+            <input className="input pl-9" placeholder="Search ID number, name, designation, or email..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
           </div>
-          <select className="input text-sm py-1.5 w-auto" value={designationFilter} onChange={e => { setDesignationFilter(e.target.value); setPage(1) }}>
+          <select className="input h-10 w-auto min-w-[180px] py-1.5 text-xs font-semibold" value={designationFilter} onChange={e => { setDesignationFilter(e.target.value); setPage(1) }}>
             <option value="">All Designations</option>
             {designationOptions.map(d => <option key={d}>{d}</option>)}
           </select>
-          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={geoLists.operations.map(o => ({ value: o, label: o }))} onChange={value => setGeo('operation', value)} />
-          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={geoLists.divisions.map(d => ({ value: d, label: d }))} onChange={value => setGeo('division', value)} />
-          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={geoLists.regions.map(r => ({ value: r, label: r }))} onChange={value => setGeo('region', value)} />
-          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={geoLists.areas.map(a => ({ value: a, label: a }))} onChange={value => setGeo('area', value)} />
-          <SegmentedSearchSelect label="Branch" value={geoFilter.branchCode} options={geoLists.branchesOptions} onChange={value => setGeo('branchCode', value)} className="w-[260px]" />
-          {(designationFilter || geoFilter.operation || geoFilter.division || geoFilter.region || geoFilter.area || geoFilter.branchCode) && (
-            <button onClick={() => { setDesignationFilter(''); setGeoFilter({ operation: '', division: '', region: '', area: '', branchCode: '' }); setPage(1) }} className="btn-secondary text-xs px-3 py-1.5"><i className="fas fa-times mr-1" />Clear</button>
-          )}
+          <button onClick={() => { setSearch(''); setDesignationFilter(''); setGeoFilter({ operation: '', division: '', region: '', area: '', branchCode: '' }); setPage(1) }} className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap">
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={geoLists.operations.map(o => ({ value: o, label: o }))} onChange={value => setGeo('operation', value)} className="w-full" />
+          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={geoLists.divisions.map(d => ({ value: d, label: d }))} onChange={value => setGeo('division', value)} className="w-full" />
+          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={geoLists.regions.map(r => ({ value: r, label: r }))} onChange={value => setGeo('region', value)} className="w-full" />
+          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={geoLists.areas.map(a => ({ value: a, label: a }))} onChange={value => setGeo('area', value)} className="w-full" />
+          <SegmentedSearchSelect label="Branch" value={geoFilter.branchCode} options={geoLists.branchesOptions} onChange={value => setGeo('branchCode', value)} placeholder="All" className="w-full" />
         </div>
       </div>
 

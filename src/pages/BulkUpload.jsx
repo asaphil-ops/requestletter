@@ -216,6 +216,55 @@ const IMPORT_TYPES = {
       ['CO-0003', '2026-06-03', 'Security Services', 'Branch Operations', '8000', 'Guard services', 'Pending', '', '<b>Admin</b><br><span style="font-size:10px;color:#64748b">Jun 3, 2026, 9:00 AM</span>', '', ''],
     ],
   },
+  compliance_transmittal: {
+    label: 'Transmittal (Compliance)',
+    table: 'compliance_certificates',
+    conflict: 'branch_code',
+    db_conflict: 'branch_code',
+    required: ['branch_code'],
+    columns: [
+      'branch_code',
+      'branch_name',
+      'type_of_application',
+      'date_received_lbc',
+      'date_submitted_bir',
+      'remarks_in_charge',
+      'remarks_bir',
+      'claimed_from_bir',
+      'cor_link',
+    ],
+    samples: [
+      ['B0001', 'Caloocan City I', 'Update Address', '2026-10-15', '2026-10-18', 'Complete requirements received via LBC', 'For releasing at RDO', 'Claimed - Oct 25, 2026', ''],
+      ['B0002', 'Pasig City I', 'New COR', '2026-10-20', '2026-10-22', 'Submitted to liaison officer', 'Pending signature', 'Pending', ''],
+      ['B0003', 'Manila City I', 'COR Replacement', '2026-10-23', '2026-10-25', 'Damaged COR for replacement', 'In process', 'Pending', ''],
+    ],
+  },
+  compliance_cor: {
+    label: 'COR Certification',
+    table: 'compliance_certificates',
+    conflict: 'branch_code',
+    db_conflict: 'branch_code',
+    required: ['branch_code', 'branch_name'],
+    columns: ['branch_code', 'branch_name', 'branch_type', 'tin', 'cor_address', 'cams_address', 'cor_link', 'remarks'],
+    samples: [
+      ['B0001', 'Caloocan City I', 'Single', '123-456-789-000', '123 Rizal Ave, Caloocan City', '123 Rizal Ave, Caloocan City', '', 'Complete'],
+      ['B0002', 'Pasig City I', 'Mother', '123-456-789-001', '45 Shaw Blvd, Pasig City', '45 Shaw Blvd, Pasig City', '', ''],
+      ['B0003', 'Manila City I', 'Satellite I', '123-456-789-002', '78 Taft Ave, Manila', '78 Taft Ave, Manila', '', ''],
+    ],
+  },
+  compliance_dole: {
+    label: 'DOLE Certification',
+    table: 'compliance_certificates',
+    conflict: 'branch_code',
+    db_conflict: 'branch_code',
+    required: ['branch_code', 'branch_name'],
+    columns: ['branch_code', 'branch_name', 'branch_type', 'tin', 'dole_address', 'cams_address', 'dole_link', 'remarks'],
+    samples: [
+      ['B0001', 'Caloocan City I', 'Single', '123-456-789-000', '123 Rizal Ave, Caloocan City', '123 Rizal Ave, Caloocan City', '', 'Complete'],
+      ['B0002', 'Pasig City I', 'Mother', '123-456-789-001', '45 Shaw Blvd, Pasig City', '45 Shaw Blvd, Pasig City', '', ''],
+      ['B0003', 'Manila City I', 'Satellite I', '123-456-789-002', '78 Taft Ave, Manila', '78 Taft Ave, Manila', '', ''],
+    ],
+  },
 }
 
 function escapeCSV(value) {
@@ -398,6 +447,16 @@ export default function BulkUpload() {
             'staff name': 'staff_name',
             'budget amount': 'budget',
             'month year': 'month',
+            // Compliance COR, DOLE & Transmittal aliases
+            type: 'branch_type',
+            cor_addr: 'cor_address',
+            dole_addr: 'dole_address',
+            cams_addr: 'cams_address',
+            branch_ccode: 'branch_code',
+            'date_received_(lbc)': 'date_received_lbc',
+            date_submitted_to_bir: 'date_submitted_bir',
+            remarks_from_in_charge: 'remarks_in_charge',
+            remarks_from_bir: 'remarks_bir',
           };
           // Helper to normalise header strings: trim, lower‑case, replace spaces/hyphens with underscores
           const normalizeHeader = (h) => h?.replace(/^\uFEFF/, '').trim().toLowerCase().replace(/[\s\u00A0-]+/g, '_');
@@ -528,14 +587,106 @@ export default function BulkUpload() {
       }
 
       const chunkSize = 500
-      for (let i = 0; i < uniqueRows.length; i += chunkSize) {
-        const chunk = uniqueRows.slice(i, i + chunkSize)
-        const mappedChunk = await Promise.all(chunk.map(mapToDbColumns))
-        const { error } = await supabase
-          .from(config.table)
-          .upsert(mappedChunk, { onConflict: config.db_conflict })
+      if (config.table === 'compliance_certificates') {
+        const isDoleImport = type === 'compliance_dole'
+        const isTransmittalImport = type === 'compliance_transmittal'
+        const DOLE_TAG = '__MODULE_DOLE__'
+        const TRANSMITTAL_TAG = '__MODULE_TRANSMITTAL__'
+        const { data: existingRows = [], error: fetchErr } = await supabase
+          .from('compliance_certificates')
+          .select('id,branch_code,cor_link,dole_link')
+        if (fetchErr) throw fetchErr
 
-        if (error) throw error
+        const isRowTransmittal = (r) =>
+          String(r.dole_link || '').trim() === TRANSMITTAL_TAG ||
+          String(r.branch_code || '').trim().toUpperCase().startsWith('TRN::')
+
+        const scopedRows = existingRows.filter(r => {
+          if (isTransmittalImport) return isRowTransmittal(r)
+          if (isRowTransmittal(r)) return false
+          return isDoleImport
+            ? String(r.cor_link || '').trim() === DOLE_TAG
+            : String(r.cor_link || '').trim() !== DOLE_TAG
+        })
+
+        const existingByCode = new Map(
+          scopedRows.map(r => [
+            String(r.branch_code || '').trim().toUpperCase().replace(/^TRN::/i, ''),
+            r.id,
+          ])
+        )
+
+        const toInsert = []
+        const toUpdate = []
+
+        for (const row of uniqueRows) {
+          const mapped = await mapToDbColumns(row)
+          const cleanCode = String(mapped.branch_code || '')
+            .trim()
+            .toUpperCase()
+            .replace(/^TRN::/i, '')
+            .replace(/O/g, '0')
+
+          let dbPayload
+          if (isTransmittalImport) {
+            dbPayload = {
+              branch_code: `TRN::${cleanCode}`,
+              branch_name: String(mapped.branch_name || '').trim(),
+              cor_link: String(mapped.cor_link || '').trim(),
+              dole_link: TRANSMITTAL_TAG,
+              dole_address: JSON.stringify({
+                type_of_application: String(mapped.type_of_application || '').trim(),
+                date_received_lbc: String(mapped.date_received_lbc || '').trim(),
+                date_submitted_bir: String(mapped.date_submitted_bir || '').trim(),
+                remarks_in_charge: String(mapped.remarks_in_charge || '').trim(),
+                remarks_bir: String(mapped.remarks_bir || '').trim(),
+                claimed_from_bir: String(mapped.claimed_from_bir || '').trim(),
+              }),
+              remarks: String(mapped.remarks_bir || mapped.remarks_in_charge || '').trim(),
+              uploaded_by: user?.full_name || user?.username || 'Admin',
+              updated_at: new Date().toISOString(),
+            }
+          } else {
+            mapped.branch_code = cleanCode
+            if (isDoleImport) {
+              mapped.cor_link = DOLE_TAG
+            }
+            mapped.uploaded_by = user?.full_name || user?.username || 'Admin'
+            mapped.updated_at = new Date().toISOString()
+            dbPayload = mapped
+          }
+
+          const existingId = existingByCode.get(cleanCode)
+          if (existingId) {
+            toUpdate.push({ id: existingId, updates: dbPayload })
+          } else {
+            toInsert.push(dbPayload)
+          }
+        }
+
+        for (let i = 0; i < toInsert.length; i += chunkSize) {
+          const chunk = toInsert.slice(i, i + chunkSize)
+          const { error } = await supabase.from('compliance_certificates').insert(chunk)
+          if (error) throw error
+        }
+
+        for (const item of toUpdate) {
+          const { error } = await supabase
+            .from('compliance_certificates')
+            .update(item.updates)
+            .eq('id', item.id)
+          if (error) throw error
+        }
+      } else {
+        for (let i = 0; i < uniqueRows.length; i += chunkSize) {
+          const chunk = uniqueRows.slice(i, i + chunkSize)
+          const mappedChunk = await Promise.all(chunk.map(mapToDbColumns))
+          const { error } = await supabase
+            .from(config.table)
+            .upsert(mappedChunk, { onConflict: config.db_conflict })
+
+          if (error) throw error
+        }
       }
 
       await supabase.from('audit_logs').insert({
@@ -552,6 +703,7 @@ export default function BulkUpload() {
       // Invalidate cache so the app reads the newly uploaded data
       if (type === 'branches') qc.invalidateQueries({ queryKey: ['branches'] })
       if (type === 'staff') qc.invalidateQueries({ queryKey: ['staff'] })
+      if (type === 'compliance_certificates') qc.invalidateQueries({ queryKey: ['compliance_certificates'] })
     } catch (err) {
       Swal.fire('Upload failed', err.message || 'Could not upload CSV.', 'error')
     } finally {

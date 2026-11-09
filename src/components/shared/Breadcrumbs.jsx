@@ -21,6 +21,12 @@ const LABELS = {
   '/audit-logs': 'Audit Logs',
   '/settings': 'Settings',
   '/tracker': 'Public Tracker',
+  '/compliance/dashboard': 'Compliance Dashboard',
+  '/compliance/transmittal': 'Transmittal',
+  '/compliance/cor': 'COR Certification',
+  '/compliance/satellite-no-cor': 'Satellite with No COR',
+  '/compliance/photocopy-cor': 'Photocopy COR',
+  '/compliance/dole': 'DOLE Certification',
 }
 
 export default function Breadcrumbs() {

@@ -54,22 +54,25 @@ export default function ActionCenter() {
       </div>
 
       <div className="card relative z-30 mb-4 overflow-visible p-4">
-        <div className="flex flex-wrap gap-2">
-          <div className="relative min-w-[220px] flex-1">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1">
             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
             <input
-              className="input pl-9 text-sm"
-              placeholder="Search pending tasks..."
+              className="input pl-9"
+              placeholder="Search module, reference, title, or owner..."
               value={search}
               onChange={event => setSearch(event.target.value)}
             />
           </div>
-          <select className="input w-auto text-sm" value={moduleFilter} onChange={event => setModuleFilter(event.target.value)}>
+          <select className="input h-10 w-auto min-w-[180px] py-1.5 text-xs font-semibold" value={moduleFilter} onChange={event => setModuleFilter(event.target.value)}>
             <option value="">All Modules</option>
             {Object.values(WORKFLOW_MODULES).map(module => (
               <option key={module.key} value={module.key}>{module.label}</option>
             ))}
           </select>
+          <button onClick={() => { setSearch(''); setModuleFilter('') }} className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap">
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
+          </button>
         </div>
       </div>
 

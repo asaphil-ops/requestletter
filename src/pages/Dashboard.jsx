@@ -230,10 +230,10 @@ export default function Dashboard() {
         <details className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
           <summary className="cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-300">Advanced geographic filters <ChevronDown className="ml-1 inline" size={13} /></summary>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <SegmentedSearchSelect label="Operation" value={filters.operation} options={selectOptions(geoOptions.operations)} onChange={value => set('operation', value)} />
-            <SegmentedSearchSelect label="Division" value={filters.division} options={selectOptions(geoOptions.divisions)} onChange={value => set('division', value)} />
-            <SegmentedSearchSelect label="Region" value={filters.region} options={selectOptions(geoOptions.regions)} onChange={value => set('region', value)} />
-            <SegmentedSearchSelect label="Area" value={filters.area} options={selectOptions(geoOptions.areas)} onChange={value => set('area', value)} />
+            <SegmentedSearchSelect label="Operation" value={filters.operation} options={selectOptions(geoOptions.operations)} onChange={value => set('operation', value)} className="w-full" />
+            <SegmentedSearchSelect label="Division" value={filters.division} options={selectOptions(geoOptions.divisions)} onChange={value => set('division', value)} className="w-full" />
+            <SegmentedSearchSelect label="Region" value={filters.region} options={selectOptions(geoOptions.regions)} onChange={value => set('region', value)} className="w-full" />
+            <SegmentedSearchSelect label="Area" value={filters.area} options={selectOptions(geoOptions.areas)} onChange={value => set('area', value)} className="w-full" />
           </div>
         </details>
         {activeFilters.length > 0 && <div className="mt-3 flex flex-wrap gap-2" aria-label="Active filters">{activeFilters.map(([key, value]) => <button key={key} onClick={() => set(key, '')} className="filter-chip"><span className="capitalize">{key.replace('branchCode', 'branch')}</span>: {value}<i className="fas fa-times" /></button>)}</div>}

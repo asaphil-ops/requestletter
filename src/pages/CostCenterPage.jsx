@@ -608,9 +608,9 @@ export default function CostCenterPage({ type }) {
 
       {/* Filter Bar */}
       <div className="card mb-4 p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
             <input
               className="input pl-9"
               placeholder="Search records..."
@@ -618,55 +618,37 @@ export default function CostCenterPage({ type }) {
               onChange={e => { setSearch(e.target.value); setPage(1) }}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 font-medium whitespace-nowrap">Date:</label>
-            <input
-              type="date"
-              className="input text-sm w-[135px]"
-              value={dateFrom}
-              onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-              title="From date"
-            />
-            <span className="text-xs text-gray-400">–</span>
-            <input
-              type="date"
-              className="input text-sm w-[135px]"
-              value={dateTo}
-              onChange={e => { setDateTo(e.target.value); setPage(1) }}
-              title="To date"
-            />
-            {(dateFrom || dateTo) && (
-              <button
-                onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
-                className="btn-icon bg-red-50 text-red-500 hover:bg-red-100"
-                title="Clear date filter"
-              >
-                <i className="fas fa-times" />
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 font-medium whitespace-nowrap">Status:</label>
-            <select
-              className="input text-sm w-[125px]"
-              value={statusFilter}
-              onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-            >
-              <option value="">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Checked">Checked</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-            {statusFilter && (
-              <button
-                onClick={() => { setStatusFilter(''); setPage(1) }}
-                className="btn-icon bg-red-50 text-red-500 hover:bg-red-100"
-                title="Clear status filter"
-              >
-                <i className="fas fa-times" />
-              </button>
-            )}
-          </div>
+          <select
+            className="input h-10 w-auto min-w-[150px] py-1.5 text-xs font-semibold"
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
+          >
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Checked">Checked</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+          <input
+            type="date"
+            className="input h-10 w-[142px] py-1.5 text-xs font-semibold"
+            value={dateFrom}
+            onChange={e => { setDateFrom(e.target.value); setPage(1) }}
+            title="From date"
+          />
+          <span className="text-xs font-semibold text-gray-400">to</span>
+          <input
+            type="date"
+            className="input h-10 w-[142px] py-1.5 text-xs font-semibold"
+            value={dateTo}
+            onChange={e => { setDateTo(e.target.value); setPage(1) }}
+            title="To date"
+          />
+          <button
+            onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setStatusFilter(''); setPage(1) }}
+            className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap"
+          >
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
+          </button>
         </div>
       </div>
 

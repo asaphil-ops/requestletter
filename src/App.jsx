@@ -10,7 +10,6 @@ import AuditLogs from './pages/AuditLogs'
 import Settings from './pages/Settings'
 import BulkUpload from './pages/BulkUpload'
 import EmbeddedPage from './pages/EmbeddedPage'
-import PublicTracker from './pages/PublicTracker'
 import { permissionsForRole } from './lib/permissions'
 import useRealtime from './hooks/useRealtime'
 import usePresence from './hooks/usePresence'
@@ -33,6 +32,8 @@ const LazyEmployeeList = lazy(() => import('./pages/EmployeeList'))
 const LazyReports = lazy(() => import('./pages/Reports'))
 const LazyCFOOBudget = lazy(() => import('./pages/CFOOBudget'))
 const LazyComplianceCertificates = lazy(() => import('./pages/ComplianceCertificates'))
+const LazyComplianceTransmittal = lazy(() => import('./pages/ComplianceTransmittal'))
+const LazyComplianceDashboard = lazy(() => import('./pages/ComplianceDashboard'))
 const LazyOnlineStaffList = lazy(() => import('./pages/OnlineStaffList'))
 const LazyBranches = lazy(() => import('./pages/Branches'))
 
@@ -79,7 +80,6 @@ function AppRoutes() {
     <Suspense fallback={<RouteLoader />}>
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/tracker" element={guarded('/tracker', <PublicTracker />)} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<LazyDashboard />} />
         <Route path="online-list" element={guarded('/online-list', <LazyOnlineStaffList />)} />
@@ -89,7 +89,13 @@ function AppRoutes() {
         <Route path="at-expenses" element={guarded('/at-expenses', <LazyATExpenses />)} />
         <Route path="generator-expenses" element={guarded('/generator-expenses', <LazyGeneratorExpenses />)} />
         <Route path="comms-expenses" element={guarded('/comms-expenses', <LazyCommsExpenses />)} />
-        <Route path="compliance/cor-dole" element={guarded('/compliance/cor-dole', <LazyComplianceCertificates />)} />
+        <Route path="compliance/dashboard" element={guarded('/compliance/dashboard', <LazyComplianceDashboard />)} />
+        <Route path="compliance/transmittal" element={guarded('/compliance/transmittal', <LazyComplianceTransmittal />)} />
+        <Route path="compliance/cor" element={guarded('/compliance/cor', <LazyComplianceCertificates certType="cor" />)} />
+        <Route path="compliance/satellite-no-cor" element={guarded('/compliance/satellite-no-cor', <LazyComplianceCertificates certType="cor" satelliteNoCorOnly />)} />
+        <Route path="compliance/photocopy-cor" element={guarded('/compliance/photocopy-cor', <LazyComplianceCertificates certType="cor" photocopyCorOnly />)} />
+        <Route path="compliance/dole" element={guarded('/compliance/dole', <LazyComplianceCertificates certType="dole" />)} />
+        <Route path="compliance/cor-dole" element={<Navigate to="/compliance/cor" replace />} />
         <Route path="cfoo-budget" element={guarded('/cfoo-budget', <LazyCFOOBudget />)} />
         
         <Route path="cost-center/initiatives" element={guarded('/cost-center/initiatives', <LazyInitiativesExpenses />)} />

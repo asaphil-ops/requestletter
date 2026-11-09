@@ -51,10 +51,15 @@ export default function AuditLogs() {
     <div>
       <PageHeader title="Audit Logs" subtitle="System activity history · last 500 entries" icon="fa-history" />
 
-      <div className="card p-3 mb-4">
-        <div className="relative">
-          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-          <input className="input pl-9 text-sm" placeholder="Search by user, action, details..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+      <div className="card p-4 mb-4">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
+            <input className="input pl-9" placeholder="Search by user, action, or details..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+          </div>
+          <button onClick={() => { setSearch(''); setPage(1) }} className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap">
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
+          </button>
         </div>
       </div>
 

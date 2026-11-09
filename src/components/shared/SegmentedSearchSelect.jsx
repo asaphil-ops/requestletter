@@ -45,11 +45,11 @@ export default function SegmentedSearchSelect({
 
   return (
     <div ref={wrapperRef} className={`segmented-search-select relative z-[60] inline-flex min-w-0 max-w-full ${widthClass}`}>
-      <div className="inline-flex w-full overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900">
-        {label && <span className="flex shrink-0 items-center border-r border-slate-300 bg-slate-50 px-2.5 text-xs font-semibold text-slate-900 sm:px-3 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">{label}</span>}
-        <div className={`flex min-w-0 flex-1 items-center ${value ? 'bg-white dark:bg-slate-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
+      <div className="inline-flex h-10 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900">
+        {label && <span className="flex shrink-0 items-center border-r border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 sm:text-[13px] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">{label}</span>}
+        <div className={`flex min-w-0 flex-1 items-center ${value ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800/70'}`}>
           <input
-            className="min-w-0 flex-1 border-0 bg-transparent px-2.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-500 sm:px-3 dark:text-slate-100"
+            className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-[13px] text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
             value={query}
             placeholder={placeholder}
             onFocus={() => setOpen(true)}
@@ -71,7 +71,7 @@ export default function SegmentedSearchSelect({
           )}
           <button
             type="button"
-            className="flex h-full items-center border-l border-slate-300 px-2 text-slate-500 hover:text-slate-800 dark:border-slate-700 dark:text-slate-300"
+            className="flex h-full items-center border-l border-slate-200 px-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
             onClick={() => setOpen(current => !current)}
             title="Open options"
           >

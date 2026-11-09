@@ -745,45 +745,68 @@ export default function Requests() {
       </div>
 
       {/* Filters */}
-      <div className="card relative z-30 overflow-visible">
-        <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-          <Filter size={16} className="text-sky-600 dark:text-sky-300" />
-          <div className="text-sm font-bold text-gray-800 dark:text-gray-100">Filters</div>
-          <div className="ml-auto text-xs font-semibold text-gray-500 dark:text-gray-400">{fmtCurrency(totalAmount)} filtered total</div>
-        </div>
-        <div className="p-4">
-        <div className="flex flex-wrap gap-3 items-center mb-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input className="input pl-9 text-sm" placeholder="Search by title, beneficiary..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+      <div className="card relative z-30 overflow-visible p-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
+            <input
+              className="input pl-9"
+              placeholder="Search by title, beneficiary, or reference..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+            />
           </div>
-          <div className="text-right border-l border-gray-200 pl-3 dark:border-slate-700">
-            <div className="text-xs text-gray-400 uppercase font-semibold">Total Amount</div>
-            <div className="text-lg font-bold text-blue-600">{fmtCurrency(totalAmount)}</div>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <select className="input text-sm py-1.5 w-auto" value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}>
+          <select
+            className="input h-10 w-auto min-w-[160px] py-1.5 text-xs font-semibold"
+            value={status}
+            onChange={e => { setStatus(e.target.value); setPage(1) }}
+          >
             <option value="All">All Status</option>
-            {['Pending','Checked','Forwarded to OPS Planning','Rejected'].map(s => <option key={s}>{s}</option>)}
+            {['Pending', 'Checked', 'Forwarded to OPS Planning', 'Rejected'].map(s => <option key={s}>{s}</option>)}
           </select>
-          <input type="date" className="input text-sm py-1.5 w-auto" value={dateStart} onChange={e => { setDateStart(e.target.value); setPage(1) }} />
-          <span className="text-gray-400 self-center">to</span>
-          <input type="date" className="input text-sm py-1.5 w-auto" value={dateEnd} onChange={e => { setDateEnd(e.target.value); setPage(1) }} />
-          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={selectOptions(geoLists.operations)} onChange={value => setGeo('operation', value)} />
-          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={selectOptions(geoLists.divisions)} onChange={value => setGeo('division', value)} />
-          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={selectOptions(geoLists.regions)} onChange={value => setGeo('region', value)} />
-          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={selectOptions(geoLists.areas)} onChange={value => setGeo('area', value)} />
+          <input
+            type="date"
+            className="input h-10 w-[142px] py-1.5 text-xs font-semibold"
+            value={dateStart}
+            onChange={e => { setDateStart(e.target.value); setPage(1) }}
+            title="Start Date"
+          />
+          <span className="text-xs font-semibold text-gray-400">to</span>
+          <input
+            type="date"
+            className="input h-10 w-[142px] py-1.5 text-xs font-semibold"
+            value={dateEnd}
+            onChange={e => { setDateEnd(e.target.value); setPage(1) }}
+            title="End Date"
+          />
+          <button
+            onClick={() => {
+              setSearch('')
+              setStatus('All')
+              setDateStart('')
+              setDateEnd('')
+              setGeoFilter({ operation: '', division: '', region: '', area: '', branchCode: '' })
+              setPage(1)
+            }}
+            className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap"
+          >
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={selectOptions(geoLists.operations)} onChange={value => setGeo('operation', value)} className="w-full" />
+          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={selectOptions(geoLists.divisions)} onChange={value => setGeo('division', value)} className="w-full" />
+          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={selectOptions(geoLists.regions)} onChange={value => setGeo('region', value)} className="w-full" />
+          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={selectOptions(geoLists.areas)} onChange={value => setGeo('area', value)} className="w-full" />
           <SegmentedSearchSelect
             label="Branch"
             value={geoFilter.branchCode}
             options={geoLists.branchesOptions}
             onChange={value => setGeo('branchCode', value)}
             placeholder="All"
-            className="w-[260px]"
+            className="w-full"
           />
-          <button onClick={() => { setSearch(''); setStatus('All'); setDateStart(''); setDateEnd(''); setGeoFilter({ operation:'',division:'',region:'',area:'',branchCode:'' }); setPage(1) }} className="btn-secondary inline-flex items-center gap-1.5 text-xs px-3 py-1.5"><X size={14} />Clear</button>
-        </div>
         </div>
       </div>
 

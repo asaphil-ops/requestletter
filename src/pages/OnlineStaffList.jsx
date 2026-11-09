@@ -101,19 +101,21 @@ export default function OnlineStaffList() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[240px] flex-1">
-          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
-          <input
-            className="input bg-white pl-9"
-            placeholder="Search online users..."
-            value={search}
-            onChange={event => setSearch(event.target.value)}
-          />
+      <div className="card p-4">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
+            <input
+              className="input pl-9"
+              placeholder="Search name, email, role, designation, or activity..."
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+            />
+          </div>
+          <button onClick={() => setSearch('')} className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap">
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
+          </button>
         </div>
-        <button onClick={() => setSearch('')} className="btn-secondary text-xs px-3 py-2">
-          <i className="fas fa-sync-alt mr-1 text-blue-600" />Reset
-        </button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

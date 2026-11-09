@@ -20,7 +20,6 @@ const VISIBILITY_MODULES = [
   { key: '/at-expenses', label: 'Aircon & Toilet', group: 'Field Operations', icon: 'fa-tools' },
   { key: '/generator-expenses', label: 'Generator', group: 'Field Operations', icon: 'fa-bolt' },
   { key: '/comms-expenses', label: 'Comms Expenses', group: 'Field Operations', icon: 'fa-bullhorn' },
-  { key: '/tracker', label: 'Request Letter Tracker', group: 'Field Operations', icon: 'fa-route' },
   { key: '/online-list', label: 'Online List', group: 'Field Operations', icon: 'fa-address-card' },
   { key: '/cfoo-budget', label: 'CFOO Budget', group: 'Cost Center', icon: 'fa-chart-pie' },
   { key: '/cost-center/initiatives', label: 'Initiatives Monthly', group: 'Cost Center', icon: 'fa-lightbulb' },
@@ -33,7 +32,12 @@ const VISIBILITY_MODULES = [
   { key: '/cashflow', label: 'Cash Flow', group: 'Monitoring', icon: 'fa-money-bill-wave' },
   { key: '/budget', label: 'Budget Monitoring', group: 'Monitoring', icon: 'fa-chart-line' },
   { key: '/reports', label: 'Reports', group: 'Monitoring', icon: 'fa-file-pdf' },
-  { key: '/compliance/cor-dole', label: 'COR and DOLE Certificate', group: 'Compliance', icon: 'fa-certificate' },
+  { key: '/compliance/dashboard', label: 'Compliance Dashboard', group: 'Compliance', icon: 'fa-chart-pie' },
+  { key: '/compliance/transmittal', label: 'Transmittal', group: 'Compliance', icon: 'fa-truck-fast' },
+  { key: '/compliance/cor', label: 'COR Certification', group: 'Compliance', icon: 'fa-certificate' },
+  { key: '/compliance/satellite-no-cor', label: 'Satellite with No COR', group: 'Compliance', icon: 'fa-satellite-dish' },
+  { key: '/compliance/photocopy-cor', label: 'Photocopy COR', group: 'Compliance', icon: 'fa-copy' },
+  { key: '/compliance/dole', label: 'DOLE Certification', group: 'Compliance', icon: 'fa-building-shield' },
 ]
 
 const mergeBudgets = (saved = {}) => Object.fromEntries(

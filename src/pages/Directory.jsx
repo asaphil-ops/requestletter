@@ -138,20 +138,22 @@ export default function Directory() {
       />
 
       {/* Filters */}
-      <div className="card p-4 mb-4">
-        <div className="flex flex-wrap gap-2">
-          <div className="relative flex-1 min-w-[180px]">
-            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-            <input className="input pl-9 text-sm" placeholder="Search Name or ID..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+      <div className="card relative z-30 mb-4 overflow-visible p-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
+            <input className="input pl-9" placeholder="Search staff name or ID number..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
           </div>
-          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={selectOptions(staffFilters.operations)} onChange={value => { setGeo('operation', value); setPage(1) }} />
-          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={selectOptions(unique('division'))} onChange={value => { setGeo('division', value); setPage(1) }} />
-          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={selectOptions(unique('region'))} onChange={value => { setGeo('region', value); setPage(1) }} />
-          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={selectOptions(unique('area'))} onChange={value => { setGeo('area', value); setPage(1) }} />
-          <SegmentedSearchSelect label="Branch" value={geoFilter.branchCode} options={filteredBranches} onChange={value => { setGeo('branchCode', value); setPage(1) }} className="w-[260px]" />
-          <button onClick={() => { setSearch(''); setGeoFilter({ operation: '', division: '', region: '', area: '', branchCode: '' }); setPage(1) }} className="btn-secondary text-xs px-3 py-1.5">
-            <i className="fas fa-sync-alt mr-1" />Reset
+          <button onClick={() => { setSearch(''); setGeoFilter({ operation: '', division: '', region: '', area: '', branchCode: '' }); setPage(1) }} className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap">
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
           </button>
+        </div>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={selectOptions(staffFilters.operations)} onChange={value => { setGeo('operation', value); setPage(1) }} className="w-full" />
+          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={selectOptions(unique('division'))} onChange={value => { setGeo('division', value); setPage(1) }} className="w-full" />
+          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={selectOptions(unique('region'))} onChange={value => { setGeo('region', value); setPage(1) }} className="w-full" />
+          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={selectOptions(unique('area'))} onChange={value => { setGeo('area', value); setPage(1) }} className="w-full" />
+          <SegmentedSearchSelect label="Branch" value={geoFilter.branchCode} options={filteredBranches} onChange={value => { setGeo('branchCode', value); setPage(1) }} placeholder="All" className="w-full" />
         </div>
       </div>
 

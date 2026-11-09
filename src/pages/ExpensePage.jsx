@@ -688,38 +688,72 @@ export default function ExpensePage({ type }) {
       </div>
 
       {/* Filters */}
-      <details className="filter-collapsible mb-4" open={filtersOpen} onToggle={(event) => setFiltersOpen(event.currentTarget.open)}>
-        <summary>
-          <i className="fas fa-filter text-blue-500" />
-          Filters
-          <span className="ml-auto text-xs font-semibold text-gray-500">{filtered.length} records</span>
-        </summary>
-        <div className="flex flex-wrap gap-2 p-4">
-          <div className="relative flex-1 min-w-[160px]">
-            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-            <input className="input pl-9 text-sm" placeholder="Search branch or item..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+      <div className="card relative z-30 overflow-visible p-4 space-y-3 mb-4">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[240px] flex-1">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
+            <input
+              className="input pl-9"
+              placeholder="Search branch code, branch name, account title, or item..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+            />
           </div>
-          <select className="input text-sm py-1.5 w-auto" value={category} onChange={e => { setCategory(e.target.value); setPage(1) }}>
+          <select
+            className="input h-10 w-auto min-w-[150px] py-1.5 text-xs font-semibold"
+            value={category}
+            onChange={e => { setCategory(e.target.value); setPage(1) }}
+          >
             <option value="All">All Categories</option>
             {config.categories.map(c => <option key={c}>{c}</option>)}
           </select>
-          <select className="input text-sm py-1.5 w-auto" value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}>
+          <select
+            className="input h-10 w-auto min-w-[155px] py-1.5 text-xs font-semibold"
+            value={status}
+            onChange={e => { setStatus(e.target.value); setPage(1) }}
+          >
             <option value="All">All Status</option>
             {['Pending', 'Checked', 'Forwarded to OPS Planning', 'Rejected'].map(s => <option key={s}>{s}</option>)}
           </select>
-          <input type="date" className="input text-sm py-1.5 w-auto" value={dateStart} onChange={e => { setDateStart(e.target.value); setPage(1) }} />
-          <span className="self-center text-gray-400">to</span>
-          <input type="date" className="input text-sm py-1.5 w-auto" value={dateEnd} onChange={e => { setDateEnd(e.target.value); setPage(1) }} />
-          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={selectOptions(geoLists.operations)} onChange={value => setGeo('operation', value)} />
-          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={selectOptions(geoLists.divisions)} onChange={value => setGeo('division', value)} />
-          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={selectOptions(geoLists.regions)} onChange={value => setGeo('region', value)} />
-          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={selectOptions(geoLists.areas)} onChange={value => setGeo('area', value)} />
-          <SegmentedSearchSelect label="Branch" value={geoFilter.branchCode} options={geoLists.branchesOptions} onChange={value => setGeo('branchCode', value)} className="w-[260px]" />
-          <button onClick={() => { setSearch(''); setCategory('All'); setStatus('All'); setDateStart(''); setDateEnd(''); setGeoFilter({ operation: '', division: '', region: '', area: '', branchCode: '' }); setPage(1) }} className="btn-secondary text-xs px-3 py-1.5">
-            <i className="fas fa-sync-alt mr-1" />Reset
+          <input
+            type="date"
+            className="input h-10 w-[142px] py-1.5 text-xs font-semibold"
+            value={dateStart}
+            onChange={e => { setDateStart(e.target.value); setPage(1) }}
+            title="Start Date"
+          />
+          <span className="text-xs font-semibold text-gray-400">to</span>
+          <input
+            type="date"
+            className="input h-10 w-[142px] py-1.5 text-xs font-semibold"
+            value={dateEnd}
+            onChange={e => { setDateEnd(e.target.value); setPage(1) }}
+            title="End Date"
+          />
+          <button
+            onClick={() => {
+              setSearch('')
+              setCategory('All')
+              setStatus('All')
+              setDateStart('')
+              setDateEnd('')
+              setGeoFilter({ operation: '', division: '', region: '', area: '', branchCode: '' })
+              setPage(1)
+            }}
+            className="btn-secondary h-10 text-xs px-3.5 whitespace-nowrap"
+          >
+            <i className="fas fa-sync-alt mr-1.5" />Reset Filters
           </button>
         </div>
-      </details>
+
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+          <SegmentedSearchSelect label="Operation" value={geoFilter.operation} options={selectOptions(geoLists.operations)} onChange={value => setGeo('operation', value)} className="w-full" />
+          <SegmentedSearchSelect label="Division" value={geoFilter.division} options={selectOptions(geoLists.divisions)} onChange={value => setGeo('division', value)} className="w-full" />
+          <SegmentedSearchSelect label="Region" value={geoFilter.region} options={selectOptions(geoLists.regions)} onChange={value => setGeo('region', value)} className="w-full" />
+          <SegmentedSearchSelect label="Area" value={geoFilter.area} options={selectOptions(geoLists.areas)} onChange={value => setGeo('area', value)} className="w-full" />
+          <SegmentedSearchSelect label="Branch" value={geoFilter.branchCode} options={geoLists.branchesOptions} onChange={value => setGeo('branchCode', value)} placeholder="All" className="w-full" />
+        </div>
+      </div>
 
       {/* Table */}
       <div className={`card relative z-0 overflow-hidden ${density === 'compact' ? 'density-compact' : ''}`}>

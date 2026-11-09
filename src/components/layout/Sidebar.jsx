@@ -19,7 +19,6 @@ const SECTIONS = [
       { label: 'Aircon & Toilet', icon: 'fa-tools', to: '/at-expenses', badge: 'at', iconTone: 'bg-teal-500/15 text-teal-300' },
       { label: 'Generator', icon: 'fa-bolt', to: '/generator-expenses', badge: 'generator', iconTone: 'bg-violet-500/15 text-violet-300' },
       { label: 'Comms Expenses', icon: 'fa-bullhorn', to: '/comms-expenses', badge: 'comms', iconTone: 'bg-rose-500/15 text-rose-300' },
-      { label: 'Request Letter Tracker', icon: 'fa-route', to: '/tracker', iconTone: 'bg-indigo-500/15 text-indigo-300' },
       { label: 'Online List', icon: 'fa-address-card', to: '/online-list', iconTone: 'bg-emerald-500/15 text-emerald-300' },
     ],
   },
@@ -48,7 +47,12 @@ const SECTIONS = [
     label: 'Compliance',
     icon: 'fa-clipboard-check',
     items: [
-      { label: 'COR and DOLE Certificate', icon: 'fa-certificate', to: '/compliance/cor-dole', iconTone: 'bg-teal-500/15 text-teal-300' },
+      { label: 'Compliance Dashboard', icon: 'fa-chart-pie', to: '/compliance/dashboard', iconTone: 'bg-emerald-500/15 text-emerald-300' },
+      { label: 'Transmittal', icon: 'fa-truck-fast', to: '/compliance/transmittal', iconTone: 'bg-indigo-500/15 text-indigo-300' },
+      { label: 'COR Certification', icon: 'fa-certificate', to: '/compliance/cor', iconTone: 'bg-teal-500/15 text-teal-300' },
+      { label: 'Satellite with No COR', icon: 'fa-satellite-dish', to: '/compliance/satellite-no-cor', iconTone: 'bg-rose-500/15 text-rose-300' },
+      { label: 'Photocopy COR', icon: 'fa-copy', to: '/compliance/photocopy-cor', iconTone: 'bg-violet-500/15 text-violet-300' },
+      { label: 'DOLE Certification', icon: 'fa-building-shield', to: '/compliance/dole', iconTone: 'bg-sky-500/15 text-sky-300' },
     ],
   },
   {
@@ -87,13 +91,13 @@ function Badge({ value }) {
 
 function SidebarModuleLink({ item, compact = false, count = 0, favorite = false, onToggleFavorite, tabIndex }) {
   return (
-    <div className="sidebar-module-row flex min-w-0 items-center gap-1">
+    <div className="sidebar-module-row relative flex min-w-0 items-center">
       <NavLink
         to={item.to}
         end={item.to === '/'}
         tabIndex={tabIndex}
         title={item.label}
-        className={({ isActive }) => `sidebar-link group relative flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${isActive ? 'sidebar-link-active text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+        className={({ isActive }) => `sidebar-link group relative flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition ${isActive ? 'sidebar-link-active text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
       >
         {({ isActive }) => (
           <>
@@ -101,7 +105,7 @@ function SidebarModuleLink({ item, compact = false, count = 0, favorite = false,
             <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isActive ? 'bg-white/15 text-white' : item.iconTone || 'bg-slate-500/15 text-slate-300'}`}>
               <i className={`fas ${item.icon} text-xs`} aria-hidden="true" />
             </span>
-            {!compact && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+            {!compact && <span className="min-w-0 flex-1 leading-snug break-words">{item.label}</span>}
             <Badge value={count} />
           </>
         )}
@@ -307,7 +311,7 @@ export default function Sidebar() {
                     className="sidebar-section-heading mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-black uppercase tracking-wide text-slate-400 transition hover:bg-white/5 hover:text-white"
                   >
                     <i className={`fas ${section.icon} w-4 text-center text-[11px]`} />
-                    {!compact && <span className="min-w-0 flex-1 truncate">{section.label}</span>}
+                    {!compact && <span className="min-w-0 flex-1 leading-snug break-words">{section.label}</span>}
                     {!compact && <Badge value={total} />}
                     {!compact && <i className={`fas fa-chevron-down text-[10px] transition-transform duration-200 ${isCollapsed ? '-rotate-90 opacity-60' : 'rotate-0'}`} aria-hidden="true" />}
                   </button>

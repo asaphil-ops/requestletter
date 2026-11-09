@@ -51,12 +51,12 @@ export default function FilterBar({ value = {}, onChange }) {
   const options = (list) => list.map(item => ({ value: item, label: item }))
 
   return (
-    <div className="module-filter-row flex flex-wrap gap-2">
-      <SegmentedSearchSelect label="Operation" value={value.operation || ''} options={options(operations)} onChange={val => set('operation', val)} />
-      <SegmentedSearchSelect label="Division" value={value.division || ''} options={options(divisions)} onChange={val => set('division', val)} />
-      <SegmentedSearchSelect label="Region" value={value.region || ''} options={options(regions)} onChange={val => set('region', val)} />
-      <SegmentedSearchSelect label="Area" value={value.area || ''} options={options(areas)} onChange={val => set('area', val)} />
-      <SegmentedSearchSelect label="Branch" value={value.branchCode || ''} options={filteredBranches} onChange={val => set('branchCode', val)} className="w-[260px]" />
+    <div className="module-filter-row grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+      <SegmentedSearchSelect label="Operation" value={value.operation || ''} options={options(operations)} onChange={val => set('operation', val)} className="w-full" />
+      <SegmentedSearchSelect label="Division" value={value.division || ''} options={options(divisions)} onChange={val => set('division', val)} className="w-full" />
+      <SegmentedSearchSelect label="Region" value={value.region || ''} options={options(regions)} onChange={val => set('region', val)} className="w-full" />
+      <SegmentedSearchSelect label="Area" value={value.area || ''} options={options(areas)} onChange={val => set('area', val)} className="w-full" />
+      <SegmentedSearchSelect label="Branch" value={value.branchCode || ''} options={filteredBranches} onChange={val => set('branchCode', val)} placeholder="All" className="w-full" />
     </div>
   )
 }
